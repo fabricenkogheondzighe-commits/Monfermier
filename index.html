@@ -144,6 +144,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
   <div style="display:flex;align-items:center;gap:8px">
     <div id="user-badge" style="font-size:11px;color:#8a8070"></div>
     <button class="btn-ghost" id="back-btn" onclick="goBack()" style="display:none">← Retour</button>
+    <button class="btn-ghost" id="home-btn" onclick="goHome()" style="display:none">🏠 Accueil</button>
     <button class="btn-ghost" id="logout-btn" onclick="logout()" style="display:none;color:#c97a7a">Déco.</button>
   </div>
 </div>
@@ -607,6 +608,8 @@ function showPage(id, addHistory=true) {
   if(page) { page.classList.add("active"); page.classList.add("fade-in"); }
   const backBtn = document.getElementById("back-btn");
   backBtn.style.display = id === "page-home" ? "none" : "block";
+  var homeBtn = document.getElementById("home-btn");
+  if(homeBtn) homeBtn.style.display = (id === "page-home" || !currentUser) ? "none" : "block";
   if(addHistory && id !== pageHistory[pageHistory.length-1]) pageHistory.push(id);
 }
 
@@ -689,7 +692,8 @@ function renderClients() {
   
   el.innerHTML = `<div style="font-size:12px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">CLIENTS (${list.length})</div>` +
   list.map(c=>{
-    const t=getType(c.type); const elig=c.points>=THRESHOLD;
+    const t=getType(c.type); const isParticulier=(c.type||"particulier")==="particulier";
+    const elig=isParticulier && c.points>=THRESHOLD;
     const pct=Math.min(100,(c.points/THRESHOLD)*100);
     const av=initials(c.name);
     return `<div class="client-card ${elig?"eligible":""}" onclick="openClient('${c.id}')">
@@ -698,13 +702,14 @@ function renderClients() {
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
           <span style="font-weight:600;font-size:15px">${c.name}</span>
           <span class="tag tag-gold" style="font-size:10px">${c.code}</span>
-          ${elig?`<span style="background:#1a3d1a;border:1px solid #3d6a3d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px">✦ REMISE</span>`:""}              ${(c.vipTickets||0)>0?`<span style="background:#1a0a2e;border:1px solid #6a3da8;color:#a07ad5;border-radius:20px;padding:2px 8px;font-size:10px">🏆 ${c.vipTickets} VIP</span>`:""}
+          ${elig?`<span style="background:#1a3d1a;border:1px solid #3d6a3d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px">✦ REMISE</span>`:""}
+          ${(c.vipTickets||0)>0 && isParticulier?`<span style="background:#1a0a2e;border:1px solid #6a3da8;color:#a07ad5;border-radius:20px;padding:2px 8px;font-size:10px">🏆 ${c.vipTickets} VIP</span>`:""}
           <span style="background:${t.bg};border:1px solid ${t.color}44;color:${t.color};border-radius:20px;padding:2px 8px;font-size:10px">${t.icon} ${t.label}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
+        ${isParticulier?`<div style="display:flex;align-items:center;gap:8px">
           <div class="bar-bg"><div class="bar" style="width:${pct}%;background:${elig?"linear-gradient(90deg,#3d9a3d,#7ac97a)":"linear-gradient(90deg,#c9a84c,#e8c96a)"}"></div></div>
           <span style="font-size:11px;color:${elig?"#7ac97a":"#8a8070"};white-space:nowrap">${c.points}/${THRESHOLD}pts</span>
-        </div>
+        </div>`:""}
         <div style="font-size:11px;color:#4a4640;margin-top:4px">${c.history.length} achat${c.history.length>1?"s":""} · ${fmtPrice(c.totalSpent)}</div>
       </div>
       <button class="btn-gold" style="padding:10px 16px;font-size:13px;border-radius:8px;flex-shrink:0" onclick="event.stopPropagation();openSale('${c.id}')">Vendre</button>
@@ -1113,6 +1118,68 @@ function renderSale() {
 // ═══════════════════════════════════════
 async function confirmSale() {
   const c = currentClient;
+  if(!c) return;
+  const total = cartTotal();
+  const final = total - (isEligible() && rewardChoice==="discount" ? Math.floor(total*DISCOUNT) : 0);
+  const isElectronic = selectedPayment !== "especes";
+  
+  // Si paiement électronique, afficher avertissement d'abord
+  if(isElectronic) {
+    const pm = PAYMENT_MODES.find(p => p.id === selectedPayment);
+    const pmLabel = pm ? pm.icon + " " + pm.label : selectedPayment;
+    const payModal = document.getElementById("confirm-payment-modal");
+    const payContent = document.getElementById("confirm-payment-content");
+    if(payContent) payContent.innerHTML =
+      "<div style='font-size:14px;color:#fff;margin-bottom:8px'>Mode de paiement</div>" +
+      "<div style='font-size:20px;font-weight:700;color:#c9a84c;margin-bottom:12px'>" + pmLabel + "</div>" +
+      "<div style='font-size:13px;color:#e8c96a;margin-bottom:4px'>Montant : <strong>" + fmtPrice(final) + "</strong></div>" +
+      "<div style='font-size:13px;color:#c97a7a;margin-top:12px;padding:10px;background:#2e0a0a;border-radius:8px;border:1px solid #6a1a1a'>⚠️ Avant de confirmer, assurez-vous que le paiement <strong>" + pmLabel + "</strong> a bien été reçu et validé sur votre téléphone.</div>";
+    if(payModal) payModal.style.display = "flex";
+    return;
+  }
+  
+  // Paiement espèces - afficher popup de confirmation normale
+  const modal = document.getElementById("confirm-sale-modal");
+  const mc = document.getElementById("confirm-sale-content");
+  if(mc) mc.innerHTML = 
+    "<div style='font-size:13px;color:#8a8070;margin-bottom:4px'>Client</div>" +
+    "<div style='font-size:16px;font-weight:700;color:#fff;margin-bottom:12px'>" + c.name + "</div>" +
+    "<div style='font-size:13px;color:#8a8070;margin-bottom:4px'>Montant total</div>" +
+    "<div style='font-size:22px;font-weight:700;color:#c9a84c;margin-bottom:8px'>" + fmtPrice(final) + "</div>" +
+    "<div style='font-size:12px;color:#4a4640'>Paiement : 💵 Espèces</div>";
+  if(modal) modal.style.display = "flex";
+}
+
+function closeConfirmPayment() {
+  var modal = document.getElementById("confirm-payment-modal");
+  if(modal) modal.style.display = "none";
+}
+
+function confirmPaymentAndSale() {
+  closeConfirmPayment();
+  // Afficher confirmation finale
+  const c = currentClient;
+  const total = cartTotal();
+  const final = total - (isEligible() && rewardChoice==="discount" ? Math.floor(total*DISCOUNT) : 0);
+  const pm = PAYMENT_MODES.find(p => p.id === selectedPayment);
+  const modal = document.getElementById("confirm-sale-modal");
+  const mc = document.getElementById("confirm-sale-content");
+  if(mc) mc.innerHTML =
+    "<div style='font-size:13px;color:#8a8070;margin-bottom:4px'>Client</div>" +
+    "<div style='font-size:16px;font-weight:700;color:#fff;margin-bottom:12px'>" + c.name + "</div>" +
+    "<div style='font-size:13px;color:#8a8070;margin-bottom:4px'>Montant total</div>" +
+    "<div style='font-size:22px;font-weight:700;color:#c9a84c;margin-bottom:8px'>" + fmtPrice(final) + "</div>" +
+    "<div style='font-size:12px;color:#7ac97a'>✅ Paiement " + (pm?pm.icon+" "+pm.label:"") + " confirmé</div>";
+  if(modal) modal.style.display = "flex";
+}
+
+function closeConfirmSale() {
+  var modal = document.getElementById("confirm-sale-modal");
+  if(modal) modal.style.display = "none";
+}
+
+function processSale() {
+  const c = currentClient;
   const total = cartTotal();
   const earned = cartPoints();
   const elig = isEligible();
@@ -1501,6 +1568,32 @@ function handleVendorPhoto(input) {
       img.onerror = function() { avPhoto = dataUrl; showToast("✅ Photo ajoutée !"); };
       img.src = dataUrl;
     } catch(e) { avPhoto = dataUrl; showToast("✅ Photo ajoutée !"); }
+  };
+  reader.readAsDataURL(file);
+}
+
+
+async function vpUpdatePhoto(event, vendorId) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 150; canvas.height = 150;
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = async function() {
+      ctx.drawImage(img, 0, 0, 150, 150);
+      const photoData = canvas.toDataURL("image/jpeg", 0.5);
+      try {
+        await db.collection("vendors").doc(vendorId).update({photo: photoData});
+        const v = vendors.find(x => x.id === vendorId);
+        if(v) { v.photo = photoData; currentVendor = v; }
+        showToast("✅ Photo mise à jour !");
+        renderVendorProfile();
+      } catch(e) { showToast("Erreur: " + (e.message||"connexion"), true); }
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -2064,8 +2157,14 @@ function renderVendorProfile() {
   el.innerHTML = `
     <div class="card" style="background:linear-gradient(135deg,#0d2b14,#1a4a24);border-color:#3d6a3d;margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-        <div style="width:100px;height:100px;border-radius:50%;overflow:hidden;background:#1a1813;border:3px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 0 20px #c9a84c44">
-          ${v.photo?`<img src="${v.photo}" style="width:100%;height:100%;object-fit:cover">`:(v.sex==="Femme"?"👩":"👨")}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:100px;height:100px;border-radius:50%;overflow:hidden;background:#1a1813;border:3px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 0 20px #c9a84c44">
+            ${v.photo?`<img src="${v.photo}" style="width:100%;height:100%;object-fit:cover">`:(v.sex==="Femme"?"👩":"👨")}
+          </div>
+          <label style="background:#1a1813;border:1px solid #c9a84c55;color:#c9a84c;border-radius:20px;padding:4px 12px;font-size:11px;cursor:pointer">
+            📷 Ma photo
+            <input type="file" accept="image/*" style="display:none" onchange="vpUpdatePhoto(event,'${v.id}')">
+          </label>
         </div>
         <div>
           <div style="font-size:20px;font-weight:700;color:#fff">${v.name}</div>
@@ -2440,6 +2539,32 @@ showPage("page-login", false);
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <button type="button" onclick="closeConfirmClient()" style="background:#1a1813;border:1px solid #4a4640;color:#8a8070;padding:12px;border-radius:8px;font-size:14px;font-weight:600">✏️ Corriger</button>
       <button type="button" onclick="confirmCreateClient()" style="background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:12px;border-radius:8px;font-size:14px;font-weight:700;border:none">✅ Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM SALE MODAL -->
+<div id="confirm-sale-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a1813;border:2px solid #c9a84c;border-radius:16px;padding:24px;width:100%;max-width:400px">
+    <div style="font-size:14px;color:#c9a84c;font-weight:700;margin-bottom:16px;text-align:center">⚠️ Confirmer la vente</div>
+    <div id="confirm-sale-content" style="background:#0f0e0b;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center"></div>
+    <div style="font-size:12px;color:#8a8070;text-align:center;margin-bottom:16px">Voulez-vous confirmer cette vente ?</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button type="button" onclick="closeConfirmSale()" style="background:#1a1813;border:1px solid #4a4640;color:#8a8070;padding:12px;border-radius:8px;font-size:14px;font-weight:600">✏️ Annuler</button>
+      <button type="button" onclick="closeConfirmSale();processSale()" style="background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:12px;border-radius:8px;font-size:14px;font-weight:700;border:none">✅ Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM PAYMENT MODAL -->
+<div id="confirm-payment-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a1813;border:2px solid #c97a4a;border-radius:16px;padding:24px;width:100%;max-width:400px">
+    <div style="font-size:15px;color:#c97a4a;font-weight:700;margin-bottom:16px;text-align:center">⚠️ Vérification du paiement</div>
+    <div id="confirm-payment-content" style="background:#0f0e0b;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center"></div>
+    <div style="font-size:12px;color:#8a8070;text-align:center;margin-bottom:16px">Confirmez-vous avoir bien reçu ce paiement ?</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button type="button" onclick="closeConfirmPayment()" style="background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;padding:12px;border-radius:8px;font-size:13px;font-weight:600">❌ Pas encore</button>
+      <button type="button" onclick="confirmPaymentAndSale()" style="background:linear-gradient(135deg,#1a6b2a,#25d366);color:#fff;padding:12px;border-radius:8px;font-size:13px;font-weight:700;border:none">✅ Oui, reçu !</button>
     </div>
   </div>
 </div>
