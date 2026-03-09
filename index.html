@@ -124,17 +124,34 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyD_chYBtxQ2rGKbGakNRM-ydAy8YYelkeI",
-      authDomain: "mon-fermier-sarl.firebaseapp.com",
-      projectId: "mon-fermier-sarl",
-      storageBucket: "mon-fermier-sarl.firebasestorage.app",
-      messagingSenderId: "430649297941",
-      appId: "1:430649297941:web:66da6d7fabd6acfcac921c"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    console.log("Firebase connecté !");
+    var db;
+    try {
+      var firebaseConfig = {
+        apiKey: "AIzaSyD_chYBtxQ2rGKbGakNRM-ydAy8YYelkeI",
+        authDomain: "mon-fermier-sarl.firebaseapp.com",
+        projectId: "mon-fermier-sarl",
+        storageBucket: "mon-fermier-sarl.firebasestorage.app",
+        messagingSenderId: "430649297941",
+        appId: "1:430649297941:web:66da6d7fabd6acfcac921c"
+      };
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      console.log("Firebase connecté !");
+    } catch(e) {
+      console.warn("Firebase indisponible:", e.message);
+      db = {
+        collection: function() {
+          var self = {
+            orderBy: function() { return self; },
+            onSnapshot: function(cb) { setTimeout(function(){ cb({forEach:function(){},docs:[]}); },0); return function(){}; },
+            get: function() { return Promise.resolve({docs:[]}); },
+            add: function() { return Promise.resolve({id:"loc_"+Date.now()}); },
+            doc: function() { return { get:function(){return Promise.resolve({exists:false,data:function(){return {};}});}, update:function(){return Promise.resolve();}, set:function(){return Promise.resolve();}, delete:function(){return Promise.resolve();} }; }
+          };
+          return self;
+        }
+      };
+    }
   </script>
 </head>
 <body>
@@ -1178,7 +1195,7 @@ function closeConfirmSale() {
   if(modal) modal.style.display = "none";
 }
 
-function processSale() {
+async function processSale() {
   const c = currentClient;
   const total = cartTotal();
   const earned = cartPoints();
