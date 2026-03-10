@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.29</title>
+  <title>Mon Fermier SARL v3.30</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -3830,24 +3830,130 @@ function calcStockNow(stock) {
 function buildStockResume(stock) {
   var data = calcStockNow(stock);
   var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">📊 État du stock</div>';
+
+  // ── Alertes stock faible ──
+  var alerts = PRODUCTS.filter(function(p){ return Math.max(0, data[p.id].enStock) < 10; });
+  if(alerts.length > 0) {
+    html += '<div style="background:#2e0a0a;border:1px solid #c97a7a44;border-radius:10px;padding:12px;margin-bottom:14px">';
+    html += '<div style="font-size:12px;font-weight:700;color:#c97a7a;margin-bottom:6px">⚠️ STOCK FAIBLE</div>';
+    alerts.forEach(function(p) {
+      html += '<div style="font-size:12px;color:#c97a7a;padding:2px 0">• '+p.name+' : '+Math.max(0,data[p.id].enStock)+' restant'+(data[p.id].enStock>1?'s':'')+'</div>';
+    });
+    html += '</div>';
+  }
+
+  // ── Résumé par produit ──
   PRODUCTS.forEach(function(p) {
     var d = data[p.id];
-    var alertColor = d.enStock < 10 ? '#c97a7a' : d.enStock < 30 ? '#c9a84c' : '#7ac97a';
+    var enStock = Math.max(0, d.enStock);
+    var alertColor = enStock < 10 ? '#c97a7a' : enStock < 30 ? '#c9a84c' : '#7ac97a';
+    var pct = d.emballe > 0 ? Math.round((d.vendu/d.emballe)*100) : 0;
     html += '<div class="card" style="margin-bottom:10px">';
-    html += '<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:10px">'+p.name+'</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+    html += '<div style="font-size:14px;font-weight:700;color:#fff">'+p.name+'</div>';
+    html += '<div style="background:'+alertColor+'22;border:1px solid '+alertColor+'44;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;color:'+alertColor+'">'+enStock+' en stock</div>';
+    html += '</div>';
+    // Barre de progression vendus/emballés
+    html += '<div style="background:#1a1813;border-radius:4px;height:6px;margin-bottom:10px;overflow:hidden">';
+    html += '<div style="background:linear-gradient(90deg,#7ac97a,#c9a84c);height:100%;width:'+pct+'%;border-radius:4px"></div>';
+    html += '</div>';
     html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px">';
     html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#c9a84c">'+d.emballe+'</div><div style="font-size:9px;color:#4a4640">Emballés</div></div>';
-    html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#7a9ac9">'+d.remis+'</div><div style="font-size:9px;color:#4a4640">Remis vendeurs</div></div>';
+    html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#7a9ac9">'+d.remis+'</div><div style="font-size:9px;color:#4a4640">Remis</div></div>';
     html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#c97a7a">'+d.vendu+'</div><div style="font-size:9px;color:#4a4640">Vendus</div></div>';
     html += '</div>';
     html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">';
     html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#9a7ac9">'+d.retour+'</div><div style="font-size:9px;color:#4a4640">Retours</div></div>';
     html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#c9a84c">'+Math.max(0,d.enMain)+'</div><div style="font-size:9px;color:#4a4640">Chez vendeurs</div></div>';
-    html += '<div style="background:#0d1a0d;border-radius:6px;padding:8px;text-align:center;border:1px solid '+alertColor+'44"><div style="font-size:16px;font-weight:700;color:'+alertColor+'">'+Math.max(0,d.enStock)+'</div><div style="font-size:9px;color:#4a4640">En magasin</div></div>';
+    html += '<div style="background:#0d1a0d;border-radius:6px;padding:8px;text-align:center;border:1px solid '+alertColor+'44"><div style="font-size:16px;font-weight:700;color:'+alertColor+'">'+enStock+'</div><div style="font-size:9px;color:#4a4640">En magasin</div></div>';
     html += '</div></div>';
   });
+
+  // ── Graphique évolution des sorties (6 mois) ──
+  html += '<div class="card" style="margin-top:4px;margin-bottom:16px">';
+  html += '<div style="font-size:12px;font-weight:700;color:#c9a84c;margin-bottom:12px">📈 Sorties par mois</div>';
+  var now2 = new Date(); var months = [];
+  for(var i=5;i>=0;i--){
+    var d2=new Date(now2.getFullYear(),now2.getMonth()-i,1);
+    var mk=d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0');
+    var label=d2.toLocaleDateString('fr-FR',{month:'short'});
+    var total=0;
+    clients.forEach(function(c){
+      (c.history||[]).forEach(function(h){
+        var pp=(h.date||'').split('/');
+        if(pp.length===3&&pp[2]+'-'+pp[1].padStart(2,'0')===mk)
+          (h.items||[]).forEach(function(it){ total+=it.qty||1; });
+      });
+    });
+    months.push({label:label, total:total});
+  }
+  var maxM = Math.max.apply(null, months.map(function(m){return m.total;}))||1;
+  html += '<div style="display:flex;gap:6px;align-items:flex-end;height:80px">';
+  months.forEach(function(m){
+    var hh = Math.max(4, Math.round((m.total/maxM)*70));
+    html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">';
+    html += '<div style="font-size:9px;color:#8a8070">'+(m.total>0?m.total:'')+'</div>';
+    html += '<div style="width:100%;background:linear-gradient(180deg,#c9a84c,#b8860b);border-radius:4px 4px 0 0;height:'+hh+'px"></div>';
+    html += '<div style="font-size:9px;color:#4a4640">'+m.label+'</div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  // ── Tableau de bord par vendeur ──
+  html += '<div style="font-size:12px;font-weight:700;color:#c9a84c;margin-bottom:10px">👤 Par vendeur</div>';
+  var vendorStockMap = {};
+  vendors.forEach(function(v){ vendorStockMap[v.id] = {name:v.name, code:v.code, recu:{}, vendu:{}, retour:{}}; });
+  // Remises reçues
+  (stock.remises||[]).forEach(function(r){
+    if(!vendorStockMap[r.vendorId]) return;
+    PRODUCTS.forEach(function(p){
+      vendorStockMap[r.vendorId].recu[p.id] = (vendorStockMap[r.vendorId].recu[p.id]||0) + (r.items[p.id]||0);
+    });
+  });
+  // Retours
+  (stock.retours||[]).forEach(function(r){
+    if(!vendorStockMap[r.vendorId]) return;
+    PRODUCTS.forEach(function(p){
+      vendorStockMap[r.vendorId].retour[p.id] = (vendorStockMap[r.vendorId].retour[p.id]||0) + (r.items[p.id]||0);
+    });
+  });
+  // Ventes
+  clients.forEach(function(c){
+    (c.history||[]).forEach(function(h){
+      var vc = vendors.find(function(v){ return v.code===(h.vendorCode||''); });
+      if(!vc || !vendorStockMap[vc.id]) return;
+      (h.items||[]).forEach(function(it){
+        vendorStockMap[vc.id].vendu[it.id] = (vendorStockMap[vc.id].vendu[it.id]||0) + (it.qty||1);
+      });
+    });
+  });
+
+  var vendorList = Object.values(vendorStockMap).filter(function(v){
+    return Object.values(v.recu).some(function(q){ return q>0; });
+  });
+
+  if(vendorList.length === 0) {
+    html += '<div class="card" style="text-align:center;color:#4a4640;padding:20px">Aucune remise enregistrée</div>';
+  } else {
+    vendorList.forEach(function(v) {
+      var totalRecu   = Object.values(v.recu).reduce(function(s,q){return s+q;},0);
+      var totalVendu  = Object.values(v.vendu).reduce(function(s,q){return s+q;},0);
+      var totalRetour = Object.values(v.retour).reduce(function(s,q){return s+q;},0);
+      var enMain      = Math.max(0, totalRecu - totalVendu - totalRetour);
+      html += '<div class="card" style="margin-bottom:10px">';
+      html += '<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:10px">'+v.name+'</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">';
+      html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:700;color:#7a9ac9">'+totalRecu+'</div><div style="font-size:9px;color:#4a4640">Reçu</div></div>';
+      html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:700;color:#c97a7a">'+totalVendu+'</div><div style="font-size:9px;color:#4a4640">Vendu</div></div>';
+      html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:15px;font-weight:700;color:#9a7ac9">'+totalRetour+'</div><div style="font-size:9px;color:#4a4640">Retourné</div></div>';
+      html += '<div style="background:#0d1a0d;border-radius:6px;padding:8px;text-align:center;border:1px solid #3d6a3d44"><div style="font-size:15px;font-weight:700;color:#c9a84c">'+enMain+'</div><div style="font-size:9px;color:#4a4640">En main</div></div>';
+      html += '</div></div>';
+    });
+  }
+
   return html;
 }
+
 
 function buildStockEmballe(stock) {
   var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">🏭 Enregistrer un emballage</div>';
