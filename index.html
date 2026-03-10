@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.36</title>
+  <title>Mon Fermier SARL v3.38</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -549,7 +549,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
     <div class="hm-brand">Mon Fermier</div>
     <div class="hm-tagline">SARL — Programme Fidélité</div>
     <div class="hm-welcome" id="hm-welcome"></div>
-    <button id="admin-btn" class="hm-admin-btn" style="display:none" onclick="openAdmin()">⚙️</button>
+
   </div>
 
   <!-- ── CA DU MOIS ── -->
@@ -570,12 +570,12 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
     </div>
   </div>
 
-  <!-- ── RECHERCHE ── -->
-  <div class="hm-search-wrap">
-    <input class="hm-search" id="search-input" placeholder="🔍 Rechercher un client..." oninput="renderClients()">
+  <!-- ── ESPACE ADMIN ── -->
+  <div style="text-align:center;margin-top:32px;padding-bottom:40px">
+    <button id="admin-btn" onclick="openAdmin()" style="display:none;background:none;border:none;color:#3a3530;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;padding:8px 20px;border-bottom:1px solid #2e2a22">
+      Espace Admin
+    </button>
   </div>
-  <div id="type-filter-bar"></div>
-  <div id="clients-list"></div>
 
 </div>
 
@@ -860,8 +860,6 @@ function showWelcome() {
 function renderHome() {
   showWelcome();
   renderKPIs();
-  renderTypeFilter();
-  renderClients();
 }
 
 function renderKPIs() {
