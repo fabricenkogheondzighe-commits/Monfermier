@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.27</title>
+  <title>Mon Fermier SARL v3.28</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -2447,8 +2447,8 @@ function buildComptaVendorList(vendorComm, mk) {
     html += '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+v.name+'</div>';
     html += '<div style="font-size:11px;color:#8a8070">Code: '+code+'</div></div>';
     html += '<div style="text-align:right">';
-    html += '<div style="font-size:20px;font-weight:700;color:'+(displayMc>0?'#c9a84c':'#4a4640')+'">'+fmtPrice(displayMc)+'</div>';
-    html += '<div style="font-size:10px;color:'+(isPaid?'#7ac97a':'#4a4640')+'">'+(isPaid?'✅ Soldé':'ce mois')+'</div></div></div>';
+    html += '<div data-amount="'+code+'" style="font-size:20px;font-weight:700;color:'+(displayMc>0?'#c9a84c':'#4a4640')+'">'+fmtPrice(displayMc)+'</div>';
+    html += '<div data-solde="'+code+'" style="font-size:10px;color:'+(isPaid?'#7ac97a':'#4a4640')+'">'+(isPaid?'✅ Soldé':'ce mois')+'</div></div></div>';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2e2a22">';
     html += '<div><div style="font-size:11px;color:#4a4640">Total cumulé</div>';
     html += '<div style="font-size:13px;font-weight:600;color:#7ac97a">'+fmtPrice(v.total)+'</div></div>';
@@ -2491,16 +2491,26 @@ async function marquerPaye(btn) {
   var code = btn.getAttribute('data-code');
   if(!vendors || vendors.length === 0) await loadVendors();
   var v = vendors.find(function(x){ return x.code===code; });
-  if(!v) { showToast('Vendeur introuvable'); return; }
-  if(!confirm('Confirmer le paiement des commissions de '+v.name+' ce mois ?')) return;
+  var name = v ? v.name : code;
+  if(!confirm('Confirmer le paiement des commissions de '+name+' ce mois ?')) return;
   var now = new Date();
   var mk = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
   // Sauvegarder statut payé dans localStorage
   var paid = JSON.parse(localStorage.getItem('mf_comm_paid')||'{}');
   paid[code+'_'+mk] = true;
   localStorage.setItem('mf_comm_paid', JSON.stringify(paid));
-  showToast('✅ Commission de '+v.name+' marquée comme payée !');
-  openAdminTab('compta');
+  showToast('✅ Commission de '+name+' marquée comme payée !');
+  // Remplacer le bouton directement sans recharger la page
+  var parent = btn.parentNode;
+  parent.innerHTML = '<span style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px">✅ Payé</span>';
+  // Mettre le montant à 0
+  var card = parent.closest ? parent.closest('.card') : null;
+  if(card) {
+    var amountDiv = card.querySelector('[data-amount="'+code+'"]');
+    if(amountDiv) { amountDiv.textContent = '0 F'; amountDiv.style.color = '#4a4640'; }
+    var soldDiv = card.querySelector('[data-solde="'+code+'"]');
+    if(soldDiv) { soldDiv.textContent = '✅ Soldé'; soldDiv.style.color = '#7ac97a'; }
+  }
 }
 
 // ═══════════════════════════════════════
