@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.24</title>
+  <title>Mon Fermier SARL v3.25</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -2437,7 +2437,8 @@ function buildComptaVendorList(vendorComm, mk) {
   entries.forEach(function(entry) {
     var code=entry[0], v=entry[1];
     var mc = v.monthly[mk]||0;
-    var isPaid = v.monthly[mk+'_paid'] ? true : false;
+    var paid = JSON.parse(localStorage.getItem('mf_comm_paid')||'{}');
+    var isPaid = paid[code+'_'+mk] ? true : false;
     var avatar = v.photo ? '<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">' : (v.sex==='Femme'?'👩':'👨');
     html += '<div class="card" style="margin-bottom:10px;'+(isPaid?'opacity:0.6':'')+'">';
     html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
@@ -2485,20 +2486,19 @@ function filterComptaMonth(btn) {
   if(el) el.innerHTML = buildComptaVendorList(vendorComm, mk);
 }
 
-async function marquerPaye(btn) {
+function marquerPaye(btn) {
   var code = btn.getAttribute('data-code');
   var v = vendors.find(function(x){ return x.code===code; });
   if(!v) return;
   if(!confirm('Confirmer le paiement des commissions de '+v.name+' ce mois ?')) return;
   var now = new Date();
   var mk = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
-  var comm = v.commissions || {};
-  comm[mk+"_paid"] = comm[mk] || 0;
-  comm[mk] = 0;
-  v.commissions = comm;
-  try { await db.collection("vendors").doc(v.id).update({commissions: comm}); } catch(e){}
-  showToast("✅ Commission de "+v.name+" marquée comme payée !");
-  openAdminTab("compta");
+  // Sauvegarder statut payé dans localStorage
+  var paid = JSON.parse(localStorage.getItem('mf_comm_paid')||'{}');
+  paid[code+'_'+mk] = true;
+  localStorage.setItem('mf_comm_paid', JSON.stringify(paid));
+  showToast('✅ Commission de '+v.name+' marquée comme payée !');
+  openAdminTab('compta');
 }
 
 // ═══════════════════════════════════════
