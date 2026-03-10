@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.31</title>
+  <title>Mon Fermier SARL v3.32</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -4304,8 +4304,113 @@ function generateMonthlyPDF() {
   setTimeout(function(){ win.print(); }, 500);
 }
 
+
+// ═══════════════════════════════════════
+// NOTIFICATIONS PUSH + MODE HORS-LIGNE
+// ═══════════════════════════════════════
+
+var notifPermission = false;
+
+async function requestNotifPermission() {
+  if(!('Notification' in window)) {
+    showToast('Notifications non supportées sur ce navigateur');
+    return false;
+  }
+  var perm = await Notification.requestPermission();
+  notifPermission = perm === 'granted';
+  if(notifPermission) {
+    showToast('🔔 Notifications activées !');
+    scheduleStockAlerts();
+  } else {
+    showToast('Notifications refusées');
+  }
+  return notifPermission;
+}
+
+function sendLocalNotif(title, body, tag) {
+  if(Notification.permission !== 'granted') return;
+  if('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'notify', title: title, body: body, tag: tag||'mf'
+    });
+  } else {
+    new Notification(title, {body: body, tag: tag||'mf'});
+  }
+}
+
+function scheduleStockAlerts() {
+  // Vérifier le stock toutes les heures
+  setInterval(function() { checkStockAndNotify(); }, 60 * 60 * 1000);
+  checkStockAndNotify(); // Vérification immédiate
+}
+
+function checkStockAndNotify() {
+  if(Notification.permission !== 'granted') return;
+  var stockData = null;
+  try { stockData = JSON.parse(localStorage.getItem('mf_stock_data'))||null; } catch(e){}
+  if(!stockData) return;
+
+  PRODUCTS.forEach(function(p) {
+    var magasin = stockData.magasin[p.id]||0;
+    var remis   = (stockData.remises||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
+    var retour  = (stockData.retours||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
+    var enStock = Math.max(0, magasin - remis + retour);
+    if(enStock < 10) {
+      new Notification('⚠️ Stock faible — Mon Fermier', {
+        body: p.name + ' : seulement ' + enStock + ' unité'+(enStock>1?'s':'')+' en magasin',
+        tag: 'stock-'+p.id
+      });
+    }
+  });
+}
+
+function checkCommandesAndNotify() {
+  if(Notification.permission !== 'granted') return;
+  var today = new Date().toISOString().split('T')[0];
+  var appts = JSON.parse(localStorage.getItem('mf_appointments')||'[]');
+  var duToday = appts.filter(function(a){
+    return !a.livree && a.dateLivraison === today;
+  });
+  if(duToday.length > 0) {
+    new Notification('🚚 Livraisons du jour — Mon Fermier', {
+      body: duToday.length + ' commande'+(duToday.length>1?'s':'')+' à livrer aujourd\'hui',
+      tag: 'livraisons'
+    });
+  }
+}
+
+// Détection hors-ligne / en ligne
+window.addEventListener('online', function() {
+  showToast('📶 Connexion rétablie — synchronisation...');
+  setTimeout(function() {
+    if(typeof loadData === 'function') loadData();
+  }, 1000);
+});
+
+window.addEventListener('offline', function() {
+  showToast('📵 Mode hors-ligne — données en cache');
+});
+
+// Vérifier commandes au démarrage
+setTimeout(function() {
+  if(Notification.permission === 'granted') {
+    checkCommandesAndNotify();
+    scheduleStockAlerts();
+  }
+}, 3000);
+
 </script>
 
+<script>
+// Indicateur hors-ligne
+function updateOfflineBanner() {
+  var b = document.getElementById('offline-banner');
+  if(b) b.style.display = navigator.onLine ? 'none' : 'block';
+}
+window.addEventListener('online',  updateOfflineBanner);
+window.addEventListener('offline', updateOfflineBanner);
+updateOfflineBanner();
+</script>
 <script>
   if("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").then(function(reg) {
