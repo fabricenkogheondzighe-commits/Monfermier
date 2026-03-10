@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.25</title>
+  <title>Mon Fermier SARL v3.26</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -2441,13 +2441,14 @@ function buildComptaVendorList(vendorComm, mk) {
     var isPaid = paid[code+'_'+mk] ? true : false;
     var avatar = v.photo ? '<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">' : (v.sex==='Femme'?'👩':'👨');
     html += '<div class="card" style="margin-bottom:10px;'+(isPaid?'opacity:0.6':'')+'">';
+    var displayMc = isPaid ? 0 : mc;
     html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
     html += '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid #c9a84c44;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px">'+avatar+'</div>';
     html += '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+v.name+'</div>';
     html += '<div style="font-size:11px;color:#8a8070">Code: '+code+'</div></div>';
     html += '<div style="text-align:right">';
-    html += '<div style="font-size:20px;font-weight:700;color:'+(mc>0?'#c9a84c':'#4a4640')+'">'+fmtPrice(mc)+'</div>';
-    html += '<div style="font-size:10px;color:#4a4640">ce mois</div></div></div>';
+    html += '<div style="font-size:20px;font-weight:700;color:'+(displayMc>0?'#c9a84c':'#4a4640')+'">'+fmtPrice(displayMc)+'</div>';
+    html += '<div style="font-size:10px;color:'+(isPaid?'#7ac97a':'#4a4640')+'">'+(isPaid?'✅ Soldé':'ce mois')+'</div></div></div>';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2e2a22">';
     html += '<div><div style="font-size:11px;color:#4a4640">Total cumulé</div>';
     html += '<div style="font-size:13px;font-weight:600;color:#7ac97a">'+fmtPrice(v.total)+'</div></div>';
