@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.28</title>
+  <title>Mon Fermier SARL v3.29</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -386,6 +386,9 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
     </button>
     <button id="admin-tab-calc" onclick="openAdminTab('calc')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
       🧮<br><span style="font-size:10px">Calculatrice</span>
+    </button>
+    <button id="admin-tab-stock" onclick="openAdminTab('stock')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      📦<br><span style="font-size:10px">Stock</span>
     </button>
   </div>
   <div id="admin-tab-content"></div>
@@ -1862,7 +1865,7 @@ async function renderAdmin() {
 }
 
 function openAdminTab(tab) {
-  ["clients","vendors","charts","compta","calendar","calc"].forEach(function(t) {
+  ["clients","vendors","charts","compta","calendar","calc","stock"].forEach(function(t) {
     var btn = document.getElementById("admin-tab-" + t);
     if(!btn) return;
     btn.style.background = t === tab ? "linear-gradient(135deg,#b8860b,#c9a84c)" : "#1a1813";
@@ -1877,6 +1880,7 @@ function openAdminTab(tab) {
   else if(tab === "compta") renderAdminCompta(el);
   else if(tab === "calendar") renderAdminCalendar(el);
   else if(tab === "calc") renderAdminCalc(el);
+  else if(tab === "stock") renderAdminStock(el);
 }
 
 function adminSearchClients() {
@@ -3733,6 +3737,308 @@ async function vendorDeleteSelected() {
   vendorSelectMode = false; vendorSelected = new Set();
   showToast(ids.length + ' vendeur' + (ids.length > 1 ? 's' : '') + ' supprime' + (ids.length > 1 ? 's' : '') + ' !');
   openAdminTab('vendors');
+}
+
+
+// ═══════════════════════════════════════
+// GESTION DE STOCK
+// ═══════════════════════════════════════
+
+var STOCK_KEY = 'mf_stock_data';
+
+function getStockData() {
+  try { return JSON.parse(localStorage.getItem(STOCK_KEY)) || {emballe:{}, magasin:{}, remises:[], retours:[]}; }
+  catch(e) { return {emballe:{}, magasin:{}, remises:[], retours:[]}; }
+}
+function saveStockData(d) { localStorage.setItem(STOCK_KEY, JSON.stringify(d)); }
+
+async function renderAdminStock(el) {
+  await loadVendors();
+  var stock = getStockData();
+  var tab = stock._tab || 'resume';
+
+  var html = '';
+
+  // ── Onglets stock ──
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">';
+  ['resume','emballe','remises','retours'].forEach(function(t) {
+    var labels = {resume:'📊 Résumé', emballe:'🏭 Emballage', remises:'🚚 Remises', retours:'🔄 Retours'};
+    var active = t === tab;
+    html += '<button onclick="stockTab(this)" data-tab="'+t+'" style="padding:8px 4px;border-radius:8px;font-size:11px;font-weight:700;border:'+(active?'none':'1px solid #2e2a22')+';background:'+(active?'linear-gradient(135deg,#b8860b,#c9a84c)':'#1a1813')+';color:'+(active?'#0a0906':'#8a8070')+';cursor:pointer">'+labels[t]+'</button>';
+  });
+  html += '</div>';
+  html += '<div id="stock-tab-content">';
+  html += buildStockTabContent(tab, stock);
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+function stockTab(btn) {
+  var tab = btn.getAttribute('data-tab');
+  var stock = getStockData();
+  stock._tab = tab;
+  saveStockData(stock);
+  ['resume','emballe','remises','retours'].forEach(function(t) {
+    var b = document.querySelector('[data-tab="'+t+'"]');
+    if(!b) return;
+    if(t===tab){ b.style.background='linear-gradient(135deg,#b8860b,#c9a84c)'; b.style.color='#0a0906'; b.style.border='none'; }
+    else       { b.style.background='#1a1813'; b.style.color='#8a8070'; b.style.border='1px solid #2e2a22'; }
+  });
+  var el = document.getElementById('stock-tab-content');
+  if(el) el.innerHTML = buildStockTabContent(tab, stock);
+}
+
+function buildStockTabContent(tab, stock) {
+  if(tab === 'resume')   return buildStockResume(stock);
+  if(tab === 'emballe')  return buildStockEmballe(stock);
+  if(tab === 'remises')  return buildStockRemises(stock);
+  if(tab === 'retours')  return buildStockRetours(stock);
+  return '';
+}
+
+function calcStockNow(stock) {
+  // Pour chaque produit: emballé - remis + retours
+  var result = {};
+  PRODUCTS.forEach(function(p) {
+    var emballe  = stock.emballe[p.id]  || 0;
+    var magasin  = stock.magasin[p.id]  || 0;
+    // Total remis aux vendeurs
+    var remis = (stock.remises||[]).reduce(function(s,r){ return s+(r.items[p.id]||0); }, 0);
+    // Total retours
+    var retour = (stock.retours||[]).reduce(function(s,r){ return s+(r.items[p.id]||0); }, 0);
+    // Ventes depuis Firebase (history)
+    var vendu = clients.reduce(function(s,c){
+      return s + (c.history||[]).reduce(function(s2,h){
+        return s2 + (h.items||[]).reduce(function(s3,it){ return s3+(it.id===p.id?it.qty:0); },0);
+      },0);
+    },0);
+    result[p.id] = {
+      name: p.name,
+      emballe: emballe,
+      magasin: magasin,
+      remis: remis,
+      vendu: vendu,
+      retour: retour,
+      enMain: remis - vendu - retour,  // chez les vendeurs non encore vendu
+      enStock: magasin - remis + retour // reste en magasin
+    };
+  });
+  return result;
+}
+
+function buildStockResume(stock) {
+  var data = calcStockNow(stock);
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">📊 État du stock</div>';
+  PRODUCTS.forEach(function(p) {
+    var d = data[p.id];
+    var alertColor = d.enStock < 10 ? '#c97a7a' : d.enStock < 30 ? '#c9a84c' : '#7ac97a';
+    html += '<div class="card" style="margin-bottom:10px">';
+    html += '<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:10px">'+p.name+'</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px">';
+    html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#c9a84c">'+d.emballe+'</div><div style="font-size:9px;color:#4a4640">Emballés</div></div>';
+    html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#7a9ac9">'+d.remis+'</div><div style="font-size:9px;color:#4a4640">Remis vendeurs</div></div>';
+    html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#c97a7a">'+d.vendu+'</div><div style="font-size:9px;color:#4a4640">Vendus</div></div>';
+    html += '</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">';
+    html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#9a7ac9">'+d.retour+'</div><div style="font-size:9px;color:#4a4640">Retours</div></div>';
+    html += '<div style="background:#1a1813;border-radius:6px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:700;color:#c9a84c">'+Math.max(0,d.enMain)+'</div><div style="font-size:9px;color:#4a4640">Chez vendeurs</div></div>';
+    html += '<div style="background:#0d1a0d;border-radius:6px;padding:8px;text-align:center;border:1px solid '+alertColor+'44"><div style="font-size:16px;font-weight:700;color:'+alertColor+'">'+Math.max(0,d.enStock)+'</div><div style="font-size:9px;color:#4a4640">En magasin</div></div>';
+    html += '</div></div>';
+  });
+  return html;
+}
+
+function buildStockEmballe(stock) {
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">🏭 Enregistrer un emballage</div>';
+  html += '<div class="card" style="margin-bottom:16px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:12px">DATE</div>';
+  html += '<input type="date" id="stock-emb-date" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:14px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:12px">QUANTITÉS EMBALLÉES</div>';
+  PRODUCTS.forEach(function(p) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1813">';
+    html += '<span style="font-size:13px;color:#fff">'+p.name+'</span>';
+    html += '<div style="display:flex;align-items:center;gap:8px">';
+    html += '<button onclick="stockQty(this,-1)" data-id="'+p.id+'" style="background:#2e2a22;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">−</button>';
+    html += '<span id="emb-qty-'+p.id+'" style="font-size:16px;font-weight:700;color:#c9a84c;min-width:30px;text-align:center">0</span>';
+    html += '<button onclick="stockQty(this,1)" data-id="'+p.id+'" style="background:#3d6a3d;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">+</button>';
+    html += '</div></div>';
+  });
+  html += '<button onclick="saveEmballage()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:16px">✅ Enregistrer emballage</button>';
+  html += '</div>';
+
+  // Historique emballages
+  var hist = (stock.historique_emballe||[]).slice().reverse();
+  if(hist.length > 0) {
+    html += '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">HISTORIQUE</div>';
+    html += '<div class="card" style="padding:0 12px">';
+    hist.slice(0,10).forEach(function(h) {
+      var detail = PRODUCTS.map(function(p){ return h.items[p.id]>0?h.items[p.id]+'× '+p.name:''; }).filter(Boolean).join(' · ');
+      html += '<div style="padding:10px 0;border-bottom:1px solid #1a1813"><div style="font-size:12px;color:#4a4640">'+h.date+'</div><div style="font-size:13px;color:#fff;margin-top:2px">'+detail+'</div></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function buildStockRemises(stock) {
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">🚚 Remise aux vendeurs</div>';
+  html += '<div class="card" style="margin-bottom:16px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">VENDEUR</div>';
+  html += '<select id="stock-rem-vendor" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;margin-bottom:14px">';
+  html += '<option value="">-- Choisir vendeur --</option>';
+  vendors.forEach(function(v) {
+    html += '<option value="'+v.id+'">'+v.name+' ('+v.code+')</option>';
+  });
+  html += '</select>';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">DATE</div>';
+  html += '<input type="date" id="stock-rem-date" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:14px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:12px">QUANTITÉS REMISES</div>';
+  PRODUCTS.forEach(function(p) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1813">';
+    html += '<span style="font-size:13px;color:#fff">'+p.name+'</span>';
+    html += '<div style="display:flex;align-items:center;gap:8px">';
+    html += '<button onclick="stockQty(this,-1)" data-id="'+p.id+'" data-prefix="rem" style="background:#2e2a22;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">−</button>';
+    html += '<span id="rem-qty-'+p.id+'" style="font-size:16px;font-weight:700;color:#c9a84c;min-width:30px;text-align:center">0</span>';
+    html += '<button onclick="stockQty(this,1)" data-id="'+p.id+'" data-prefix="rem" style="background:#3d6a3d;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">+</button>';
+    html += '</div></div>';
+  });
+  html += '<button onclick="saveRemise()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:16px">✅ Enregistrer remise</button>';
+  html += '</div>';
+
+  // Historique remises
+  var remises = (stock.remises||[]).slice().reverse();
+  if(remises.length > 0) {
+    html += '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">HISTORIQUE REMISES</div>';
+    html += '<div class="card" style="padding:0 12px">';
+    remises.slice(0,15).forEach(function(r) {
+      var v = vendors.find(function(x){ return x.id===r.vendorId; });
+      var detail = PRODUCTS.map(function(p){ return r.items[p.id]>0?r.items[p.id]+'× '+p.name:''; }).filter(Boolean).join(' · ');
+      html += '<div style="padding:10px 0;border-bottom:1px solid #1a1813">';
+      html += '<div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#fff">'+(v?v.name:r.vendorId)+'</span><span style="font-size:11px;color:#4a4640">'+r.date+'</span></div>';
+      html += '<div style="font-size:11px;color:#8a8070;margin-top:2px">'+detail+'</div></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function buildStockRetours(stock) {
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">🔄 Retour de produits</div>';
+  html += '<div class="card" style="margin-bottom:16px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">VENDEUR</div>';
+  html += '<select id="stock-ret-vendor" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;margin-bottom:14px">';
+  html += '<option value="">-- Choisir vendeur --</option>';
+  vendors.forEach(function(v) {
+    html += '<option value="'+v.id+'">'+v.name+' ('+v.code+')</option>';
+  });
+  html += '</select>';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">DATE</div>';
+  html += '<input type="date" id="stock-ret-date" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:14px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:12px">QUANTITÉS RETOURNÉES</div>';
+  PRODUCTS.forEach(function(p) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1813">';
+    html += '<span style="font-size:13px;color:#fff">'+p.name+'</span>';
+    html += '<div style="display:flex;align-items:center;gap:8px">';
+    html += '<button onclick="stockQty(this,-1)" data-id="'+p.id+'" data-prefix="ret" style="background:#2e2a22;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">−</button>';
+    html += '<span id="ret-qty-'+p.id+'" style="font-size:16px;font-weight:700;color:#c9a84c;min-width:30px;text-align:center">0</span>';
+    html += '<button onclick="stockQty(this,1)" data-id="'+p.id+'" data-prefix="ret" style="background:#3d6a3d;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">+</button>';
+    html += '</div></div>';
+  });
+  html += '<button onclick="saveRetour()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:16px">✅ Enregistrer retour</button>';
+  html += '</div>';
+
+  // Historique retours
+  var retours = (stock.retours||[]).slice().reverse();
+  if(retours.length > 0) {
+    html += '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">HISTORIQUE RETOURS</div>';
+    html += '<div class="card" style="padding:0 12px">';
+    retours.slice(0,15).forEach(function(r) {
+      var v = vendors.find(function(x){ return x.id===r.vendorId; });
+      var detail = PRODUCTS.map(function(p){ return r.items[p.id]>0?r.items[p.id]+'× '+p.name:''; }).filter(Boolean).join(' · ');
+      html += '<div style="padding:10px 0;border-bottom:1px solid #1a1813">';
+      html += '<div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#fff">'+(v?v.name:r.vendorId)+'</span><span style="font-size:11px;color:#4a4640">'+r.date+'</span></div>';
+      html += '<div style="font-size:11px;color:#8a8070;margin-top:2px">'+detail+'</div></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function stockQty(btn, delta) {
+  var id = btn.getAttribute('data-id');
+  var prefix = btn.getAttribute('data-prefix') || 'emb';
+  var span = document.getElementById(prefix+'-qty-'+id);
+  if(!span) return;
+  var val = parseInt(span.textContent)||0;
+  val = Math.max(0, val+delta);
+  span.textContent = val;
+}
+
+function saveEmballage() {
+  var date = document.getElementById('stock-emb-date');
+  if(!date) return;
+  var items = {};
+  PRODUCTS.forEach(function(p) {
+    var s = document.getElementById('emb-qty-'+p.id);
+    items[p.id] = s ? (parseInt(s.textContent)||0) : 0;
+  });
+  var total = Object.values(items).reduce(function(s,v){return s+v;},0);
+  if(total === 0) { showToast('Entrez au moins une quantité'); return; }
+  var stock = getStockData();
+  PRODUCTS.forEach(function(p) {
+    stock.emballe[p.id] = (stock.emballe[p.id]||0) + (items[p.id]||0);
+    stock.magasin[p.id] = (stock.magasin[p.id]||0) + (items[p.id]||0);
+  });
+  if(!stock.historique_emballe) stock.historique_emballe = [];
+  stock.historique_emballe.push({date: date.value, items: items, id: Date.now()});
+  saveStockData(stock);
+  showToast('✅ Emballage enregistré !');
+  stockTab(document.querySelector('[data-tab="emballe"]'));
+}
+
+function saveRemise() {
+  var vendorSel = document.getElementById('stock-rem-vendor');
+  var dateSel   = document.getElementById('stock-rem-date');
+  if(!vendorSel || !vendorSel.value) { showToast('Choisissez un vendeur'); return; }
+  var items = {};
+  PRODUCTS.forEach(function(p) {
+    var s = document.getElementById('rem-qty-'+p.id);
+    items[p.id] = s ? (parseInt(s.textContent)||0) : 0;
+  });
+  var total = Object.values(items).reduce(function(s,v){return s+v;},0);
+  if(total === 0) { showToast('Entrez au moins une quantité'); return; }
+  var v = vendors.find(function(x){ return x.id===vendorSel.value; });
+  var stock = getStockData();
+  if(!stock.remises) stock.remises = [];
+  stock.remises.push({vendorId: vendorSel.value, vendorName: v?v.name:'', date: dateSel?dateSel.value:'', items: items, id: Date.now()});
+  saveStockData(stock);
+  showToast('✅ Remise à '+(v?v.name:'vendeur')+' enregistrée !');
+  stockTab(document.querySelector('[data-tab="remises"]'));
+}
+
+function saveRetour() {
+  var vendorSel = document.getElementById('stock-ret-vendor');
+  var dateSel   = document.getElementById('stock-ret-date');
+  if(!vendorSel || !vendorSel.value) { showToast('Choisissez un vendeur'); return; }
+  var items = {};
+  PRODUCTS.forEach(function(p) {
+    var s = document.getElementById('ret-qty-'+p.id);
+    items[p.id] = s ? (parseInt(s.textContent)||0) : 0;
+  });
+  var total = Object.values(items).reduce(function(s,v){return s+v;},0);
+  if(total === 0) { showToast('Entrez au moins une quantité'); return; }
+  var v = vendors.find(function(x){ return x.id===vendorSel.value; });
+  var stock = getStockData();
+  if(!stock.retours) stock.retours = [];
+  stock.retours.push({vendorId: vendorSel.value, vendorName: v?v.name:'', date: dateSel?dateSel.value:'', items: items, id: Date.now()});
+  // Remettre en magasin
+  PRODUCTS.forEach(function(p) {
+    stock.magasin[p.id] = (stock.magasin[p.id]||0) + (items[p.id]||0);
+  });
+  saveStockData(stock);
+  showToast('✅ Retour de '+(v?v.name:'vendeur')+' enregistré !');
+  stockTab(document.querySelector('[data-tab="retours"]'));
 }
 
 </script>
