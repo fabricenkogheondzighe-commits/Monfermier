@@ -2,14 +2,11 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.10</title>
+  <title>Mon Fermier SARL v3.13</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -271,15 +268,11 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
   <!-- PHOTO -->
   <div style="text-align:center;margin-bottom:16px">
     <div id="av-photo-preview" style="width:90px;height:90px;border-radius:50%;background:#1a1813;border:2px dashed #c9a84c;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;overflow:hidden;font-size:36px">📸</div>
+    <input type="file" id="av-photo-camera" accept="image/*" capture="environment" style="display:none" onchange="handleVendorPhoto(this)">
+    <input type="file" id="av-photo-gallery" accept="image/*" style="display:none" onchange="handleVendorPhoto(this)">
     <div style="display:flex;gap:8px;justify-content:center">
-      <label style="background:#2a1f0a;border:1px solid #c9a84c;color:#c9a84c;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;display:inline-block">
-        📷 Caméra
-        <input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleVendorPhoto(this)">
-      </label>
-      <label style="background:#1a2a0a;border:1px solid #7ac97a;color:#7ac97a;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;display:inline-block">
-        🖼️ Galerie
-        <input type="file" accept="image/*" style="display:none" onchange="handleVendorPhoto(this)">
-      </label>
+      <button type="button" onclick="avOpenCamera()" style="background:#2a1f0a;border:1px solid #c9a84c;color:#c9a84c;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer">📷 Caméra</button>
+      <button type="button" onclick="avOpenGallery()" style="background:#1a2a0a;border:1px solid #7ac97a;color:#7ac97a;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer">🖼️ Galerie</button>
     </div>
   </div>
 
@@ -358,7 +351,6 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
     <h2 style="font-size:20px;color:#c9a84c">👤 Profil Vendeur</h2>
     <div style="display:flex;gap:8px">
-      <button type="button" id="edit-vendor-btn" class="btn-ghost" style="color:#c9a84c;border-color:#c9a84c55;display:none">✏️ Modifier</button>
       <button class="btn-ghost" onclick="goBack()">← Retour</button>
     </div>
   </div>
@@ -389,7 +381,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
       💰<br><span style="font-size:10px">Compta</span>
     </button>
     <button id="admin-tab-calendar" onclick="openAdminTab('calendar')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      📅<br><span style="font-size:10px">Calendrier</span>
+      📦<br><span style="font-size:10px">Commandes</span>
     </button>
     <button id="admin-tab-calc" onclick="openAdminTab('calc')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
       🧮<br><span style="font-size:10px">Calculatrice</span>
@@ -2100,76 +2092,33 @@ function closeAdminConfirmModal() {
   var m = document.getElementById("admin-confirm-modal"); if(m) m.style.display = "none";
 }
 
-function adminSearchVendors() {
-  var el = document.getElementById("admin-tab-content");
-  if(el) renderAdminVendors(el);
-}
-
 async function renderAdminVendors(el) {
   await loadVendors();
-  var searchEl = document.getElementById("admin-vendor-search");
-  var search = searchEl ? searchEl.value.toLowerCase() : "";
-  var filtered = search
-    ? vendors.filter(function(v) {
-        return v.name.toLowerCase().includes(search) || (v.code||"").toLowerCase().includes(search);
-      })
-    : vendors;
-
-  var html = '<div style="display:flex;gap:8px;margin-bottom:14px">'
-    + '<input id="admin-vendor-search" type="text" placeholder="🔍 Nom ou code vendeur..." oninput="adminSearchVendors()"'
-    + ' style="flex:1;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box">'
-    + '</div>';
-
-  if(filtered.length === 0) {
-    html += '<div style="text-align:center;color:#4a4640;padding:30px">'
-      + (vendors.length === 0 ? "Aucun vendeur enregistré" : "Aucun résultat")
-      + '</div>';
+  var html = '';
+  if(vendors.length === 0) {
+    html = '<div style="text-align:center;color:#4a4640;padding:40px">Aucun vendeur enregistré</div>';
   } else {
-    filtered.forEach(function(v) {
+    vendors.forEach(function(v) {
       var susp = v.suspended ? true : false;
-      var avatar = v.photo
-        ? '<img src="' + v.photo + '" style="width:100%;height:100%;object-fit:cover">'
-        : (v.sex === "Femme" ? "👩" : "👨");
-      html += '<div class="card" style="margin-bottom:10px;opacity:' + (susp ? "0.6" : "1") + ';cursor:pointer"'
-        + '<div class="card" style="margin-bottom:10px;opacity:' + (susp ? "0.6" : "1") + ';cursor:pointer" data-id="' + v.id + '" onclick="adminVendorOpen(this)">'
-        + '<div style="display:flex;align-items:center;gap:12px">'
-          + '<div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:#1a1813;'
-            + 'border:2px solid ' + (susp ? "#6a1a1a" : "#c9a84c44") + ';flex-shrink:0;'
-            + 'display:flex;align-items:center;justify-content:center;font-size:22px">'
-            + avatar
-          + '</div>'
-          + '<div style="flex:1;min-width:0">'
-            + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-              + '<span style="font-weight:700;font-size:15px">' + v.name + '</span>'
-              + (susp
-                ? '<span style="background:#2e0a0a;color:#c97a7a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #6a1a1a">⛔ Suspendu</span>'
-                : '<span style="background:#0d1a0d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #3d6a3d">✅ Actif</span>')
-            + '</div>'
-            + '<div style="font-size:12px;color:#8a8070;margin-top:2px">'
-              + 'Code: ' + v.code + ' · ' + ((v.vendorType||"") === "fixe" ? "Vendeur fixe" : "Commercial")
-            + '</div>'
-          + '</div>'
-          + '<span style="color:#c9a84c;font-size:20px">›</span>'
-        + '</div>'
-      + '</div>';
+      html += '<div class="card" style="margin-bottom:10px;opacity:' + (susp?'0.6':'1') + '">' +
+        '<div style="display:flex;align-items:center;gap:12px">' +
+          '<div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid ' + (susp?'#6a1a1a':'#c9a84c44') + ';flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px">' +
+            (v.photo ? '<img src="' + v.photo + '" style="width:100%;height:100%;object-fit:cover">' : (v.sex==='Femme'?'👩':'👨')) +
+          '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="display:flex;align-items:center;gap:6px">' +
+              '<span style="font-weight:700;font-size:15px">' + v.name + '</span>' +
+              (susp ? '<span style="background:#2e0a0a;color:#c97a7a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #6a1a1a">⛔ Suspendu</span>' : '<span style="background:#0d1a0d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #3d6a3d">✅ Actif</span>') +
+            '</div>' +
+            '<div style="font-size:12px;color:#8a8070;margin-top:2px">Code: ' + v.code + ' · ' + (v.type==='fixe'?'Fixe':'Temporaire') + '</div>' +
+          '</div>' +
+          '<button onclick="adminVendorMenu(this)" data-id="' + v.id + '" style="background:#1a1813;border:1px solid #2e2a22;color:#c9a84c;padding:8px 14px;border-radius:8px;font-size:13px">⚙️</button>' +
+        '</div>' +
+      '</div>';
     });
   }
-
-  html += '<button onclick="openAddVendor()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);'
-    + 'color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:12px">➕ Nouveau vendeur</button>';
-
+  html += '<button onclick="openAddVendor()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:12px">➕ Nouveau vendeur</button>';
   el.innerHTML = html;
-  // Restore search value
-  var newSearch = document.getElementById("admin-vendor-search");
-  if(newSearch && search) newSearch.value = search;
-}
-
-function adminVendorOpen(el) {
-  var vendorId = typeof el === "string" ? el : el.getAttribute("data-id");
-  var v = vendors.find(function(x){ return x.id === vendorId; });
-  if(!v) return;
-  currentVendor = v;
-  openVendorProfile(vendorId);
 }
 
 
@@ -2498,13 +2447,10 @@ function renderAdminCalendar(el) {
   var now = new Date();
   var today = now.toISOString().split("T")[0];
 
-  appointments.sort(function(a,b){ return a.date.localeCompare(b.date); });
-  var upcoming = appointments.filter(function(a){ return a.date >= today; });
-  var past = appointments.filter(function(a){ return a.date < today; });
+  appointments.sort(function(a,b){ return a.dateLivraison.localeCompare(b.dateLivraison); });
+  var upcoming = appointments.filter(function(a){ return a.dateLivraison >= today; });
+  var past = appointments.filter(function(a){ return a.dateLivraison < today; });
 
-  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:16px">📅 Commandes programmées</div>';
-
-  // Formulaire enrichi
   var typeOpts = CLIENT_TYPES.map(function(t){
     return '<option value="'+t.id+'">'+t.icon+' '+t.label+'</option>';
   }).join('');
@@ -2522,10 +2468,12 @@ function renderAdminCalendar(el) {
     '</div>';
   }).join('');
 
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:16px">📦 Gestion des commandes</div>';
+
   html += '<div class="card" style="margin-bottom:16px">' +
     '<div style="font-size:13px;font-weight:700;color:#c9a84c;margin-bottom:14px">➕ Nouvelle commande</div>' +
 
-    // Nom & Prénom
+    // Prénom + Nom
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
       '<input id="cal-prenom" type="text" placeholder="Prénom *" ' +
         'style="background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:13px;width:100%;box-sizing:border-box">' +
@@ -2543,80 +2491,228 @@ function renderAdminCalendar(el) {
     '<div style="font-size:12px;color:#c9a84c;font-weight:600;margin-bottom:6px">📦 Produits commandés</div>' +
     prodRows +
 
-    // Date & Note
-    '<input id="cal-date" type="date" min="'+today+'" ' +
-      'style="width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;' +
-      'font-size:13px;box-sizing:border-box;margin-top:10px;margin-bottom:8px">' +
+    // Date de commande (auto aujourd'hui) + Date de livraison
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;margin-bottom:8px">' +
+      '<div>' +
+        '<div style="font-size:11px;color:#8a8070;margin-bottom:4px">📅 Date commande</div>' +
+        '<input id="cal-date-commande" type="date" value="'+today+'" ' +
+          'style="width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:13px;box-sizing:border-box">' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:11px;color:#8a8070;margin-bottom:4px">🚚 Date livraison *</div>' +
+        '<input id="cal-date-livraison" type="date" min="'+today+'" ' +
+          'style="width:100%;background:#0f0e0b;border:1px solid #c9a84c44;color:#fff;padding:10px;border-radius:8px;font-size:13px;box-sizing:border-box">' +
+      '</div>' +
+    '</div>' +
+
+    // Statut paiement
+    '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">💳 Statut paiement</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">' +
+      '<button type="button" id="cal-pay-avant" onclick="calSetPay(\'avant\')" ' +
+        'style="padding:12px 8px;border-radius:10px;font-size:12px;font-weight:700;border:2px solid #3d9a3d;background:#0d2b14;color:#7ac97a;cursor:pointer">' +
+        '💰 Payé<br><span style="font-size:10px;font-weight:400">Payé avant livraison</span>' +
+      '</button>' +
+      '<button type="button" id="cal-pay-livraison" onclick="calSetPay(\'livraison\')" ' +
+        'style="padding:12px 8px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">' +
+        '🚚 Payer à la livraison<br><span style="font-size:10px;font-weight:400">Règlement à réception</span>' +
+      '</button>' +
+    '</div>' +
+
+    // Contact
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+      '<input id="cal-phone" type="tel" placeholder="📱 Téléphone" ' +
+        'style="background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:13px;width:100%;box-sizing:border-box">' +
+      '<input id="cal-email" type="email" placeholder="📧 Email" ' +
+        'style="background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:13px;width:100%;box-sizing:border-box">' +
+    '</div>' +
+
+    // Note
     '<input id="cal-note" type="text" placeholder="Note optionnelle..." ' +
-      'style="width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;' +
-      'font-size:13px;box-sizing:border-box;margin-bottom:10px">' +
+      'style="width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:10px">' +
 
     '<button onclick="addAppointment()" ' +
-      'style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:13px;' +
-      'border-radius:8px;font-size:14px;font-weight:700;border:none">📅 Programmer la commande</button>' +
+      'style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:13px;border-radius:8px;font-size:14px;font-weight:700;border:none">📦 Enregistrer la commande</button>' +
   '</div>';
 
-  // À venir
+  // ─── LISTE À VENIR ───
   if(upcoming.length > 0) {
-    html += '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:10px">📌 À venir ('+upcoming.length+')</div>';
+    html += '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:10px">📌 À livrer ('+upcoming.length+')</div>';
     upcoming.forEach(function(a) {
-      var d = new Date(a.date+"T00:00:00");
-      var daysLeft = Math.ceil((d - new Date(today)) / 86400000);
+      var dLiv = new Date(a.dateLivraison+"T00:00:00");
+      var daysLeft = Math.ceil((dLiv - new Date(today+"T00:00:00")) / 86400000);
       var urgent = daysLeft <= 2;
       var globalIdx = appointments.indexOf(a);
       var typeInfo = CLIENT_TYPES.find(function(t){ return t.id===a.clientType; }) || {icon:"👤",label:a.clientType||""};
       var itemsHtml = (a.items && a.items.length > 0)
-        ? a.items.map(function(it){ return it.qty+"× "+it.name+" ("+fmtPrice(it.price*it.qty)+")"; }).join(" · ")
+        ? a.items.map(function(it){ return it.qty+"× "+it.name; }).join(" · ")
         : (a.desc||"Commande");
-      var totalHtml = a.totalPrice ? '<div style="font-size:13px;font-weight:700;color:#c9a84c;margin-top:4px">💰 Total: '+fmtPrice(a.totalPrice)+'</div>' : '';
+
+      // Badge paiement
+      var payBadge = a.paiement === 'avant'
+        ? '<span style="background:#0d2b14;border:1px solid #3d9a3d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">💰 Payé</span>'
+        : '<span style="background:#1a1008;border:1px solid #8a5a00;color:#c9a84c;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">🚚 Payer à la livraison</span>';
+
+      // Dates
+      var dateCommStr = a.dateCommande ? '<span style="font-size:10px;color:#4a4640">Commandé le: '+formatDateFR(a.dateCommande)+'</span>' : '';
 
       html += '<div class="card" style="margin-bottom:10px;border:1px solid '+(urgent?'#c97a4a':'#2e2a22')+'">' +
         '<div style="display:flex;align-items:flex-start;gap:10px">' +
-          // Calendrier visuel
-          '<div style="width:48px;height:56px;background:'+(urgent?'#2e1a0a':'#1a1813')+';border-radius:10px;' +
+          // Calendrier visuel - date livraison
+          '<div style="width:50px;height:58px;background:'+(urgent?'#2e1a0a':'#1a1813')+';border-radius:10px;' +
             'display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;' +
             'border:1px solid '+(urgent?'#c97a4a':'#2e2a22')+'">' +
-            '<div style="font-size:18px;font-weight:700;color:'+(urgent?'#c97a4a':'#c9a84c')+'">'+d.getDate()+'</div>' +
-            '<div style="font-size:9px;color:#8a8070;text-transform:uppercase">'+d.toLocaleDateString("fr-FR",{month:"short"})+'</div>' +
+            '<div style="font-size:8px;color:#8a8070;text-transform:uppercase">Livr.</div>' +
+            '<div style="font-size:18px;font-weight:700;color:'+(urgent?'#c97a4a':'#c9a84c')+'">'+dLiv.getDate()+'</div>' +
+            '<div style="font-size:9px;color:#8a8070;text-transform:uppercase">'+dLiv.toLocaleDateString("fr-FR",{month:"short"})+'</div>' +
           '</div>' +
           '<div style="flex:1;min-width:0">' +
             '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">' +
               '<span style="font-weight:700;font-size:14px;color:#fff">'+a.client+'</span>' +
-              '<span style="background:'+typeInfo.color||'#2e2a22'+';border-radius:20px;padding:2px 8px;font-size:10px;color:#fff">'+typeInfo.icon+' '+typeInfo.label+'</span>' +
+              '<span style="background:'+(typeInfo.color||'#2e2a22')+';border-radius:20px;padding:2px 8px;font-size:10px;color:#fff">'+typeInfo.icon+' '+(typeInfo.label||'')+'</span>' +
             '</div>' +
             '<div style="font-size:12px;color:#8a8070;margin-bottom:4px">'+itemsHtml+'</div>' +
-            totalHtml +
-            (a.note ? '<div style="font-size:11px;color:#4a4640;margin-top:4px;font-style:italic">📝 '+a.note+'</div>' : '') +
-            '<div style="font-size:11px;color:'+(urgent?'#c97a4a':'#4a4640')+';margin-top:6px;font-weight:600">' +
-              (daysLeft===0?'⚠️ Aujourd hui':daysLeft===1?'⚠️ Demain':'📆 Dans '+daysLeft+' jours') +
+            '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">' +
+              payBadge +
+              (a.totalPrice ? '<span style="font-size:12px;font-weight:700;color:#c9a84c">'+fmtPrice(a.totalPrice)+'</span>' : '') +
+            '</div>' +
+            dateCommStr +
+            (a.note ? '<div style="font-size:11px;color:#4a4640;margin-top:3px;font-style:italic">📝 '+a.note+'</div>' : '') +
+            '<div style="font-size:11px;color:'+(urgent?'#c97a4a':'#4a4640')+';margin-top:5px;font-weight:600">' +
+              (daysLeft===0?'⚠️ Livraison aujourd\'hui':daysLeft===1?'⚠️ Livraison demain':'📆 Dans '+daysLeft+' jours') +
             '</div>' +
           '</div>' +
-          '<button data-idx="'+globalIdx+'" onclick="deleteAppointment(this)" ' +
-            'style="background:none;border:none;color:#4a4640;font-size:20px;cursor:pointer;padding:0;flex-shrink:0">✕</button>' +
+          // Bouton marquer livré + supprimer
+          '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">' +
+            '<button data-idx="'+globalIdx+'" onclick="marquerLivre(this)" ' +
+              'style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;white-space:nowrap">✅ Livré</button>' +
+            (a.phone ? '<button data-idx="'+globalIdx+'" onclick="cmdWhatsApp(this)" ' +
+              'style="background:#0d1a0d;border:1px solid #25d366;color:#25d366;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;white-space:nowrap">💬</button>' : '') +
+            (a.email ? '<button data-idx="'+globalIdx+'" onclick="cmdEmail(this)" ' +
+              'style="background:#0a0d1a;border:1px solid #4a7ac9;color:#7ab0c9;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;white-space:nowrap">📧</button>' : '') +
+            '<button data-idx="'+globalIdx+'" onclick="deleteAppointment(this)" ' +
+              'style="background:none;border:none;color:#4a4640;font-size:18px;cursor:pointer;padding:0">✕</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
     });
   }
 
-  // Passés
+  // ─── LISTE PASSÉS / LIVRÉS ───
   if(past.length > 0) {
-    html += '<div style="font-size:12px;color:#4a4640;font-weight:700;margin:14px 0 8px">✅ Passés ('+past.length+')</div>';
-    past.slice(-5).reverse().forEach(function(a) {
-      var d = new Date(a.date+"T00:00:00");
+    html += '<div style="font-size:12px;color:#4a4640;font-weight:700;margin:14px 0 8px">✅ Livrés / Passés ('+past.length+')</div>';
+    past.slice(-10).reverse().forEach(function(a) {
+      var dLiv = new Date(a.dateLivraison+"T00:00:00");
       var globalIdx = appointments.indexOf(a);
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:10px;background:#0f0e0b;border-radius:8px;margin-bottom:6px;opacity:0.55">' +
-        '<span style="font-size:11px;color:#4a4640;flex-shrink:0">'+d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+'</span>' +
+      var payBadge = a.paiement === 'avant'
+        ? '<span style="color:#7ac97a;font-size:10px">💰 Payé</span>'
+        : '<span style="color:#c9a84c;font-size:10px">🚚 À la livraison</span>';
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:10px;background:#0f0e0b;border-radius:8px;margin-bottom:6px;opacity:0.6">' +
+        '<span style="font-size:11px;color:#4a4640;flex-shrink:0">'+dLiv.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+'</span>' +
         '<span style="font-size:13px;color:#4a4640;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.client+(a.totalPrice?' — '+fmtPrice(a.totalPrice):'')+'</span>' +
+        payBadge +
         '<button data-idx="'+globalIdx+'" onclick="deleteAppointment(this)" style="background:none;border:none;color:#4a4640;font-size:16px;cursor:pointer">✕</button>' +
       '</div>';
     });
   }
 
   if(appointments.length === 0) {
-    html += '<div style="text-align:center;color:#4a4640;padding:30px">Aucune commande programmée</div>';
+    html += '<div style="text-align:center;color:#4a4640;padding:30px">Aucune commande enregistrée</div>';
   }
 
   el.innerHTML = html;
+}
+
+function calSetPay(mode) {
+  var btnAvant = document.getElementById('cal-pay-avant');
+  var btnLiv = document.getElementById('cal-pay-livraison');
+  if(!btnAvant || !btnLiv) return;
+  if(mode === 'avant') {
+    btnAvant.style.border = '2px solid #3d9a3d';
+    btnAvant.style.background = '#0d2b14';
+    btnAvant.style.color = '#7ac97a';
+    btnLiv.style.border = '1px solid #2e2a22';
+    btnLiv.style.background = '#1a1813';
+    btnLiv.style.color = '#8a8070';
+  } else {
+    btnLiv.style.border = '2px solid #8a5a00';
+    btnLiv.style.background = '#1a1008';
+    btnLiv.style.color = '#c9a84c';
+    btnAvant.style.border = '1px solid #2e2a22';
+    btnAvant.style.background = '#1a1813';
+    btnAvant.style.color = '#8a8070';
+  }
+  btnAvant.dataset.selected = mode === 'avant' ? '1' : '0';
+}
+
+function calGetPay() {
+  var btn = document.getElementById('cal-pay-avant');
+  return (btn && btn.dataset.selected === '1') ? 'avant' : 'livraison';
+}
+
+function formatDateFR(dateStr) {
+  if(!dateStr) return '';
+  var parts = dateStr.split('-');
+  if(parts.length === 3) return parts[2]+'/'+parts[1]+'/'+parts[0];
+  return dateStr;
+}
+
+function cmdWhatsApp(btn) {
+  var i = parseInt(btn.getAttribute('data-idx'));
+  var a = appointments[i];
+  if(!a || !a.phone) return;
+  var phone = a.phone.replace(/[^0-9]/g, '');
+  if(phone.length <= 9) phone = '241' + phone;
+  var sep = '------------------';
+  var nl = String.fromCharCode(10);
+  var txt = String.fromCharCode(127806) + ' MON FERMIER SARL' + nl
+    + sep + nl
+    + 'COMMANDE #' + (i+1) + nl
+    + sep + nl
+    + 'Client: ' + a.client + nl
+    + 'Commande: ' + formatDateFR(a.dateCommande) + nl
+    + 'Livraison: ' + formatDateFR(a.dateLivraison) + nl
+    + sep + nl;
+  (a.items||[]).forEach(function(it){
+    txt += it.qty + 'x ' + it.name + ' = ' + fmtPrice(it.price * it.qty) + nl;
+  });
+  txt += sep + nl;
+  txt += 'TOTAL: ' + fmtPrice(a.totalPrice||0) + nl;
+  txt += 'Paiement: ' + (a.paiement === 'avant' ? 'Paye avant livraison' : 'A la livraison') + nl;
+  if(a.note) txt += 'Note: ' + a.note + nl;
+  txt += sep + nl + 'Merci de votre confiance!';
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(txt), '_blank');
+}
+
+function cmdEmail(btn) {
+  var i = parseInt(btn.getAttribute('data-idx'));
+  var a = appointments[i];
+  if(!a || !a.email) return;
+  var nl = String.fromCharCode(10);
+  var itemsList = (a.items||[]).map(function(it){
+    return it.qty + 'x ' + it.name + ' = ' + fmtPrice(it.price * it.qty);
+  }).join(', ');
+  var subject = encodeURIComponent('Confirmation commande Mon Fermier SARL - ' + a.client);
+  var body = 'Bonjour ' + a.client + ',' + nl + nl
+    + 'Votre commande a bien ete enregistree.' + nl + nl
+    + 'Produits : ' + itemsList + nl
+    + 'Total : ' + fmtPrice(a.totalPrice||0) + nl
+    + 'Date de livraison : ' + formatDateFR(a.dateLivraison) + nl
+    + 'Paiement : ' + (a.paiement === 'avant' ? 'Paye avant livraison' : 'A regler a la livraison') + nl
+    + (a.note ? 'Note : ' + a.note + nl : '')
+    + nl + 'Merci de votre confiance !' + nl
+    + 'Mon Fermier SARL';
+  window.open('mailto:' + a.email + '?subject=' + subject + '&body=' + encodeURIComponent(body), '_blank');
+}
+
+
+function marquerLivre(btn) {
+  var idx = parseInt(btn.getAttribute('data-idx'));
+  if(isNaN(idx)) return;
+  appointments[idx].livrée = true;
+  appointments[idx].dateLivraisonReelle = new Date().toISOString().split('T')[0];
+  saveAppointments();
+  showToast('✅ Commande marquée comme livrée !');
+  openAdminTab('calendar');
 }
 
 
@@ -2625,11 +2721,15 @@ function addAppointment() {
   var nom    = (document.getElementById('cal-nom')||{value:''}).value.trim();
   var clientName = (prenom+' '+nom).trim();
   var clientType = (document.getElementById('cal-type')||{value:'particulier'}).value;
-  var date   = (document.getElementById('cal-date')||{value:''}).value;
+  var dateCommande   = (document.getElementById('cal-date-commande')||{value:''}).value;
+  var dateLivraison  = (document.getElementById('cal-date-livraison')||{value:''}).value;
   var note   = (document.getElementById('cal-note')||{value:''}).value.trim();
+  var phone  = (document.getElementById('cal-phone')||{value:''}).value.trim();
+  var email  = (document.getElementById('cal-email')||{value:''}).value.trim();
+  var paiement = calGetPay();
 
-  if(!clientName) { showToast('Entrez le nom du client', true); return; }
-  if(!date)       { showToast('Choisissez une date', true); return; }
+  if(!clientName)    { showToast('Entrez le nom du client', true); return; }
+  if(!dateLivraison) { showToast('Choisissez une date de livraison', true); return; }
 
   var items = [];
   var totalPrice = 0;
@@ -2653,11 +2753,17 @@ function addAppointment() {
     items: items,
     totalPrice: totalPrice,
     note: note,
-    date: date,
+    dateCommande: dateCommande || new Date().toISOString().split('T')[0],
+    dateLivraison: dateLivraison,
+    date: dateLivraison,  // compatibilité
+    paiement: paiement,
+    phone: phone,
+    email: email,
+    livrée: false,
     id: Date.now()
   });
   saveAppointments();
-  showToast('📅 Commande de '+clientName+' programmée !');
+  showToast('📦 Commande de '+clientName+' enregistrée !');
   openAdminTab('calendar');
 }
 
@@ -2679,8 +2785,6 @@ var calcNewNum = true;
 var calcJustCalc = false;
 
 function renderAdminCalc(el) {
-  // Réinitialiser la calculatrice à chaque ouverture
-  calcDisplay = "0"; calcOperand = null; calcOperator = null; calcNewNum = true; calcJustCalc = false;
   var btnStyle = "padding:0;height:64px;border-radius:12px;font-size:20px;font-weight:700;border:none;cursor:pointer;";
   function calcBtn(key, label, bg, color, span) {
     return '<button data-key="' + key + '" onclick="calcInput(this)" style="' + btnStyle + 'background:' + bg + ';color:' + color + (span?';grid-column:span '+span:'') + '">' + label + '</button>';
@@ -2718,81 +2822,84 @@ function renderAdminCalc(el) {
 function calcInput(btn) {
   var key = btn.getAttribute("data-key");
 
-  if(key === "C") {
+  if (key === "C") {
     calcDisplay = "0";
     calcOperand = null;
     calcOperator = null;
     calcNewNum = true;
     calcJustCalc = false;
 
-  } else if(key === "pm") {
-    var n = parseFloat(calcDisplay);
-    calcDisplay = String(isNaN(n) ? 0 : -n);
+  } else if (key === "pm") {
+    var v1 = parseFloat(calcDisplay);
+    if (!isNaN(v1) && v1 !== 0) calcDisplay = String(-v1);
 
-  } else if(key === "pct") {
-    var n2 = parseFloat(calcDisplay);
-    calcDisplay = String(isNaN(n2) ? 0 : n2 / 100);
+  } else if (key === "pct") {
+    var v2 = parseFloat(calcDisplay);
+    if (!isNaN(v2)) calcDisplay = String(v2 / 100);
 
-  } else if(key === "+" || key === "-" || key === "*" || key === "/") {
-    // Si on avait déjà un opérateur en attente, calculer d'abord
-    if(calcOperand !== null && !calcNewNum) {
-      var a = parseFloat(calcOperand);
-      var b = parseFloat(calcDisplay);
-      var res;
-      if(calcOperator === "+") res = a + b;
-      else if(calcOperator === "-") res = a - b;
-      else if(calcOperator === "*") res = a * b;
-      else res = (b !== 0) ? a / b : 0;
-      calcDisplay = String(Math.round(res * 1e10) / 1e10);
+  } else if (key === "+" || key === "-" || key === "*" || key === "/") {
+    var cur = parseFloat(calcDisplay);
+    if (calcOperand !== null && calcOperator !== null && !calcNewNum) {
+      var ra = parseFloat(String(calcOperand));
+      var rb = cur;
+      var rr;
+      if (calcOperator === "+") rr = ra + rb;
+      else if (calcOperator === "-") rr = ra - rb;
+      else if (calcOperator === "*") rr = ra * rb;
+      else rr = (rb !== 0) ? ra / rb : 0;
+      calcDisplay = String(Math.round(rr * 1e9) / 1e9);
     }
     calcOperand = parseFloat(calcDisplay);
     calcOperator = key;
     calcNewNum = true;
     calcJustCalc = false;
 
-  } else if(key === "=") {
-    if(calcOperand !== null && calcOperator) {
-      var a2 = parseFloat(calcOperand);
-      var b2 = parseFloat(calcDisplay);
-      var res2;
-      if(calcOperator === "+") res2 = a2 + b2;
-      else if(calcOperator === "-") res2 = a2 - b2;
-      else if(calcOperator === "*") res2 = a2 * b2;
-      else res2 = (b2 !== 0) ? a2 / b2 : 0;
-      calcDisplay = String(Math.round(res2 * 1e10) / 1e10);
+  } else if (key === "=") {
+    if (calcOperand !== null && calcOperator !== null) {
+      var ea = parseFloat(String(calcOperand));
+      var eb = parseFloat(calcDisplay);
+      var er;
+      if (calcOperator === "+") er = ea + eb;
+      else if (calcOperator === "-") er = ea - eb;
+      else if (calcOperator === "*") er = ea * eb;
+      else er = (eb !== 0) ? ea / eb : 0;
+      calcDisplay = String(Math.round(er * 1e9) / 1e9);
       calcOperand = null;
       calcOperator = null;
       calcNewNum = true;
       calcJustCalc = true;
     }
 
-  } else if(key === ".") {
-    if(calcNewNum) {
+  } else if (key === ".") {
+    if (calcNewNum || calcJustCalc) {
       calcDisplay = "0.";
       calcNewNum = false;
       calcJustCalc = false;
-    } else if(calcDisplay.indexOf(".") === -1) {
-      calcDisplay = calcDisplay + ".";
+    } else if (calcDisplay.indexOf(".") === -1) {
+      calcDisplay += ".";
     }
 
   } else {
-    // Chiffre 0-9
-    if(calcNewNum || calcJustCalc) {
+    // digit 0-9
+    if (calcNewNum || calcJustCalc) {
       calcDisplay = key;
       calcNewNum = false;
       calcJustCalc = false;
     } else {
-      calcDisplay = (calcDisplay === "0") ? key : calcDisplay + key;
+      calcDisplay = (calcDisplay === "0") ? key : (calcDisplay + key);
     }
   }
 
   var dEl = document.getElementById("calc-display");
   var opEl = document.getElementById("calc-op");
-  if(dEl) dEl.textContent = calcDisplay;
-  if(opEl) opEl.textContent = (calcOperand !== null && calcOperator) ? (calcOperand + " " + calcOperator) : "";
+  if (dEl) dEl.textContent = calcDisplay;
+  if (opEl) opEl.textContent = (calcOperand !== null && calcOperator) ? (calcOperand + " " + calcOperator) : "";
 }
 
 
+// ═══════════════════════════════════════
+// VENDOR COMMISSION in profile
+// ═══════════════════════════════════════
 function getVendorMonthlyCommission(vendorCode) {
   var now = new Date();
   var mk = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
@@ -2912,289 +3019,243 @@ function openVendorProfile(id) {
 }
 
 function renderVendorProfile() {
-  var v = currentVendor;
+  const v = currentVendor;
+  // Afficher bouton Modifier uniquement pour admin
   var editBtn = document.getElementById("edit-vendor-btn");
-  if(editBtn) editBtn.style.display = (currentUser && currentUser.role === "admin") ? "inline-block" : "none";
-  var el = document.getElementById("vendor-profile-content");
+  if(editBtn) editBtn.style.display = (currentUser && currentUser.role==="admin") ? "inline-block" : "none";
+  const el = document.getElementById("vendor-profile-content");
   if(!el || !v) return;
-
-  // Collect sales for this vendor
-  var vendorSales = [];
-  clients.forEach(function(c) {
-    c.history.forEach(function(h) {
+  const vendorSales = [];
+  clients.forEach(c => {
+    c.history.forEach(h => {
       if((h.vendorCode || "ADMIN") === v.code) {
-        vendorSales.push(Object.assign({}, h, {clientName: c.name, clientCode: c.code, clientType: c.type}));
+        vendorSales.push({...h, clientName: c.name, clientCode: c.code});
       }
     });
   });
-  vendorSales.sort(function(a, b) {
-    var da = (a.date||"").split("/").reverse().join("-");
-    var db2 = (b.date||"").split("/").reverse().join("-");
+  vendorSales.sort((a,b) => {
+    const da = a.date.split("/").reverse().join("-");
+    const db2 = b.date.split("/").reverse().join("-");
     return da < db2 ? 1 : -1;
   });
-
-  var totalRevenue = vendorSales.reduce(function(s,h){ return s + (h.final||0); }, 0);
-  var uniqueClients = new Set(vendorSales.map(function(h){ return h.clientCode; })).size;
-
-  // Avatar
-  var avatarHtml = v.photo
-    ? '<img src="' + v.photo + '" style="width:100%;height:100%;object-fit:cover">'
-    : (v.sex === "Femme" ? "👩" : "👨");
-
-  el.innerHTML =
-    // Header card
-    '<div class="card" style="background:linear-gradient(135deg,#0d2b14,#1a4a24);border-color:#3d6a3d;margin-bottom:16px">'
-      + '<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">'
-        + '<div style="width:80px;height:80px;border-radius:50%;overflow:hidden;background:#1a1813;'
-          + 'border:3px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:36px">'
-          + avatarHtml
-        + '</div>'
-        + '<div style="flex:1">'
-          + '<div style="font-size:20px;font-weight:700;color:#fff">' + v.name + '</div>'
-          + '<div style="font-size:12px;color:#c9a84c;font-family:monospace;margin:4px 0">' + v.code + '</div>'
-          + '<div style="font-size:12px;color:#7ac97a">' + ((v.vendorType||"") === "fixe" ? "🏪 Vendeur fixe" : "🚗 Commercial itinérant") + '</div>'
-          + (v.suspended ? '<div style="font-size:11px;color:#c97a7a;margin-top:4px">⛔ Compte suspendu</div>' : '')
-        + '</div>'
-      + '</div>'
-      // KPIs
-      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
-        + '<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">'
-          + '<div style="font-size:20px;font-weight:700;color:#c9a84c">' + vendorSales.length + '</div>'
-          + '<div style="font-size:10px;color:#7a9a7a">Ventes</div>'
-        + '</div>'
-        + '<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">'
-          + '<div style="font-size:20px;font-weight:700;color:#c9a84c">' + uniqueClients + '</div>'
-          + '<div style="font-size:10px;color:#7a9a7a">Clients</div>'
-        + '</div>'
-        + '<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">'
-          + '<div style="font-size:13px;font-weight:700;color:#c9a84c">' + fmtPrice(totalRevenue) + '</div>'
-          + '<div style="font-size:10px;color:#7a9a7a">C.A.</div>'
-        + '</div>'
-      + '</div>'
-    + '</div>'
-
-    // 3 TAB BUTTONS
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">'
-      + '<button id="vp-tab-info" onclick="vpTab(this)" data-tab="info" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;cursor:pointer">👤<br><span style="font-size:10px">Infos</span></button>'
-      + '<button id="vp-tab-ventes" onclick="vpTab(this)" data-tab="ventes" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">📈<br><span style="font-size:10px">Ventes</span></button>'
-      + '<button id="vp-tab-comm" onclick="vpTab(this)" data-tab="comm" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">💰<br><span style="font-size:10px">Commissions</span></button>'
-    + '</div>'
-    + '<div id="vp-tab-content"></div>'
-
-    // Action buttons (admin only)
-    + ((currentUser && currentUser.role === "admin")
-      ? '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;border-top:1px solid #2e2a22;padding-top:16px">'
-          + '<button onclick="openEditVendor(\''+v.id+'\')" style="background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:10px;border-radius:8px;font-size:12px;font-weight:600">✏️ Modifier</button>'
-          + '<button data-id="'+v.id+'" onclick="quickToggleSuspend(this)" style="background:'+(v.suspended?'#0d1a0d':'#1a0a0a')+';border:1px solid '+(v.suspended?'#3d6a3d':'#6a3a1a')+';color:'+(v.suspended?'#7ac97a':'#c9a84c')+';padding:10px;border-radius:8px;font-size:12px;font-weight:600">'+(v.suspended?'✅ Lever':'⛔ Suspendre')+'</button>'
-          + '<button data-id="'+v.id+'" onclick="deleteVendorById(this)" style="background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;padding:10px;border-radius:8px;font-size:12px;font-weight:600">🗑️ Supprimer</button>'
-        + '</div>'
-      : '');
-
-  // Render default tab
-  vpTabData = {v: v, vendorSales: vendorSales, totalRevenue: totalRevenue};
-  vpTab('info');
+  const totalRevenue = vendorSales.reduce((s,h)=>s+h.final, 0);
+  const uniqueClients = new Set(vendorSales.map(h=>h.clientCode)).size;
+  el.innerHTML = `
+    <div class="card" style="background:linear-gradient(135deg,#0d2b14,#1a4a24);border-color:#3d6a3d;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:100px;height:100px;border-radius:50%;overflow:hidden;background:#1a1813;border:3px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 0 20px #c9a84c44">
+            ${v.photo?`<img src="${v.photo}" style="width:100%;height:100%;object-fit:cover">`:(v.sex==="Femme"?"👩":"👨")}
+          </div>
+          <label style="background:#1a1813;border:1px solid #c9a84c55;color:#c9a84c;border-radius:20px;padding:4px 12px;font-size:11px;cursor:pointer">
+            📷 Ma photo
+            <input type="file" accept="image/*" style="display:none" onchange="vpUpdatePhoto(event,'${v.id}')">
+          </label>
+        </div>
+        <div>
+          <div style="font-size:20px;font-weight:700;color:#fff">${v.name}</div>
+          <div style="font-size:12px;color:#c9a84c;font-family:monospace;margin:4px 0">${v.code}</div>
+          <div style="font-size:12px;color:#7ac97a">${v.vendorType==="fixe"?"🏪 Vendeur fixe":"🚗 Commercial itinérant"}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+        <div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#c9a84c">${vendorSales.length}</div>
+          <div style="font-size:10px;color:#7a9a7a">Ventes</div>
+        </div>
+        <div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:#c9a84c">${uniqueClients}</div>
+          <div style="font-size:10px;color:#7a9a7a">Clients</div>
+        </div>
+        <div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:13px;font-weight:700;color:#c9a84c">${fmtPrice(totalRevenue)}</div>
+          <div style="font-size:10px;color:#7a9a7a">C.A.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        ${v.phone?`<div><span style="color:#4a6a4a">📱</span> <span style="color:#ccc">${v.phone}</span></div>`:""}
+        ${v.sex?`<div><span style="color:#4a6a4a">⚥</span> <span style="color:#ccc">${v.sex}</span></div>`:""}
+        ${v.dob?`<div><span style="color:#4a6a4a">📅</span> <span style="color:#ccc">${v.dob}</span></div>`:""}
+        ${v.email?`<div style="grid-column:1/-1"><span style="color:#4a6a4a">📧</span> <span style="color:#ccc">${v.email}</span></div>`:""}
+        ${v.address?`<div style="grid-column:1/-1"><span style="color:#4a6a4a">🏠</span> <span style="color:#ccc">${v.address}</span></div>`:""}
+        ${v.cni?`<div style="grid-column:1/-1"><span style="color:#4a6a4a">🪪</span> <span style="color:#ccc">${v.cni}</span></div>`:""}
+        ${v.vendorType==="fixe"&&v.quartier?`<div style="grid-column:1/-1"><span style="color:#4a6a4a">📍</span> <span style="color:#ccc">${v.quartier}, ${v.ville}</span></div>`:""}
+        ${v.vendorType==="itinerant"&&v.zone?`<div style="grid-column:1/-1"><span style="color:#4a6a4a">🗺️</span> <span style="color:#ccc">${v.zone}</span></div>`:""}
+        ${v.createdAt?`<div><span style="color:#4a6a4a">📅 Enregistré le</span> <span style="color:#ccc">${v.createdAt}</span></div>`:""}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-size:11px;color:#8a8070;letter-spacing:1.5px;margin-bottom:10px">🔑 IDENTIFIANTS</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:#4a4640">Code</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-weight:700;color:#c9a84c;font-family:monospace">${v.code}</span>
+          <button onclick="navigator.clipboard&&navigator.clipboard.writeText('${v.code}').then(()=>showToast('Copié !'))" style="background:#2a1f0a;border:1px solid #c9a84c33;color:#c9a84c;padding:3px 8px;border-radius:4px;font-size:10px">Copier</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:#4a4640">Mot de passe</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-weight:700;color:#7ac97a;font-family:monospace">${v.password}</span>
+          <button onclick="navigator.clipboard&&navigator.clipboard.writeText('${v.password}').then(()=>showToast('Copié !'))" style="background:#1a3a1a;border:1px solid #3d6a3d33;color:#7ac97a;padding:3px 8px;border-radius:4px;font-size:10px">Copier</button>
+        </div>
+      </div>
+    </div>
+    ${buildVendorCommissionBlock(v.code, vendorSales)}
+    <div style="margin-top:20px;border-top:1px solid #2e2a22;padding-top:16px">
+      <button onclick="deleteVendor('${v.id}')" style="width:100%;background:#3a1a1a;border:1px solid #6a3d3d;color:#c97a7a;padding:12px;border-radius:6px;font-size:14px">🗑️ Supprimer ce vendeur</button>
+    </div>
+  `;
 }
 
-var vpTabData = {};
+// ═══════════════════════════════════════════
+// COMMISSIONS VENDEUR - Bloc complet
+// ═══════════════════════════════════════════
+function buildVendorCommissionBlock(vendorCode, vendorSales) {
+  var now = new Date();
+  var currentMonthKey = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
 
-function vpTab(btn) {
-  var tab = typeof btn === "string" ? btn : btn.getAttribute("data-tab");
-  var v = vpTabData.v;
-  var vendorSales = vpTabData.vendorSales || [];
-  if(!v) return;
-
-  // Update tab buttons
-  ['info','ventes','comm'].forEach(function(t) {
-    var btn = document.getElementById("vp-tab-" + t);
-    if(!btn) return;
-    btn.style.background = t === tab ? "linear-gradient(135deg,#b8860b,#c9a84c)" : "#1a1813";
-    btn.style.color = t === tab ? "#0a0906" : "#8a8070";
-    btn.style.border = t === tab ? "none" : "1px solid #2e2a22";
+  // Commissions par produit (toutes périodes)
+  var byProduct = {};
+  COMMISSIONS.forEach(function(c) {
+    byProduct[c.productId] = {name:c.name, commission:c.commission||0, prime:c.prime||0, qty:0, total:0};
   });
 
-  var el = document.getElementById("vp-tab-content");
-  if(!el) return;
+  // Commissions par mois (6 derniers)
+  var byMonth = {};
+  for(var i=0;i<6;i++) {
+    var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    var mk = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+    byMonth[mk] = {label:d.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"}), total:0};
+  }
 
-  if(tab === 'info') {
-    el.innerHTML =
-      '<div class="card" style="margin-bottom:12px">'
-        + '<div style="font-size:11px;color:#8a8070;letter-spacing:1.5px;margin-bottom:12px">🪪 INFORMATIONS PERSONNELLES</div>'
-        + vpInfoRow("📱 Téléphone", v.phone)
-        + vpInfoRow("📧 Email", v.email)
-        + vpInfoRow("⚥ Sexe", v.sex)
-        + vpInfoRow("🎂 Naissance", v.dob)
-        + vpInfoRow("🏠 Adresse", v.address)
-        + vpInfoRow("🪪 CNI", v.cni)
-        + vpInfoRow("📍 Localisation", v.vendorType === "fixe" ? (v.quartier ? v.quartier + ", " + v.ville : v.ville) : v.zone)
-        + vpInfoRow("📅 Enregistré le", v.createdAt)
-      + '</div>'
-      + '<div class="card">'
-        + '<div style="font-size:11px;color:#8a8070;letter-spacing:1.5px;margin-bottom:12px">🔑 IDENTIFIANTS</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-          + '<span style="color:#4a4640;font-size:13px">Code</span>'
-          + '<span style="font-weight:700;color:#c9a84c;font-family:monospace;font-size:14px">' + v.code + '</span>'
-        + '</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center">'
-          + '<span style="color:#4a4640;font-size:13px">Mot de passe</span>'
-          + '<span style="font-weight:700;color:#7ac97a;font-family:monospace;font-size:14px">' + v.password + '</span>'
-        + '</div>'
-      + '</div>';
+  var totalCommAll = 0;
+  var totalCommMonth = 0;
 
-  } else if(tab === 'ventes') {
-    var now = new Date();
-    var months = [];
-    for(var i = 5; i >= 0; i--) {
-      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({label: d.toLocaleDateString("fr-FR",{month:"short"}), month: d.getMonth(), year: d.getFullYear(), revenue: 0, sales: 0});
+  vendorSales.forEach(function(h) {
+    var comm = h.commission || 0;
+    if(comm <= 0) return;
+
+    // Par mois
+    var parts = (h.date||"").split("/");
+    if(parts.length === 3) {
+      var mk2 = parts[2]+"-"+parts[1].padStart(2,"0");
+      if(byMonth[mk2]) byMonth[mk2].total += comm;
+      if(mk2 === currentMonthKey) totalCommMonth += comm;
     }
-    vendorSales.forEach(function(h) {
-      var parts = (h.date||"").split("/");
-      if(parts.length === 3) {
-        var hm = parseInt(parts[1])-1, hy = parseInt(parts[2]);
-        var m = months.find(function(m){ return m.month === hm && m.year === hy; });
-        if(m) { m.revenue += (h.final||0); m.sales++; }
-      }
-    });
-    var maxR = Math.max.apply(null, months.map(function(m){ return m.revenue; })) || 1;
+    totalCommAll += comm;
 
-    var bars = months.map(function(m) {
-      var h = Math.max(4, Math.round((m.revenue/maxR)*80));
-      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
-        + '<div style="font-size:9px;color:#8a8070">' + (m.sales > 0 ? m.sales : "") + '</div>'
-        + '<div style="width:100%;background:linear-gradient(180deg,#c9a84c,#b8860b);border-radius:4px 4px 0 0;height:' + h + 'px;min-height:4px"></div>'
-        + '<div style="font-size:9px;color:#4a4640">' + m.label + '</div>'
-      + '</div>';
+    // Par produit (via cart items dans l'historique)
+    if(h.items) {
+      h.items.forEach(function(it) {
+        if(byProduct[it.id]) {
+          byProduct[it.id].qty += it.qty||1;
+          var c = COMMISSIONS.find(function(c){ return c.productId===it.id; });
+          if(c) byProduct[it.id].total += (c.commission||c.prime||0)*(it.qty||1);
+        }
+      });
+    } else {
+      // Fallback: répartir la commission uniformément si pas d'items
+      // (ventes anciennes sans détail produit)
+    }
+  });
+
+  // Barres de progression mensuelle
+  var maxMonth = Math.max.apply(null, Object.values(byMonth).map(function(m){return m.total;})) || 1;
+  var monthsArr = Object.entries(byMonth).reverse(); // du plus ancien au plus récent
+
+  var monthBars = monthsArr.map(function(entry) {
+    var mk=entry[0], m=entry[1];
+    var pct = Math.round((m.total/maxMonth)*100);
+    var isCurrentMonth = mk === currentMonthKey;
+    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">' +
+      '<div style="font-size:10px;color:'+(m.total>0?'#c9a84c':'#4a4640')+';font-weight:700;text-align:center">' +
+        (m.total>0 ? fmtPrice(m.total).replace(' F','') : '') +
+      '</div>' +
+      '<div style="width:100%;background:#1a1813;border-radius:4px 4px 0 0;overflow:hidden;height:60px;display:flex;align-items:flex-end">' +
+        '<div style="width:100%;height:'+Math.max(4,pct*0.6)+'%;background:'+
+          (isCurrentMonth?'linear-gradient(180deg,#c9a84c,#b8860b)':'linear-gradient(180deg,#3a8070,#2a6060)')+
+          ';border-radius:4px 4px 0 0;min-height:4px;transition:height 0.3s"></div>' +
+      '</div>' +
+      '<div style="font-size:10px;color:'+(isCurrentMonth?'#c9a84c':'#4a4640')+';text-align:center;font-weight:'+(isCurrentMonth?'700':'400')+'">'+m.label+'</div>' +
+    '</div>';
+  }).join('');
+
+  // Détail par produit
+  var prodRows = Object.entries(byProduct)
+    .filter(function(e){ return e[1].qty > 0; })
+    .sort(function(a,b){ return b[1].total - a[1].total; })
+    .map(function(entry) {
+      var p = entry[1];
+      var commLabel = p.commission > 0 ? fmtPrice(p.commission)+'/vente' : fmtPrice(p.prime)+' prime';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1a1813">' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;color:#fff">'+p.name+'</div>' +
+          '<div style="font-size:11px;color:#8a8070">'+commLabel+' · '+p.qty+' vendu'+( p.qty>1?'s':'')+' </div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<div style="font-size:15px;font-weight:700;color:#c9a84c">'+fmtPrice(p.total)+'</div>' +
+        '</div>' +
+      '</div>';
     }).join('');
 
-    var salesRows = vendorSales.length === 0
-      ? '<div style="text-align:center;color:#4a4640;padding:20px">Aucune vente</div>'
-      : vendorSales.slice(0,30).map(function(h) {
-          var items = h.items ? h.items.map(function(it){ return it.qty+"× "+it.name; }).join(", ") : "";
-          return '<div style="padding:10px 0;border-bottom:1px solid #1a1813">'
-            + '<div style="display:flex;justify-content:space-between;align-items:start">'
-              + '<div>'
-                + '<div style="font-weight:600;font-size:13px">' + (h.clientName||"") + '</div>'
-                + (items ? '<div style="font-size:11px;color:#8a8070;margin-top:2px">' + items + '</div>' : '')
-              + '</div>'
-              + '<div style="text-align:right;flex-shrink:0;margin-left:8px">'
-                + '<div style="font-weight:700;color:#c9a84c">' + fmtPrice(h.final||0) + '</div>'
-                + '<div style="font-size:10px;color:#4a4640">' + (h.date||"") + '</div>'
-              + '</div>'
-            + '</div>'
-          + '</div>';
-        }).join('');
-
-    el.innerHTML =
-      '<div class="card" style="margin-bottom:14px">'
-        + '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:12px">📊 Évolution 6 mois</div>'
-        + '<div style="display:flex;gap:6px;align-items:flex-end;height:100px">' + bars + '</div>'
-      + '</div>'
-      + '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">TOUTES LES VENTES (' + vendorSales.length + ')</div>'
-      + '<div class="card" style="padding:4px 12px">' + salesRows + '</div>';
-
-  } else if(tab === 'comm') {
-    var now2 = new Date();
-    var mk = now2.getFullYear() + "-" + String(now2.getMonth()+1).padStart(2,"0");
-    var byProduct = {};
-    COMMISSIONS.forEach(function(c) {
-      byProduct[c.productId] = {name:c.name, rate:c.commission||c.prime||0, isPrime:!!c.prime, qty:0, total:0};
-    });
-
-    var monthComm = 0, totalComm = 0;
-    vendorSales.forEach(function(h) {
-      var comm = h.commission || 0;
-      if(comm <= 0) return;
-      totalComm += comm;
-      var parts = (h.date||"").split("/");
-      if(parts.length === 3) {
-        var hmk = parts[2]+"-"+parts[1].padStart(2,"0");
-        if(hmk === mk) monthComm += comm;
-      }
-      if(h.items) {
-        h.items.forEach(function(it) {
-          if(byProduct[it.id]) {
-            byProduct[it.id].qty += (it.qty||1);
-            byProduct[it.id].total += byProduct[it.id].rate * (it.qty||1);
-          }
-        });
-      }
-    });
-
-    var prodRows = Object.values(byProduct).filter(function(p){ return p.qty > 0; })
-      .sort(function(a,b){ return b.total - a.total; })
-      .map(function(p) {
-        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1a1813">'
-          + '<div style="flex:1">'
-            + '<div style="font-size:13px;color:#fff">' + p.name + '</div>'
-            + '<div style="font-size:11px;color:#8a8070">' + fmtPrice(p.rate) + (p.isPrime?" (prime)":"/vente") + ' · ' + p.qty + ' vendu' + (p.qty>1?"s":"") + '</div>'
-          + '</div>'
-          + '<div style="font-size:15px;font-weight:700;color:#c9a84c">' + fmtPrice(p.total) + '</div>'
-        + '</div>';
+  // Historique des ventes avec détail produits
+  var salesRows = vendorSales.length === 0
+    ? '<div style="text-align:center;color:#4a4640;padding:20px;border:1px dashed #2e2a22;border-radius:12px">Aucune vente</div>'
+    : vendorSales.slice(0,30).map(function(h) {
+        var comm = h.commission || 0;
+        var itemsDetail = h.items
+          ? h.items.map(function(it){ return it.qty+'× '+it.name; }).join(', ')
+          : '';
+        return '<div style="padding:10px 0;border-bottom:1px solid #1a1813">' +
+          '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">' +
+            '<div>' +
+              '<div style="font-weight:600;font-size:13px">'+h.clientName+'</div>' +
+              (itemsDetail ? '<div style="font-size:11px;color:#8a8070;margin-top:2px">'+itemsDetail+'</div>' : '') +
+            '</div>' +
+            '<div style="text-align:right;flex-shrink:0;margin-left:8px">' +
+              '<div style="font-size:13px;font-weight:700;color:#c9a84c">'+fmtPrice(h.final)+'</div>' +
+              '<div style="font-size:10px;color:#4a4640">'+h.date+'</div>' +
+            '</div>' +
+          '</div>' +
+          (comm>0 ? '<span style="background:#1a2a1a;border:1px solid #3d6a3d44;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:11px">Commission: '+fmtPrice(comm)+'</span>' : '') +
+        '</div>';
       }).join('');
 
-    var commSales = vendorSales.filter(function(h){ return (h.commission||0) > 0; });
-    var salesCommRows = commSales.length === 0
-      ? '<div style="text-align:center;color:#4a4640;padding:16px">Aucune commission</div>'
-      : commSales.slice(0,20).map(function(h) {
-          var items = h.items ? h.items.map(function(it){ return it.qty+"× "+it.name; }).join(", ") : "";
-          return '<div style="padding:8px 0;border-bottom:1px solid #1a1813">'
-            + '<div style="display:flex;justify-content:space-between;align-items:start">'
-              + '<div>'
-                + '<div style="font-size:12px;color:#fff">' + (h.clientName||"") + '</div>'
-                + (items ? '<div style="font-size:10px;color:#8a8070">' + items + '</div>' : '')
-              + '</div>'
-              + '<div style="text-align:right;flex-shrink:0;margin-left:8px">'
-                + '<div style="font-size:13px;font-weight:700;color:#7ac97a">+' + fmtPrice(h.commission) + '</div>'
-                + '<div style="font-size:10px;color:#4a4640">' + (h.date||"") + '</div>'
-              + '</div>'
-            + '</div>'
-          + '</div>';
-        }).join('');
+  return '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:14px">💰 COMMISSIONS</div>' +
 
-    el.innerHTML =
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
-        + '<div class="card" style="text-align:center;background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border-color:#3d6a3d">'
-          + '<div style="font-size:20px;font-weight:700;color:#7ac97a">' + fmtPrice(monthComm) + '</div>'
-          + '<div style="font-size:10px;color:#4a4640;margin-top:4px">Ce mois</div>'
-        + '</div>'
-        + '<div class="card" style="text-align:center">'
-          + '<div style="font-size:20px;font-weight:700;color:#c9a84c">' + fmtPrice(totalComm) + '</div>'
-          + '<div style="font-size:10px;color:#4a4640;margin-top:4px">Total cumulé</div>'
-        + '</div>'
-      + '</div>'
-      + (prodRows ? '<div class="card" style="margin-bottom:14px"><div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:4px">📦 Par produit</div>' + prodRows + '</div>' : '')
-      + '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">DÉTAIL PAR VENTE</div>'
-      + '<div class="card" style="padding:4px 12px">' + salesCommRows + '</div>';
-  }
-}
+    // Résumé global
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">' +
+      '<div class="card" style="text-align:center;background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border-color:#3d6a3d">' +
+        '<div style="font-size:22px;font-weight:700;color:#7ac97a">'+fmtPrice(totalCommMonth)+'</div>' +
+        '<div style="font-size:11px;color:#4a4640;margin-top:4px">Ce mois</div>' +
+      '</div>' +
+      '<div class="card" style="text-align:center">' +
+        '<div style="font-size:22px;font-weight:700;color:#c9a84c">'+fmtPrice(totalCommAll)+'</div>' +
+        '<div style="font-size:11px;color:#4a4640;margin-top:4px">Total cumulé</div>' +
+      '</div>' +
+    '</div>' +
 
-function vpInfoRow(label, value) {
-  if(!value) return "";
-  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1813">'
-    + '<span style="font-size:12px;color:#4a4640">' + label + '</span>'
-    + '<span style="font-size:13px;color:#fff;font-weight:500;text-align:right;max-width:60%">' + value + '</span>'
-    + '</div>';
+    // Évolution mensuelle (barres)
+    '<div class="card" style="margin-bottom:14px">' +
+      '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:12px">📈 Évolution — 6 mois</div>' +
+      '<div style="display:flex;gap:6px;align-items:flex-end;height:90px">' + monthBars + '</div>' +
+    '</div>' +
+
+    // Détail par produit
+    (Object.values(byProduct).some(function(p){ return p.qty>0; })
+      ? '<div class="card" style="margin-bottom:14px">' +
+          '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:4px">📦 Commission par produit</div>' +
+          prodRows +
+        '</div>'
+      : '') +
+
+    // Historique des ventes
+    '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:12px">HISTORIQUE DES VENTES ('+vendorSales.length+')</div>' +
+    '<div class="card" style="padding:4px 12px">' + salesRows + '</div>';
 }
 
 
-async function quickToggleSuspend(btn) {
-  var id = btn.getAttribute('data-id');
-  var v = vendors.find(function(x){ return x.id === id; });
-  if(!v) return;
-  var newState = !v.suspended;
-  try {
-    await db.collection('vendors').doc(id).update({suspended: newState});
-    v.suspended = newState;
-    currentVendor = v;
-    showToast(newState ? '⛔ Vendeur suspendu' : '✅ Suspension levée');
-    renderVendorProfile();
-  } catch(e) { showToast('Erreur: ' + (e.message||''), true); }
-}
-
-function deleteVendorById(btn) {
-  var id = btn.getAttribute("data-id");
-  deleteVendor(id);
-}
 async function deleteVendor(id) {
   if(!confirm("Supprimer ce vendeur ?")) return;
   try {
