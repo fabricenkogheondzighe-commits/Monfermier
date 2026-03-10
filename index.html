@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.16</title>
+  <title>Mon Fermier SARL v3.18</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -1243,6 +1243,17 @@ async function processSale() {
   const vipChosen = choiceUsed==="vip";
   const final = total - discount;
 
+  // Calcul commission AVANT création de l'objet sale
+  var saleCommission = 0;
+  cart.forEach(function(item) {
+    var comm = COMMISSIONS.find(function(c){ return c.productId === item.id; });
+    if(comm) {
+      if(comm.commission) saleCommission += comm.commission * item.qty;
+      if(comm.prime) saleCommission += comm.prime * item.qty;
+    }
+  });
+
+
   const sale = {
     date: new Date().toLocaleDateString("fr-FR"),
     time: new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),
@@ -1256,6 +1267,7 @@ async function processSale() {
     paymentIcon: PAYMENT_MODES.find(p=>p.id===selectedPayment)?.icon || "💵",
     vendorCode: currentUser?.code || "ADMIN",
     vendorName: currentUser?.name || "Administrateur",
+    commission: saleCommission,
   };
 
   let newPoints = c.points + earned;
@@ -1281,16 +1293,6 @@ async function processSale() {
     const {id, ...data} = updatedClient;
     await db.collection("clients").doc(id).set(data);
   } catch(e) { saveData(); }
-  // Calculate commission for this sale
-  var saleCommission = 0;
-  cart.forEach(function(item) {
-    var comm = COMMISSIONS.find(function(c){ return c.productId === item.id; });
-    if(comm) {
-      if(comm.commission) saleCommission += comm.commission * item.qty;
-      if(comm.prime) saleCommission += comm.prime * item.qty;
-    }
-  });
-  sale.commission = saleCommission;
   // Save commission to vendor record
   if(currentUser && currentUser.role === "vendor" && saleCommission > 0) {
     var vendor = vendors.find(function(v){ return v.code === currentUser.code; });
@@ -1985,32 +1987,193 @@ function closeAdminConfirmModal() {
 
 async function renderAdminVendors(el) {
   await loadVendors();
+
+  // ── Calcul commissions du mois pour chaque vendeur ──
+  var now = new Date();
+  var curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  var curMonthLabel = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+
+  // Parcourir tous les clients pour collecter les ventes du mois
+  var vendorStats = {}; // code → {name, sales:[], totalComm, byProduct:{}}
+  vendors.forEach(function(v) {
+    vendorStats[v.code] = {
+      id: v.id, name: v.name, code: v.code, photo: v.photo, sex: v.sex,
+      suspended: v.suspended,
+      sales: [], totalComm: 0,
+      byProduct: {}
+    };
+    COMMISSIONS.forEach(function(c) {
+      vendorStats[v.code].byProduct[c.productId] = {
+        name: c.name, rate: c.commission||c.prime||0, isPrime: !!c.prime, qty: 0, total: 0
+      };
+    });
+  });
+
+  clients.forEach(function(c) {
+    (c.history||[]).forEach(function(h) {
+      var vcode = h.vendorCode || 'ADMIN';
+      var comm  = h.commission || 0;
+      if(comm <= 0) return;
+      // Filtrer ce mois
+      var parts = (h.date||'').split('/');
+      if(parts.length !== 3) return;
+      var hMonth = parts[2] + '-' + parts[1].padStart(2,'0');
+      if(hMonth !== curMonth) return;
+      if(!vendorStats[vcode]) return;
+      vendorStats[vcode].totalComm += comm;
+      vendorStats[vcode].sales.push(h);
+      // Par produit
+      (h.items||[]).forEach(function(it) {
+        if(vendorStats[vcode].byProduct[it.id]) {
+          vendorStats[vcode].byProduct[it.id].qty   += (it.qty||1);
+          vendorStats[vcode].byProduct[it.id].total += vendorStats[vcode].byProduct[it.id].rate * (it.qty||1);
+        }
+      });
+    });
+  });
+
+  var totalMoisAll = Object.values(vendorStats).reduce(function(s,v){ return s+v.totalComm; }, 0);
+  var vendorsWithComm = Object.values(vendorStats).filter(function(v){ return v.totalComm > 0; });
+  vendorsWithComm.sort(function(a,b){ return b.totalComm - a.totalComm; });
+
   var html = '';
+
+  // ── CARTE RÉCAP COMMISSIONS DU MOIS ──
+  if(vendors.length > 0) {
+    html += '<div class="card" style="margin-bottom:16px;border-color:#c9a84c44;background:linear-gradient(135deg,#1a1208,#0f0e0b)">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+    html += '<div style="font-size:13px;font-weight:700;color:#c9a84c">💰 Commissions — ' + curMonthLabel + '</div>';
+    html += '<div style="font-size:12px;font-weight:700;color:#7ac97a">' + fmtPrice(totalMoisAll) + ' total</div>';
+    html += '</div>';
+
+    if(vendorsWithComm.length === 0) {
+      html += '<div style="text-align:center;color:#4a4640;padding:16px;font-size:13px">Aucune commission ce mois</div>';
+    } else {
+      vendorsWithComm.forEach(function(vs) {
+        var avatar = vs.photo
+          ? '<img src="'+vs.photo+'" style="width:100%;height:100%;object-fit:cover">'
+          : (vs.sex==='Femme'?'👩':'👨');
+
+        // Détail par produit
+        var prodDetail = Object.values(vs.byProduct)
+          .filter(function(p){ return p.qty > 0; })
+          .map(function(p){
+            return '<div style="display:flex;justify-content:space-between;padding:4px 0">'
+              +'<span style="font-size:11px;color:#8a8070">'+p.name+' ×'+p.qty+'</span>'
+              +'<span style="font-size:11px;font-weight:600;color:#c9a84c">'+fmtPrice(p.total)+'</span>'
+            +'</div>';
+          }).join('');
+
+        html += '<div style="border:1px solid #2e2a22;border-radius:10px;padding:12px;margin-bottom:10px;background:#0f0e0b">';
+        html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+        html += '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">'+avatar+'</div>';
+        html += '<div style="flex:1">';
+        html += '<div style="font-size:14px;font-weight:700;color:#fff">'+vs.name+'</div>';
+        html += '<div style="font-size:11px;color:#8a8070">'+vs.sales.length+' vente'+(vs.sales.length>1?'s':'')+' ce mois</div>';
+        html += '</div>';
+        html += '<div style="text-align:right">';
+        html += '<div style="font-size:16px;font-weight:700;color:#7ac97a">'+fmtPrice(vs.totalComm)+'</div>';
+        html += '<div style="font-size:10px;color:#4a4640">à payer</div>';
+        html += '</div>';
+        html += '</div>';
+        if(prodDetail) {
+          html += '<div style="border-top:1px solid #1a1813;padding-top:6px">'+prodDetail+'</div>';
+        }
+        // Bouton WhatsApp pour envoyer le récap au vendeur
+        var vendorObj = vendors.find(function(v){ return v.code===vs.code; });
+        if(vendorObj && vendorObj.phone) {
+          html += '<button onclick="sendCommRecap(\''+vs.code+'\')" style="width:100%;margin-top:8px;background:#0d1a0d;border:1px solid #25d366;color:#25d366;padding:8px;border-radius:8px;font-size:12px;font-weight:600">💬 Envoyer récap WhatsApp</button>';
+        }
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+  }
+
+  // ── BARRE DE RECHERCHE ──
+  html += '<div style="margin-bottom:12px">'
+    + '<input id="admin-vendor-search" type="text" placeholder="🔍 Rechercher un vendeur..." oninput="adminSearchVendors()" '
+    + 'style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:12px;border-radius:10px;font-size:14px;box-sizing:border-box">'
+    + '</div>';
+
+  // ── LISTE VENDEURS ──
   if(vendors.length === 0) {
-    html = '<div style="text-align:center;color:#4a4640;padding:40px">Aucun vendeur enregistré</div>';
+    html += '<div style="text-align:center;color:#4a4640;padding:40px">Aucun vendeur enregistré</div>';
   } else {
     vendors.forEach(function(v) {
       var susp = v.suspended ? true : false;
-      html += '<div class="card" style="margin-bottom:10px;opacity:' + (susp?'0.6':'1') + '">' +
-        '<div style="display:flex;align-items:center;gap:12px">' +
-          '<div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid ' + (susp?'#6a1a1a':'#c9a84c44') + ';flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px">' +
-            (v.photo ? '<img src="' + v.photo + '" style="width:100%;height:100%;object-fit:cover">' : (v.sex==='Femme'?'👩':'👨')) +
-          '</div>' +
-          '<div style="flex:1;min-width:0">' +
-            '<div style="display:flex;align-items:center;gap:6px">' +
-              '<span style="font-weight:700;font-size:15px">' + v.name + '</span>' +
-              (susp ? '<span style="background:#2e0a0a;color:#c97a7a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #6a1a1a">⛔ Suspendu</span>' : '<span style="background:#0d1a0d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #3d6a3d">✅ Actif</span>') +
-            '</div>' +
-            '<div style="font-size:12px;color:#8a8070;margin-top:2px">Code: ' + v.code + ' · ' + (v.type==='fixe'?'Fixe':'Temporaire') + '</div>' +
-          '</div>' +
-          '<button onclick="adminVendorMenu(this)" data-id="' + v.id + '" style="background:#1a1813;border:1px solid #2e2a22;color:#c9a84c;padding:8px 14px;border-radius:8px;font-size:13px">⚙️</button>' +
-        '</div>' +
-      '</div>';
+      // Commission ce mois pour ce vendeur
+      var vStats = vendorStats[v.code];
+      var commMois = vStats ? vStats.totalComm : 0;
+      html += '<div class="card vendor-card" data-id="'+v.id+'" style="margin-bottom:10px;opacity:'+(susp?'0.6':'1')+';cursor:pointer" onclick="adminVendorOpen(this)">'
+        +'<div style="display:flex;align-items:center;gap:12px">'
+          +'<div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid '+(susp?'#6a1a1a':'#c9a84c44')+';flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px">'
+            +(v.photo?'<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">':(v.sex==='Femme'?'👩':'👨'))
+          +'</div>'
+          +'<div style="flex:1;min-width:0">'
+            +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+              +'<span style="font-weight:700;font-size:15px">'+v.name+'</span>'
+              +(susp?'<span style="background:#2e0a0a;color:#c97a7a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #6a1a1a">⛔ Suspendu</span>':'<span style="background:#0d1a0d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #3d6a3d">✅ Actif</span>')
+            +'</div>'
+            +'<div style="font-size:12px;color:#8a8070;margin-top:2px">'+v.code+' · '+(v.vendorType==='fixe'?'Fixe':'Itinérant')+'</div>'
+            +(commMois>0?'<div style="font-size:12px;color:#7ac97a;font-weight:600;margin-top:2px">💰 '+fmtPrice(commMois)+' ce mois</div>':'')
+          +'</div>'
+          +'<button onclick="event.stopPropagation();adminVendorMenu(this)" data-id="'+v.id+'" style="background:#1a1813;border:1px solid #2e2a22;color:#c9a84c;padding:8px 14px;border-radius:8px;font-size:13px">⚙️</button>'
+        +'</div>'
+      +'</div>';
     });
   }
+
   html += '<button onclick="openAddVendor()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:12px">➕ Nouveau vendeur</button>';
   el.innerHTML = html;
 }
+
+function sendCommRecap(vendorCode) {
+  var vs = null;
+  var now = new Date();
+  var curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  var curMonthLabel = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  var vendorObj = vendors.find(function(v){ return v.code===vendorCode; });
+  if(!vendorObj || !vendorObj.phone) return;
+
+  var phone = vendorObj.phone.replace(/[^0-9]/g,'');
+  if(phone.length <= 9) phone = '241' + phone;
+
+  var totalComm = 0; var salesCount = 0;
+  var byProduct = {};
+  COMMISSIONS.forEach(function(c){ byProduct[c.productId]={name:c.name,rate:c.commission||c.prime||0,qty:0,total:0}; });
+
+  clients.forEach(function(c){
+    (c.history||[]).forEach(function(h){
+      if((h.vendorCode||'ADMIN') !== vendorCode) return;
+      var parts=(h.date||'').split('/');
+      if(parts.length!==3) return;
+      var hm=parts[2]+'-'+parts[1].padStart(2,'0');
+      if(hm!==curMonth) return;
+      totalComm+=(h.commission||0); salesCount++;
+      (h.items||[]).forEach(function(it){
+        if(byProduct[it.id]){byProduct[it.id].qty+=(it.qty||1);byProduct[it.id].total+=byProduct[it.id].rate*(it.qty||1);}
+      });
+    });
+  });
+
+  var nl = String.fromCharCode(10);
+  var sep = '------------------';
+  var txt = String.fromCharCode(127806)+' MON FERMIER SARL'+nl
+    +sep+nl
+    +'RECAPITULATIF COMMISSIONS'+nl
+    +curMonthLabel.toUpperCase()+nl
+    +sep+nl
+    +'Vendeur : '+vendorObj.name+nl
+    +'Ventes : '+salesCount+nl
+    +sep+nl;
+  Object.values(byProduct).filter(function(p){return p.qty>0;}).forEach(function(p){
+    txt += p.name+' x'+p.qty+' = '+fmtPrice(p.total)+nl;
+  });
+  txt += sep+nl+'TOTAL A PERCEVOIR : '+fmtPrice(totalComm)+nl+sep+nl+'Merci pour votre travail !';
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(txt),'_blank');
+}
+
 
 
 function adminVendorViewProfile() {
@@ -2726,6 +2889,16 @@ function renderVendorProfile() {
 
   var totalRevenue  = vendorSales.reduce(function(s,h){ return s+(h.final||0); }, 0);
   var uniqueClients = new Set(vendorSales.map(function(h){ return h.clientCode; })).size;
+
+  // Commissions
+  var totalComm = vendorSales.reduce(function(s,h){ return s+(h.commission||0); }, 0);
+  var now0 = new Date();
+  var curMk = now0.getFullYear()+'-'+String(now0.getMonth()+1).padStart(2,'0');
+  var monthComm0 = vendorSales.reduce(function(s,h){
+    var p=(h.date||'').split('/');
+    if(p.length===3 && (p[2]+'-'+p[1].padStart(2,'0'))===curMk) return s+(h.commission||0);
+    return s;
+  }, 0);
   var avatarHtml    = v.photo
     ? '<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">'
     : (v.sex==='Femme' ? '👩' : '👨');
@@ -2741,10 +2914,13 @@ function renderVendorProfile() {
           +(v.suspended?'<div style="font-size:11px;color:#c97a7a;margin-top:4px">⛔ Compte suspendu</div>':'')
         +'</div>'
       +'</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
+      +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'
         +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:#c9a84c">'+vendorSales.length+'</div><div style="font-size:10px;color:#7a9a7a">Ventes</div></div>'
         +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:#c9a84c">'+uniqueClients+'</div><div style="font-size:10px;color:#7a9a7a">Clients</div></div>'
-        +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:#c9a84c">'+fmtPrice(totalRevenue)+'</div><div style="font-size:10px;color:#7a9a7a">C.A.</div></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">'
+        +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:#c9a84c">'+fmtPrice(totalRevenue)+'</div><div style="font-size:10px;color:#7a9a7a">C.A. total</div></div>'
+        +'<div style="background:#0d1a0d;border-radius:8px;padding:10px;text-align:center;border:1px solid #3d6a3d"><div style="font-size:13px;font-weight:700;color:#7ac97a">'+fmtPrice(totalComm)+'</div><div style="font-size:10px;color:#4a8a4a">💰 Commissions</div></div>'
       +'</div>'
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">'
@@ -2811,7 +2987,7 @@ function vpTab(btn) {
     var prodRows=Object.values(byProduct).filter(function(p){return p.qty>0;}).sort(function(a,b){return b.total-a.total;}).map(function(p){return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1a1813"><div style="flex:1"><div style="font-size:13px;color:#fff">'+p.name+'</div><div style="font-size:11px;color:#8a8070">'+fmtPrice(p.rate)+(p.isPrime?' (prime)':'/vente')+' · '+p.qty+' vendu'+(p.qty>1?'s':'')+'</div></div><div style="font-size:15px;font-weight:700;color:#c9a84c">'+fmtPrice(p.total)+'</div></div>';}).join('');
     var commSales=vendorSales.filter(function(h){return(h.commission||0)>0;});
     var salesCommRows=commSales.length===0?'<div style="text-align:center;color:#4a4640;padding:16px">Aucune commission</div>':commSales.slice(0,20).map(function(h){var items=h.items?h.items.map(function(it){return it.qty+'x '+it.name;}).join(', '):'';return '<div style="padding:8px 0;border-bottom:1px solid #1a1813"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:12px;color:#fff">'+(h.clientName||'')+'</div>'+(items?'<div style="font-size:10px;color:#8a8070">'+items+'</div>':'')+'</div><div style="text-align:right;flex-shrink:0;margin-left:8px"><div style="font-size:13px;font-weight:700;color:#7ac97a">+'+fmtPrice(h.commission)+'</div><div style="font-size:10px;color:#4a4640">'+(h.date||'')+'</div></div></div></div>';}).join('');
-    el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="card" style="text-align:center;background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border-color:#3d6a3d"><div style="font-size:20px;font-weight:700;color:#7ac97a">'+fmtPrice(monthComm)+'</div><div style="font-size:10px;color:#4a4640;margin-top:4px">Ce mois</div></div><div class="card" style="text-align:center"><div style="font-size:20px;font-weight:700;color:#c9a84c">'+fmtPrice(totalComm)+'</div><div style="font-size:10px;color:#4a4640;margin-top:4px">Total cumulé</div></div></div>'+(prodRows?'<div class="card" style="margin-bottom:14px"><div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:8px">📦 Commission par article</div>'+prodRows+'</div>':'')+'<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">DÉTAIL PAR VENTE</div><div class="card" style="padding:4px 12px">'+salesCommRows+'</div>';
+    el.innerHTML='<div style="background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border:1px solid #3d6a3d;border-radius:12px;padding:16px;margin-bottom:14px;text-align:center"><div style="font-size:11px;color:#4a8a4a;letter-spacing:2px;margin-bottom:6px">💰 À PAYER CE MOIS</div><div style="font-size:32px;font-weight:700;color:#7ac97a">'+fmtPrice(monthComm)+'</div><div style="font-size:11px;color:#4a4640;margin-top:4px">Total cumulé : '+fmtPrice(totalComm)+'</div></div>'+(prodRows?'<div class="card" style="margin-bottom:14px"><div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:8px">📦 Commission par article</div>'+prodRows+'</div>':'')+'<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">DÉTAIL PAR VENTE</div><div class="card" style="padding:4px 12px">'+salesCommRows+'</div>';
   }
 }
 
