@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.19</title>
+  <title>Mon Fermier SARL v3.20</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -2929,59 +2929,69 @@ function renderVendorProfile() {
   var el = document.getElementById("vendor-profile-content");
   if(!el || !v) return;
 
+  // Collecter toutes les ventes du vendeur
   var vendorSales = [];
   clients.forEach(function(c) {
-    c.history.forEach(function(h) {
-      if((h.vendorCode || "ADMIN") === v.code)
-        vendorSales.push(Object.assign({}, h, {clientName: c.name, clientCode: c.code}));
+    (c.history||[]).forEach(function(h) {
+      if((h.vendorCode||'ADMIN') === v.code)
+        vendorSales.push(Object.assign({}, h, {clientName:c.name, clientCode:c.code}));
     });
   });
-  vendorSales.sort(function(a,b) {
-    return ((b.date||'').split('/').reverse().join('-')) > ((a.date||'').split('/').reverse().join('-')) ? 1 : -1;
+  vendorSales.sort(function(a,b){
+    var da=(a.date||'').split('/').reverse().join('-');
+    var db2=(b.date||'').split('/').reverse().join('-');
+    return da < db2 ? 1 : -1;
   });
 
   var totalRevenue  = vendorSales.reduce(function(s,h){ return s+(h.final||0); }, 0);
   var uniqueClients = new Set(vendorSales.map(function(h){ return h.clientCode; })).size;
-
-  // Commissions
-  var totalComm = vendorSales.reduce(function(s,h){ return s+(h.commission||0); }, 0);
-  var now0 = new Date();
-  var curMk = now0.getFullYear()+'-'+String(now0.getMonth()+1).padStart(2,'0');
-  var monthComm0 = vendorSales.reduce(function(s,h){
-    var p=(h.date||'').split('/');
-    if(p.length===3 && (p[2]+'-'+p[1].padStart(2,'0'))===curMk) return s+(h.commission||0);
-    return s;
-  }, 0);
+  var totalComm     = vendorSales.reduce(function(s,h){ return s+(h.commission||0); }, 0);
   var avatarHtml    = v.photo
     ? '<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">'
-    : (v.sex==='Femme' ? '👩' : '👨');
+    : (v.sex==='Femme'?'👩':'👨');
 
   el.innerHTML =
+    // ── HEADER ──
     '<div class="card" style="background:linear-gradient(135deg,#0d2b14,#1a4a24);border-color:#3d6a3d;margin-bottom:16px">'
-      +'<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">'
-        +'<div style="width:80px;height:80px;border-radius:50%;overflow:hidden;background:#1a1813;border:3px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:36px">'+avatarHtml+'</div>'
+      +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'
+        +'<div style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:#1a1813;border:3px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px">'+avatarHtml+'</div>'
         +'<div style="flex:1">'
-          +'<div style="font-size:20px;font-weight:700;color:#fff">'+v.name+'</div>'
-          +'<div style="font-size:12px;color:#c9a84c;font-family:monospace;margin:4px 0">'+v.code+'</div>'
-          +'<div style="font-size:12px;color:#7ac97a">'+((v.vendorType||'')==='fixe'?'🏪 Vendeur fixe':'🚗 Commercial itinérant')+'</div>'
-          +(v.suspended?'<div style="font-size:11px;color:#c97a7a;margin-top:4px">⛔ Compte suspendu</div>':'')
+          +'<div style="font-size:19px;font-weight:700;color:#fff">'+v.name+'</div>'
+          +'<div style="font-size:12px;color:#c9a84c;font-family:monospace;margin:3px 0">'+v.code+'</div>'
+          +'<div style="font-size:12px;color:#7ac97a">'+((v.vendorType||'')==='fixe'?'🏪 Fixe':'🚗 Itinérant')+'</div>'
+          +(v.suspended?'<div style="font-size:11px;color:#c97a7a;margin-top:3px">⛔ Suspendu</div>':'')
         +'</div>'
       +'</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'
-        +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:#c9a84c">'+vendorSales.length+'</div><div style="font-size:10px;color:#7a9a7a">Ventes</div></div>'
-        +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:#c9a84c">'+uniqueClients+'</div><div style="font-size:10px;color:#7a9a7a">Clients</div></div>'
+      // KPIs 2x2
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+        +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">'
+          +'<div style="font-size:22px;font-weight:700;color:#c9a84c">'+vendorSales.length+'</div>'
+          +'<div style="font-size:10px;color:#7a9a7a">Ventes</div>'
+        +'</div>'
+        +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">'
+          +'<div style="font-size:22px;font-weight:700;color:#c9a84c">'+uniqueClients+'</div>'
+          +'<div style="font-size:10px;color:#7a9a7a">Clients</div>'
+        +'</div>'
       +'</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">'
-        +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center"><div style="font-size:13px;font-weight:700;color:#c9a84c">'+fmtPrice(totalRevenue)+'</div><div style="font-size:10px;color:#7a9a7a">C.A. total</div></div>'
-        +'<div style="background:#0d1a0d;border-radius:8px;padding:10px;text-align:center;border:1px solid #3d6a3d"><div style="font-size:13px;font-weight:700;color:#7ac97a">'+fmtPrice(totalComm)+'</div><div style="font-size:10px;color:#4a8a4a">💰 Commissions</div></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        +'<div style="background:#ffffff11;border-radius:8px;padding:10px;text-align:center">'
+          +'<div style="font-size:13px;font-weight:700;color:#c9a84c">'+fmtPrice(totalRevenue)+'</div>'
+          +'<div style="font-size:10px;color:#7a9a7a">C.A. total</div>'
+        +'</div>'
+        +'<div style="background:#0d1a0d;border-radius:8px;padding:10px;text-align:center;border:1px solid #3d6a3d">'
+          +'<div style="font-size:13px;font-weight:700;color:#7ac97a">'+fmtPrice(totalComm)+'</div>'
+          +'<div style="font-size:10px;color:#4a8a4a">💰 Commissions</div>'
+        +'</div>'
       +'</div>'
     +'</div>'
+    // ── 3 ONGLETS ──
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">'
-      +'<button id="vp-tab-info"   data-tab="info"   onclick="vpTab(this)" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;cursor:pointer">👤<br><span style="font-size:10px">Infos</span></button>'
+      +'<button id="vp-tab-info"   data-tab="info"   onclick="vpTab(this)" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;cursor:pointer">👤<br><span style="font-size:10px">Profil</span></button>'
       +'<button id="vp-tab-ventes" data-tab="ventes" onclick="vpTab(this)" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">📈<br><span style="font-size:10px">Évolution</span></button>'
       +'<button id="vp-tab-comm"   data-tab="comm"   onclick="vpTab(this)" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">💰<br><span style="font-size:10px">Commissions</span></button>'
     +'</div>'
     +'<div id="vp-tab-content"></div>'
+    // ── BOUTONS ADMIN ──
     +((currentUser && currentUser.role==='admin')
       ? '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;border-top:1px solid #2e2a22;padding-top:16px">'
           +'<button onclick="openEditVendor(\''+v.id+'\')" style="background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:10px;border-radius:8px;font-size:12px;font-weight:600">✏️ Modifier</button>'
@@ -2990,7 +3000,7 @@ function renderVendorProfile() {
         +'</div>'
       : '');
 
-  vpTabData = {v: v, vendorSales: vendorSales};
+  vpTabData = {v:v, vendorSales:vendorSales, totalComm:totalComm};
   vpTab(document.getElementById('vp-tab-info'));
 }
 
@@ -3000,54 +3010,244 @@ function vpTab(btn) {
   var tab = (typeof btn === 'string') ? btn : btn.getAttribute('data-tab');
   var v = vpTabData.v;
   var vendorSales = vpTabData.vendorSales || [];
+  var totalComm   = vpTabData.totalComm   || 0;
   if(!v) return;
+
+  // Mettre à jour les styles des boutons
   ['info','ventes','comm'].forEach(function(t) {
     var b = document.getElementById('vp-tab-'+t);
     if(!b) return;
     if(t===tab){ b.style.background='linear-gradient(135deg,#b8860b,#c9a84c)'; b.style.color='#0a0906'; b.style.border='none'; }
     else       { b.style.background='#1a1813'; b.style.color='#8a8070'; b.style.border='1px solid #2e2a22'; }
   });
+
   var el = document.getElementById('vp-tab-content');
   if(!el) return;
+
+  // ══ ONGLET PROFIL ══
   if(tab==='info') {
     el.innerHTML =
+      // Infos personnelles
       '<div class="card" style="margin-bottom:12px">'
         +'<div style="font-size:11px;color:#8a8070;letter-spacing:1.5px;margin-bottom:12px">🪪 INFORMATIONS PERSONNELLES</div>'
-        +vpInfoRow('📱 Téléphone',v.phone)+vpInfoRow('📧 Email',v.email)
-        +vpInfoRow('⚥ Sexe',v.sex)+vpInfoRow('🎂 Naissance',v.dob)
-        +vpInfoRow('🏠 Adresse',v.address)+vpInfoRow('🪪 CNI',v.cni)
+        +vpInfoRow('📱 Téléphone',v.phone)
+        +vpInfoRow('📧 Email',v.email)
+        +vpInfoRow('⚥ Sexe',v.sex)
+        +vpInfoRow('🎂 Naissance',v.dob)
+        +vpInfoRow('🏠 Adresse',v.address)
+        +vpInfoRow('🪪 CNI',v.cni)
         +vpInfoRow('📍 Zone',v.vendorType==='fixe'?((v.quartier?v.quartier+', ':'')+v.ville):v.zone)
         +vpInfoRow('📅 Enregistré le',v.createdAt)
       +'</div>'
-      +'<div class="card">'
+      // Identifiants
+      +'<div class="card" style="margin-bottom:12px">'
         +'<div style="font-size:11px;color:#8a8070;letter-spacing:1.5px;margin-bottom:12px">🔑 IDENTIFIANTS</div>'
-        +'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1813"><span style="color:#4a4640;font-size:13px">Code</span><span style="font-weight:700;color:#c9a84c;font-family:monospace">'+v.code+'</span></div>'
-        +'<div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:#4a4640;font-size:13px">Mot de passe</span><span style="font-weight:700;color:#7ac97a;font-family:monospace">'+v.password+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1813">'
+          +'<span style="font-size:13px;color:#4a4640">Code</span>'
+          +'<span style="font-weight:700;color:#c9a84c;font-family:monospace">'+v.code+'</span>'
+        +'</div>'
+        +'<div style="display:flex;justify-content:space-between;padding:8px 0">'
+          +'<span style="font-size:13px;color:#4a4640">Mot de passe</span>'
+          +'<span style="font-weight:700;color:#7ac97a;font-family:monospace">'+v.password+'</span>'
+        +'</div>'
+      +'</div>'
+      // Total commissions + bouton recalculer
+      +'<div class="card" style="background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border-color:#3d6a3d">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+          +'<div>'
+            +'<div style="font-size:11px;color:#4a8a4a;letter-spacing:1.5px">💰 TOTAL COMMISSIONS</div>'
+            +'<div style="font-size:26px;font-weight:700;color:#7ac97a;margin-top:4px">'+fmtPrice(totalComm)+'</div>'
+          +'</div>'
+          +'<button onclick="recalcVendorCommissions(\''+v.id+'\')" style="background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:10px 12px;border-radius:10px;font-size:11px;font-weight:600;line-height:1.4;text-align:center">🔄<br>Recalculer</button>'
+        +'</div>'
       +'</div>';
+
+  // ══ ONGLET ÉVOLUTION ══
   } else if(tab==='ventes') {
     var now=new Date(); var months=[];
-    for(var i=5;i>=0;i--){var d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({label:d.toLocaleDateString('fr-FR',{month:'short'}),month:d.getMonth(),year:d.getFullYear(),revenue:0,sales:0});}
-    vendorSales.forEach(function(h){var p=(h.date||'').split('/');if(p.length===3){var hm=parseInt(p[1])-1,hy=parseInt(p[2]);var m=months.find(function(x){return x.month===hm&&x.year===hy;});if(m){m.revenue+=(h.final||0);m.sales++;}}});
+    for(var i=5;i>=0;i--){
+      var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      months.push({label:d.toLocaleDateString('fr-FR',{month:'short'}),month:d.getMonth(),year:d.getFullYear(),revenue:0,sales:0});
+    }
+    vendorSales.forEach(function(h){
+      var p=(h.date||'').split('/');
+      if(p.length===3){
+        var hm=parseInt(p[1])-1, hy=parseInt(p[2]);
+        var m=months.find(function(x){return x.month===hm&&x.year===hy;});
+        if(m){m.revenue+=(h.final||0);m.sales++;}
+      }
+    });
     var maxR=Math.max.apply(null,months.map(function(m){return m.revenue;}))||1;
-    var bars=months.map(function(m){var hh=Math.max(4,Math.round((m.revenue/maxR)*80));return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:9px;color:#8a8070">'+(m.sales>0?m.sales:'')+'</div><div style="width:100%;background:linear-gradient(180deg,#c9a84c,#b8860b);border-radius:4px 4px 0 0;height:'+hh+'px;min-height:4px"></div><div style="font-size:9px;color:#4a4640">'+m.label+'</div></div>';}).join('');
-    var salesRows=vendorSales.length===0?'<div style="text-align:center;color:#4a4640;padding:20px">Aucune vente</div>':vendorSales.slice(0,30).map(function(h){var items=h.items?h.items.map(function(it){return it.qty+'x '+it.name;}).join(', '):'';return '<div style="padding:10px 0;border-bottom:1px solid #1a1813"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-weight:600;font-size:13px">'+(h.clientName||'')+'</div>'+(items?'<div style="font-size:11px;color:#8a8070;margin-top:2px">'+items+'</div>':'')+'</div><div style="text-align:right;flex-shrink:0;margin-left:8px"><div style="font-weight:700;color:#c9a84c">'+fmtPrice(h.final||0)+'</div><div style="font-size:10px;color:#4a4640">'+(h.date||'')+'</div></div></div></div>';}).join('');
-    el.innerHTML='<div class="card" style="margin-bottom:14px"><div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:12px">📊 Évolution 6 mois</div><div style="display:flex;gap:6px;align-items:flex-end;height:100px">'+bars+'</div></div><div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">TOUTES LES VENTES ('+vendorSales.length+')</div><div class="card" style="padding:4px 12px">'+salesRows+'</div>';
+    var bars=months.map(function(m){
+      var hh=Math.max(4,Math.round((m.revenue/maxR)*80));
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<div style="font-size:9px;color:#8a8070">'+(m.sales>0?m.sales:'')+'</div>'
+        +'<div style="width:100%;background:linear-gradient(180deg,#c9a84c,#b8860b);border-radius:4px 4px 0 0;height:'+hh+'px;min-height:4px"></div>'
+        +'<div style="font-size:9px;color:#4a4640">'+m.label+'</div>'
+      +'</div>';
+    }).join('');
+
+    // Toutes les ventes depuis le début
+    var allSalesRows = vendorSales.length===0
+      ? '<div style="text-align:center;color:#4a4640;padding:20px">Aucune vente enregistrée</div>'
+      : vendorSales.map(function(h) {
+          var items = (h.items||[]).map(function(it){ return it.qty+'x '+it.name; }).join(', ');
+          return '<div style="padding:10px 0;border-bottom:1px solid #1a1813">'
+            +'<div style="display:flex;justify-content:space-between;align-items:start">'
+              +'<div style="flex:1;min-width:0">'
+                +'<div style="font-weight:600;font-size:13px;color:#fff">'+(h.clientName||'Client')+'</div>'
+                +(items?'<div style="font-size:11px;color:#8a8070;margin-top:2px">'+items+'</div>':'')
+                +(h.commission>0?'<div style="font-size:11px;color:#7ac97a;margin-top:2px">💰 Commission: '+fmtPrice(h.commission)+'</div>':'')
+              +'</div>'
+              +'<div style="text-align:right;flex-shrink:0;margin-left:10px">'
+                +'<div style="font-weight:700;color:#c9a84c;font-size:14px">'+fmtPrice(h.final||0)+'</div>'
+                +'<div style="font-size:10px;color:#4a4640">'+(h.date||'')+'</div>'
+              +'</div>'
+            +'</div>'
+          +'</div>';
+        }).join('');
+
+    el.innerHTML =
+      '<div class="card" style="margin-bottom:14px">'
+        +'<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:12px">📊 Évolution 6 mois</div>'
+        +'<div style="display:flex;gap:6px;align-items:flex-end;height:100px">'+bars+'</div>'
+      +'</div>'
+      +'<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">TOUTES LES VENTES ('+vendorSales.length+')</div>'
+      +'<div class="card" style="padding:4px 12px">'+allSalesRows+'</div>';
+
+  // ══ ONGLET COMMISSIONS ══
   } else if(tab==='comm') {
-    var now2=new Date();var mk=now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0');
-    var byProduct={};COMMISSIONS.forEach(function(c){byProduct[c.productId]={name:c.name,rate:c.commission||c.prime||0,isPrime:!!c.prime,qty:0,total:0};});
-    var monthComm=0,totalComm=0;
-    vendorSales.forEach(function(h){var comm=h.commission||0;if(comm<=0)return;totalComm+=comm;var pp=(h.date||'').split('/');if(pp.length===3&&(pp[2]+'-'+pp[1].padStart(2,'0'))===mk)monthComm+=comm;if(h.items){h.items.forEach(function(it){if(byProduct[it.id]){byProduct[it.id].qty+=(it.qty||1);byProduct[it.id].total+=byProduct[it.id].rate*(it.qty||1);}});}});
-    var prodRows=Object.values(byProduct).filter(function(p){return p.qty>0;}).sort(function(a,b){return b.total-a.total;}).map(function(p){return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1a1813"><div style="flex:1"><div style="font-size:13px;color:#fff">'+p.name+'</div><div style="font-size:11px;color:#8a8070">'+fmtPrice(p.rate)+(p.isPrime?' (prime)':'/vente')+' · '+p.qty+' vendu'+(p.qty>1?'s':'')+'</div></div><div style="font-size:15px;font-weight:700;color:#c9a84c">'+fmtPrice(p.total)+'</div></div>';}).join('');
-    var commSales=vendorSales.filter(function(h){return(h.commission||0)>0;});
-    var salesCommRows=commSales.length===0?'<div style="text-align:center;color:#4a4640;padding:16px">Aucune commission</div>':commSales.slice(0,20).map(function(h){var items=h.items?h.items.map(function(it){return it.qty+'x '+it.name;}).join(', '):'';return '<div style="padding:8px 0;border-bottom:1px solid #1a1813"><div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font-size:12px;color:#fff">'+(h.clientName||'')+'</div>'+(items?'<div style="font-size:10px;color:#8a8070">'+items+'</div>':'')+'</div><div style="text-align:right;flex-shrink:0;margin-left:8px"><div style="font-size:13px;font-weight:700;color:#7ac97a">+'+fmtPrice(h.commission)+'</div><div style="font-size:10px;color:#4a4640">'+(h.date||'')+'</div></div></div></div>';}).join('');
-    el.innerHTML='<div style="background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border:1px solid #3d6a3d;border-radius:12px;padding:16px;margin-bottom:14px;text-align:center"><div style="font-size:11px;color:#4a8a4a;letter-spacing:2px;margin-bottom:6px">💰 À PAYER CE MOIS</div><div style="font-size:32px;font-weight:700;color:#7ac97a">'+fmtPrice(monthComm)+'</div><div style="font-size:11px;color:#4a4640;margin-top:4px">Total cumulé : '+fmtPrice(totalComm)+'</div></div>'+(prodRows?'<div class="card" style="margin-bottom:14px"><div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:8px">📦 Commission par article</div>'+prodRows+'</div>':'')+'<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">DÉTAIL PAR VENTE</div><div class="card" style="padding:4px 12px">'+salesCommRows+'</div>';
+    // Regrouper par produit
+    var byProduct = {};
+    COMMISSIONS.forEach(function(c){
+      byProduct[c.productId] = {
+        name: c.name,
+        priceUnit: PRODUCTS.find(function(p){return p.id===c.productId;})||{price:0},
+        rate: c.commission||c.prime||0,
+        isPrime: !!c.prime,
+        qty: 0, totalSales: 0, totalComm: 0,
+        ventes: []
+      };
+    });
+
+    vendorSales.forEach(function(h){
+      var comm = h.commission||0;
+      (h.items||[]).forEach(function(it){
+        if(!byProduct[it.id]) return;
+        var bp = byProduct[it.id];
+        bp.qty       += (it.qty||1);
+        bp.totalSales+= (it.price||0)*(it.qty||1);
+        bp.totalComm += bp.rate*(it.qty||1);
+        bp.ventes.push({date:h.date, client:h.clientName, qty:it.qty, price:it.price});
+      });
+    });
+
+    var prodList = Object.values(byProduct).filter(function(p){return p.qty>0;})
+      .sort(function(a,b){return b.totalComm-a.totalComm;});
+
+    var prodRows = prodList.length===0
+      ? '<div style="text-align:center;color:#4a4640;padding:20px">Aucune vente avec commission</div>'
+      : prodList.map(function(p){
+          return '<div style="padding:12px 0;border-bottom:1px solid #1a1813">'
+            // Ligne article
+            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+              +'<div>'
+                +'<div style="font-size:14px;font-weight:700;color:#fff">'+p.name+'</div>'
+                +'<div style="font-size:11px;color:#8a8070">'+p.qty+' vendu'+(p.qty>1?'s':'')+' · '+fmtPrice(p.rate)+(p.isPrime?' prime':'/vente')+'</div>'
+              +'</div>'
+              +'<div style="text-align:right">'
+                +'<div style="font-size:15px;font-weight:700;color:#7ac97a">'+fmtPrice(p.totalComm)+'</div>'
+                +'<div style="font-size:10px;color:#4a4640">commission</div>'
+              +'</div>'
+            +'</div>'
+            // Ligne CA article
+            +'<div style="display:flex;gap:12px;background:#1a1813;border-radius:6px;padding:8px">'
+              +'<div style="flex:1;text-align:center">'
+                +'<div style="font-size:11px;color:#4a4640">Montant ventes</div>'
+                +'<div style="font-size:13px;font-weight:600;color:#c9a84c">'+fmtPrice(p.totalSales)+'</div>'
+              +'</div>'
+              +'<div style="width:1px;background:#2e2a22"></div>'
+              +'<div style="flex:1;text-align:center">'
+                +'<div style="font-size:11px;color:#4a4640">Commission</div>'
+                +'<div style="font-size:13px;font-weight:600;color:#7ac97a">'+fmtPrice(p.totalComm)+'</div>'
+              +'</div>'
+              +'<div style="width:1px;background:#2e2a22"></div>'
+              +'<div style="flex:1;text-align:center">'
+                +'<div style="font-size:11px;color:#4a4640">Quantité</div>'
+                +'<div style="font-size:13px;font-weight:600;color:#fff">×'+p.qty+'</div>'
+              +'</div>'
+            +'</div>'
+          +'</div>';
+        }).join('');
+
+    // Total général
+    var grandTotal = prodList.reduce(function(s,p){return s+p.totalComm;},0);
+    var grandSales = prodList.reduce(function(s,p){return s+p.totalSales;},0);
+
+    el.innerHTML =
+      // Résumé global
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+        +'<div class="card" style="text-align:center;background:#0f0e0b">'
+          +'<div style="font-size:11px;color:#4a4640;margin-bottom:4px">Ventes totales</div>'
+          +'<div style="font-size:18px;font-weight:700;color:#c9a84c">'+fmtPrice(grandSales)+'</div>'
+        +'</div>'
+        +'<div class="card" style="text-align:center;background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border-color:#3d6a3d">'
+          +'<div style="font-size:11px;color:#4a8a4a;margin-bottom:4px">💰 Total commissions</div>'
+          +'<div style="font-size:18px;font-weight:700;color:#7ac97a">'+fmtPrice(grandTotal)+'</div>'
+        +'</div>'
+      +'</div>'
+      // Détail par article
+      +'<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">DÉTAIL PAR ARTICLE</div>'
+      +'<div class="card" style="padding:0 12px">'+prodRows+'</div>';
   }
 }
 
-function vpInfoRow(label,value){
+function vpInfoRow(label, value) {
   if(!value) return '';
-  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1813"><span style="font-size:12px;color:#4a4640">'+label+'</span><span style="font-size:13px;color:#fff;font-weight:500;text-align:right;max-width:60%">'+value+'</span></div>';
+  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1813">'
+    +'<span style="font-size:12px;color:#4a4640">'+label+'</span>'
+    +'<span style="font-size:13px;color:#fff;font-weight:500;text-align:right;max-width:60%">'+value+'</span>'
+    +'</div>';
 }
+
+async function recalcVendorCommissions(vendorId) {
+  var v = vendors.find(function(x){ return x.id===vendorId; });
+  if(!v) return;
+  if(!confirm('Recalculer les commissions de '+v.name+' ?')) return;
+  showToast('🔄 Recalcul en cours...');
+  var updated = 0;
+  var promises = [];
+  for(var ci=0; ci<clients.length; ci++) {
+    var c = clients[ci];
+    var changed = false;
+    var newHistory = (c.history||[]).map(function(h) {
+      if((h.vendorCode||'ADMIN') !== v.code) return h;
+      if(!h.items || h.items.length===0) return h;
+      var comm = 0;
+      h.items.forEach(function(item) {
+        var c2 = COMMISSIONS.find(function(x){ return x.productId===item.id; });
+        if(c2){
+          if(c2.commission) comm += c2.commission*(item.qty||1);
+          if(c2.prime)      comm += c2.prime*(item.qty||1);
+        }
+      });
+      if(comm !== (h.commission||0)) { changed=true; updated++; return Object.assign({},h,{commission:comm}); }
+      return h;
+    });
+    if(changed) {
+      clients[ci] = Object.assign({}, c, {history:newHistory});
+      var cData = Object.assign({}, clients[ci]);
+      var cId = cData.id; delete cData.id;
+      promises.push(db.collection('clients').doc(cId).set(cData).catch(function(e){ console.error(e); }));
+    }
+  }
+  await Promise.all(promises);
+  showToast('✅ '+updated+' vente'+(updated>1?'s':'')+' recalculée'+(updated>1?'s':'')+' !');
+  currentVendor = v;
+  renderVendorProfile();
+  vpTab('info');
+}
+
 
 async function quickToggleSuspend(btn) {
   var id = btn.getAttribute('data-id');
