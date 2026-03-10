@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.32</title>
+  <title>Mon Fermier SARL v3.33</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -693,21 +693,96 @@ function renderHome() {
 }
 
 function renderKPIs() {
-  const el = document.getElementById("kpis");
-  const eligible = clients.filter(c=>c.points>=THRESHOLD).length;
-  const revenue = clients.reduce((s,c)=>s+c.totalSpent,0);
-  const vipCount = clients.filter(c=>(c.vipTickets||0)>0).length;
-  el.innerHTML = [
-    {label:"Total clients", value:clients.length, icon:"👥", color:"#3a7bd5", bg:"#1a2a4a", sub:`${clients.length} enregistré${clients.length>1?"s":""}`},
-    {label:"Remises dispo", value:eligible, icon:"🏷️", color:"#7ac97a", bg:"#1a3a1a", sub:"clients éligibles 5%"},
-    {label:"Chiffre total", value:fmtPrice(revenue), icon:"💵", color:"#c9a84c", bg:"#2a1f0a", sub:"revenus cumulés"},
-  ].map(k=>`
-    <div class="kpi" style="background:${k.bg};border:1px solid ${k.color}33">
-      <div class="kpi-icon">${k.icon}</div>
-      <div class="kpi-label">${k.label}</div>
-      <div class="kpi-value" style="color:${k.color};font-size:${typeof k.value==='string'?'14':'24'}px">${k.value}</div>
-      <div class="kpi-sub">${k.sub}</div>
-    </div>`).join("");
+  var el = document.getElementById('kpis');
+  if(!el) return;
+
+  var now = new Date();
+  var mk = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var monthLabel = now.toLocaleDateString('fr-FR',{month:'long', year:'numeric'});
+
+  var totalClients = clients.length;
+  var eligible     = clients.filter(function(c){ return c.points>=THRESHOLD; }).length;
+  var revenue      = clients.reduce(function(s,c){ return s+(c.totalSpent||0); },0);
+  var vipCount     = clients.filter(function(c){ return (c.vipTickets||0)>0; }).length;
+
+  var revMois = 0, ventesMois = 0, newClientsMois = 0;
+  clients.forEach(function(c) {
+    var pp2=(c.createdAt||'').split('/');
+    if(pp2.length===3 && pp2[2]+'-'+pp2[1].padStart(2,'0')===mk) newClientsMois++;
+    (c.history||[]).forEach(function(h) {
+      var pp=(h.date||'').split('/');
+      if(pp.length===3 && pp[2]+'-'+pp[1].padStart(2,'0')===mk) {
+        revMois+=(h.final||0); ventesMois++;
+      }
+    });
+  });
+
+  var commMois = 0;
+  clients.forEach(function(c){
+    (c.history||[]).forEach(function(h){
+      var pp=(h.date||'').split('/');
+      if(pp.length===3 && pp[2]+'-'+pp[1].padStart(2,'0')===mk) commMois+=(h.commission||0);
+    });
+  });
+
+  var stockAlertes = 0;
+  try {
+    var sd = JSON.parse(localStorage.getItem('mf_stock_data')||'null');
+    if(sd) PRODUCTS.forEach(function(p){
+      var remis  = (sd.remises||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
+      var retour = (sd.retours||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
+      if(Math.max(0,(sd.magasin[p.id]||0)-remis+retour)<10) stockAlertes++;
+    });
+  } catch(e){}
+
+  el.innerHTML =
+    '<div style="padding:16px 0 8px 0">'
+      +'<div style="font-size:11px;color:#8a8070;letter-spacing:2px">MON FERMIER SARL</div>'
+      +'<div style="font-size:22px;font-weight:700;color:#fff;margin-top:4px">Bonjour 👋</div>'
+      +'<div style="font-size:13px;color:#c9a84c;margin-top:2px">'+monthLabel+'</div>'
+    +'</div>'
+    +'<div style="background:linear-gradient(135deg,#1a1208,#2a1f0a);border:1px solid #c9a84c33;border-radius:14px;padding:18px;margin-bottom:12px">'
+      +'<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:6px">CA CE MOIS</div>'
+      +'<div style="font-size:32px;font-weight:700;color:#c9a84c">'+fmtPrice(revMois)+'</div>'
+      +'<div style="display:flex;gap:16px;margin-top:10px">'
+        +'<div><div style="font-size:11px;color:#4a4640">Ventes</div><div style="font-size:15px;font-weight:700;color:#fff">'+ventesMois+'</div></div>'
+        +'<div style="width:1px;background:#2e2a22"></div>'
+        +'<div><div style="font-size:11px;color:#4a4640">Total cumulé</div><div style="font-size:15px;font-weight:700;color:#c9a84c">'+fmtPrice(revenue)+'</div></div>'
+        +'<div style="width:1px;background:#2e2a22"></div>'
+        +'<div><div style="font-size:11px;color:#4a4640">Commissions</div><div style="font-size:15px;font-weight:700;color:#7ac97a">'+fmtPrice(commMois)+'</div></div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
+      +'<div style="background:#1a2a4a;border:1px solid #3a7bd533;border-radius:12px;padding:14px">'
+        +'<div style="font-size:24px">👥</div>'
+        +'<div style="font-size:26px;font-weight:700;color:#3a7bd5;margin:4px 0">'+totalClients+'</div>'
+        +'<div style="font-size:11px;color:#4a6a9a">Clients</div>'
+        +'<div style="font-size:10px;color:#2a4a7a;margin-top:2px">'+newClientsMois+' ce mois</div>'
+      +'</div>'
+      +'<div style="background:#1a3a1a;border:1px solid #7ac97a33;border-radius:12px;padding:14px">'
+        +'<div style="font-size:24px">🏷️</div>'
+        +'<div style="font-size:26px;font-weight:700;color:#7ac97a;margin:4px 0">'+eligible+'</div>'
+        +'<div style="font-size:11px;color:#4a8a4a">Remises dispo</div>'
+        +'<div style="font-size:10px;color:#2a5a2a;margin-top:2px">clients éligibles</div>'
+      +'</div>'
+      +'<div onclick="goToStock()" style="background:'+(stockAlertes>0?'#2e0a0a':'#1a1813')+';border:1px solid '+(stockAlertes>0?'#c97a7a33':'#2e2a22')+';border-radius:12px;padding:14px;cursor:pointer">'
+        +'<div style="font-size:24px">📦</div>'
+        +'<div style="font-size:26px;font-weight:700;color:'+(stockAlertes>0?'#c97a7a':'#c9a84c')+';margin:4px 0">'+stockAlertes+'</div>'
+        +'<div style="font-size:11px;color:'+(stockAlertes>0?'#8a4a4a':'#4a4640')+'">Alertes stock</div>'
+        +'<div style="font-size:10px;color:'+(stockAlertes>0?'#6a3a3a':'#2e2a22')+';margin-top:2px">'+(stockAlertes>0?'Stock faible !':'Stock OK')+'</div>'
+      +'</div>'
+      +'<div style="background:#2a1a3a;border:1px solid #9a7ac933;border-radius:12px;padding:14px">'
+        +'<div style="font-size:24px">🎫</div>'
+        +'<div style="font-size:26px;font-weight:700;color:#9a7ac9;margin:4px 0">'+vipCount+'</div>'
+        +'<div style="font-size:11px;color:#6a4a8a">Tickets tombola</div>'
+        +'<div style="font-size:10px;color:#4a2a6a;margin-top:2px">clients VIP</div>'
+      +'</div>'
+    +'</div>';
+}
+
+function goToStock() {
+  openAdmin();
+  setTimeout(function(){ openAdminTab('stock'); }, 300);
 }
 
 function renderTypeFilter() {
