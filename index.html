@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.38</title>
+  <title>Mon Fermier SARL v3.40</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -69,6 +69,23 @@ input{font-family:inherit;outline:none}
   letter-spacing: 3px; margin-top: 4px;
   text-transform: uppercase;
 }
+.hm-clock {
+  font-size: 36px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 2px;
+  margin: 16px 0 4px;
+  text-shadow: 0 0 30px #c9a84c44;
+  font-variant-numeric: tabular-nums;
+}
+.hm-clock-date {
+  font-size: 12px;
+  color: #8a7050;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
 .hm-welcome {
   margin-top: 14px;
   font-size: 15px;
@@ -543,37 +560,25 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
 <div id="page-home" class="page active fade-in">
 <div id="home-root">
 
-  <!-- ── HEADER ── -->
+  <!-- HEADER -->
   <div class="hm-header">
     <div class="hm-logo-ring">🌾</div>
     <div class="hm-brand">Mon Fermier</div>
     <div class="hm-tagline">SARL — Programme Fidélité</div>
+    <div class="hm-clock" id="hm-clock"></div>
     <div class="hm-welcome" id="hm-welcome"></div>
-
   </div>
 
-  <!-- ── CA DU MOIS ── -->
+  <!-- CA DU MOIS -->
   <div class="hm-ca-card" id="hm-ca"></div>
 
-  <!-- ── ALERTE STOCK ── -->
+  <!-- ALERTE STOCK -->
   <div id="hm-stock-alert" style="display:none"></div>
 
-  <!-- ── ACTIONS ── -->
-  <div class="hm-actions">
-    <button class="hm-btn-primary" onclick="showPage('page-new-client')">
-      <span class="hm-btn-icon">＋</span>
-      <span class="hm-btn-label">Nouveau client</span>
-    </button>
-    <div class="hm-btn-row">
-      <button class="hm-btn-secondary" onclick="openScanner()">📷 Scanner</button>
-      <button class="hm-btn-secondary hm-btn-vip" onclick="openVip()">🏆 VIP</button>
-    </div>
-  </div>
-
-  <!-- ── ESPACE ADMIN ── -->
-  <div style="text-align:center;margin-top:32px;padding-bottom:40px">
-    <button id="admin-btn" onclick="openAdmin()" style="display:none;background:none;border:none;color:#3a3530;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;padding:8px 20px;border-bottom:1px solid #2e2a22">
-      Espace Admin
+  <!-- BOUTON ADMIN -->
+  <div style="margin:24px 16px 0">
+    <button id="admin-btn" onclick="openAdmin()" style="display:none;width:100%;padding:16px;background:linear-gradient(135deg,#1a0a2e,#2e1a4a);border:1px solid #9a7ac966;border-radius:16px;color:#c9a84c;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 20px #9a7ac922">
+      ⚙️ &nbsp; Espace Administrateur
     </button>
   </div>
 
@@ -848,6 +853,24 @@ function goHome() {
 // ═══════════════════════════════════════
 // HOME
 // ═══════════════════════════════════════
+function startClock() {
+  var el = document.getElementById('hm-clock');
+  if(!el) return;
+  function tick() {
+    var now = new Date();
+    var h = String(now.getHours()).padStart(2,'0');
+    var m = String(now.getMinutes()).padStart(2,'0');
+    var s = String(now.getSeconds()).padStart(2,'0');
+    var date = now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    el.innerHTML =
+      '<div class="hm-clock">'+h+':'+m+'<span style="color:#c9a84c44;font-size:28px">:'+s+'</span></div>'
+      +'<div class="hm-clock-date">'+date+'</div>';
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+
 function showWelcome() {
   var el = document.getElementById('hm-welcome');
   if(!el) return;
@@ -859,6 +882,7 @@ function showWelcome() {
 
 function renderHome() {
   showWelcome();
+  startClock();
   renderKPIs();
 }
 
