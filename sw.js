@@ -1,4 +1,4 @@
-const CACHE = 'monfermier-v202603100941';
+const CACHE = 'monfermier-v202603101047';
 const FILES = ['./'];
 
 // Installation - skip waiting pour activation immédiate
