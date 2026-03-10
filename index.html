@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.33</title>
+  <title>Mon Fermier SARL v3.36</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -35,11 +35,156 @@ input{font-family:inherit;outline:none}
 #header h1 span{color:#c9a84c}
 #back-btn{background:transparent;border:none;color:#8a8070;font-size:14px;padding:8px}
 /* HERO */
-.hero{background:linear-gradient(135deg,#0d2b14,#1a4a24);border:1px solid #2d5a35;border-radius:16px;padding:28px 20px;margin-bottom:20px}
-.hero h2{font-size:24px;color:#fff;margin-bottom:8px}
+.hero{background:linear-gradient(160deg,#0a1a0e 0%,#0f2a16 60%,#1a1208 100%);border:none;border-radius:20px;padding:28px 20px 20px 20px;margin-bottom:16px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,#c9a84c18 0%,transparent 70%);pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:-30px;left:-30px;width:120px;height:120px;background:radial-gradient(circle,#7ac97a12 0%,transparent 70%);pointer-events:none}
+
+/* ── HOME REDESIGN ── */
+#home-root { padding: 0 0 100px 0; }
+
+.hm-header {
+  position: relative;
+  text-align: center;
+  padding: 48px 20px 36px;
+  background: radial-gradient(ellipse at 50% 0%, #c9a84c18 0%, transparent 65%);
+}
+.hm-logo-ring {
+  width: 80px; height: 80px;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, #1a1208, #2a1f0a);
+  border: 2px solid #c9a84c55;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  box-shadow: 0 0 32px #c9a84c22, 0 8px 24px #00000066;
+}
+.hm-brand {
+  font-size: 28px; font-weight: 800;
+  color: #fff;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 20px #c9a84c44;
+}
+.hm-tagline {
+  font-size: 11px; color: #c9a84c99;
+  letter-spacing: 3px; margin-top: 4px;
+  text-transform: uppercase;
+}
+.hm-welcome {
+  margin-top: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #c9a84c;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: welcomeFadeIn 0.8s ease 0.4s forwards;
+  letter-spacing: 0.3px;
+}
+@keyframes welcomeFadeIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hm-admin-btn {
+  position: absolute; top: 20px; right: 16px;
+  background: #1a1813; border: 1px solid #2e2a22;
+  color: #8a8070; padding: 8px 12px;
+  border-radius: 10px; font-size: 16px; cursor: pointer;
+}
+
+/* CA CARD */
+.hm-ca-card {
+  margin: 0 16px 16px;
+  background: linear-gradient(135deg, #1a1208 0%, #0f0e0b 50%, #1a1208 100%);
+  border: 1px solid #c9a84c33;
+  border-radius: 20px; padding: 24px;
+  position: relative; overflow: hidden;
+}
+.hm-ca-card::before {
+  content: ''; position: absolute;
+  top: -50px; right: -50px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, #c9a84c15, transparent 70%);
+}
+.hm-ca-label {
+  font-size: 10px; color: #8a7050;
+  letter-spacing: 3px; margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.hm-ca-value {
+  font-size: 38px; font-weight: 800;
+  color: #c9a84c; line-height: 1;
+  text-shadow: 0 0 40px #c9a84c55;
+}
+.hm-ca-sub {
+  font-size: 12px; color: #4a4030;
+  margin-top: 6px;
+}
+.hm-ca-divider {
+  height: 1px; background: linear-gradient(90deg, transparent, #c9a84c22, transparent);
+  margin: 16px 0;
+}
+.hm-ca-stats {
+  display: flex; justify-content: space-around;
+}
+.hm-stat { text-align: center; }
+.hm-stat-val { font-size: 16px; font-weight: 700; color: #fff; }
+.hm-stat-lbl { font-size: 10px; color: #4a4030; margin-top: 2px; letter-spacing: 1px; }
+
+/* STOCK ALERT */
+.hm-stock-alert-inner {
+  margin: 0 16px 16px;
+  background: linear-gradient(135deg, #1a0808, #2e0a0a);
+  border: 1px solid #c97a7a44;
+  border-radius: 16px; padding: 16px 20px;
+  display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer;
+}
+.hm-stock-left { display: flex; align-items: center; gap: 12px; }
+.hm-stock-icon { font-size: 28px; }
+.hm-stock-title { font-size: 14px; font-weight: 700; color: #c97a7a; }
+.hm-stock-sub   { font-size: 11px; color: #6a3a3a; margin-top: 2px; }
+.hm-stock-arrow { font-size: 20px; color: #c97a7a44; }
+
+/* ACTIONS */
+.hm-actions { margin: 0 16px 16px; }
+.hm-btn-primary {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, #b8860b, #c9a84c, #e8c96a);
+  color: #0a0906; border: none; border-radius: 16px;
+  font-size: 15px; font-weight: 800;
+  letter-spacing: 0.5px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  cursor: pointer; margin-bottom: 10px;
+  box-shadow: 0 4px 20px #c9a84c44;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.hm-btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+.hm-btn-icon { font-size: 20px; font-weight: 900; }
+.hm-btn-label { font-size: 15px; }
+.hm-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hm-btn-secondary {
+  padding: 14px; background: #1a1813;
+  border: 1px solid #2e2a22; color: #c9a84c;
+  border-radius: 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background 0.2s;
+}
+.hm-btn-secondary:active { background: #2e2a22; }
+.hm-btn-vip { border-color: #6a3da844; color: #a07ad5; }
+
+/* SEARCH */
+.hm-search-wrap { margin: 0 16px 12px; }
+.hm-search {
+  width: 100%; background: #1a1813;
+  border: 1px solid #2e2a22; color: #fff;
+  padding: 13px 16px; border-radius: 12px;
+  font-size: 14px; box-sizing: border-box;
+  outline: none; transition: border-color 0.2s;
+}
+.hm-search:focus { border-color: #c9a84c44; }
+
+.hero h2{font-size:26px;color:#fff;margin-bottom:6px;font-weight:800;line-height:1.2}
 .hero h2 span{color:#c9a84c}
 .hero p{font-size:13px;color:#7a9a7a;margin-bottom:16px;line-height:1.6}
-.rule-item{display:flex;align-items:center;gap:8px;background:#ffffff0a;border-radius:8px;padding:6px 12px;margin-bottom:6px;font-size:12px;color:#a0c4a0}
+.rule-item{display:flex;align-items:center;gap:8px;background:#ffffff08;border-left:2px solid #c9a84c44;border-radius:0 8px 8px 0;padding:6px 12px;margin-bottom:5px;font-size:12px;color:#a0c4a0;transition:background 0.2s}
 /* BUTTONS */
 .btn-gold{background:linear-gradient(135deg,#c9a84c,#e8c96a);color:#0f0e0b;border:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:14px}
 .btn-gold:active{opacity:0.8}
@@ -54,7 +199,7 @@ input{font-family:inherit;outline:none}
 /* CARDS */
 .card{background:#1a1813;border:1px solid #2e2a22;border-radius:10px;padding:18px;margin-bottom:12px}
 /* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.kpi-grid{margin-bottom:16px}
 .kpi{border-radius:12px;padding:14px;position:relative;overflow:hidden}
 .kpi .kpi-icon{position:absolute;top:-8px;right:-8px;font-size:44px;opacity:.12}
 .kpi .kpi-label{font-size:10px;color:#4a4640;letter-spacing:1.5px;margin-bottom:6px;text-transform:uppercase}
@@ -396,25 +541,42 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
 
 <!-- HOME -->
 <div id="page-home" class="page active fade-in">
-  <div class="hero">
-    <div style="font-size:11px;color:#7ac97a;letter-spacing:3px;margin-bottom:8px">PROGRAMME DE FIDÉLITÉ</div>
-    <h2>Bienvenue sur<br><span>Mon Fermier SARL</span></h2>
-    <p>Gérez vos clients, suivez leurs points et accordez des remises automatiquement.</p>
-    <div class="rule-item">💰 1 000 F = 1 point</div>
-    <div class="rule-item">🎯 50 pts → Remise 5% ou 🎁 Cadeau</div>
-    <div class="rule-item">♻️ Points remis à zéro après récompense</div>
-    <div class="rule-item">🏆 1 000 pts → Ticket tombola VIP 🎰</div>
-    <div style="display:flex;gap:10px;margin-top:16px">
-      <button class="btn-gold" onclick="showPage('page-new-client')">+ Nouveau client</button>
-      <button class="btn-outline" style="border-color:#6a3da8;color:#a07ad5" onclick="openVip()">🏆 VIP</button>
-      <button class="btn-outline" style="border-color:#c9a84c55;color:#c9a84c" onclick="openScanner()">📷 Scanner</button>
-      <button id="admin-btn" class="btn-outline" style="border-color:#c97a7a55;color:#c97a7a;display:none" onclick="openAdmin()">⚙️ Admin</button>
-      <input class="input" id="search-input" placeholder="🔍 Nom ou code..." oninput="renderClients()" style="background:#ffffff0d;border-color:#2d5a35">
+<div id="home-root">
+
+  <!-- ── HEADER ── -->
+  <div class="hm-header">
+    <div class="hm-logo-ring">🌾</div>
+    <div class="hm-brand">Mon Fermier</div>
+    <div class="hm-tagline">SARL — Programme Fidélité</div>
+    <div class="hm-welcome" id="hm-welcome"></div>
+    <button id="admin-btn" class="hm-admin-btn" style="display:none" onclick="openAdmin()">⚙️</button>
+  </div>
+
+  <!-- ── CA DU MOIS ── -->
+  <div class="hm-ca-card" id="hm-ca"></div>
+
+  <!-- ── ALERTE STOCK ── -->
+  <div id="hm-stock-alert" style="display:none"></div>
+
+  <!-- ── ACTIONS ── -->
+  <div class="hm-actions">
+    <button class="hm-btn-primary" onclick="showPage('page-new-client')">
+      <span class="hm-btn-icon">＋</span>
+      <span class="hm-btn-label">Nouveau client</span>
+    </button>
+    <div class="hm-btn-row">
+      <button class="hm-btn-secondary" onclick="openScanner()">📷 Scanner</button>
+      <button class="hm-btn-secondary hm-btn-vip" onclick="openVip()">🏆 VIP</button>
     </div>
   </div>
-  <div class="kpi-grid" id="kpis"></div>
+
+  <!-- ── RECHERCHE ── -->
+  <div class="hm-search-wrap">
+    <input class="hm-search" id="search-input" placeholder="🔍 Rechercher un client..." oninput="renderClients()">
+  </div>
   <div id="type-filter-bar"></div>
   <div id="clients-list"></div>
+
 </div>
 
 <!-- NEW CLIENT -->
@@ -686,99 +848,91 @@ function goHome() {
 // ═══════════════════════════════════════
 // HOME
 // ═══════════════════════════════════════
+function showWelcome() {
+  var el = document.getElementById('hm-welcome');
+  if(!el) return;
+  var hour = new Date().getHours();
+  var greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+  el.textContent = greeting + ', Mr Nkoghe 👋';
+}
+
+
 function renderHome() {
+  showWelcome();
   renderKPIs();
   renderTypeFilter();
   renderClients();
 }
 
 function renderKPIs() {
-  var el = document.getElementById('kpis');
-  if(!el) return;
-
   var now = new Date();
   var mk = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   var monthLabel = now.toLocaleDateString('fr-FR',{month:'long', year:'numeric'});
 
   var totalClients = clients.length;
-  var eligible     = clients.filter(function(c){ return c.points>=THRESHOLD; }).length;
-  var revenue      = clients.reduce(function(s,c){ return s+(c.totalSpent||0); },0);
-  var vipCount     = clients.filter(function(c){ return (c.vipTickets||0)>0; }).length;
-
-  var revMois = 0, ventesMois = 0, newClientsMois = 0;
-  clients.forEach(function(c) {
-    var pp2=(c.createdAt||'').split('/');
-    if(pp2.length===3 && pp2[2]+'-'+pp2[1].padStart(2,'0')===mk) newClientsMois++;
-    (c.history||[]).forEach(function(h) {
-      var pp=(h.date||'').split('/');
-      if(pp.length===3 && pp[2]+'-'+pp[1].padStart(2,'0')===mk) {
-        revMois+=(h.final||0); ventesMois++;
-      }
-    });
-  });
-
-  var commMois = 0;
+  var revMois=0, ventesMois=0;
   clients.forEach(function(c){
     (c.history||[]).forEach(function(h){
       var pp=(h.date||'').split('/');
-      if(pp.length===3 && pp[2]+'-'+pp[1].padStart(2,'0')===mk) commMois+=(h.commission||0);
+      if(pp.length===3&&pp[2]+'-'+pp[1].padStart(2,'0')===mk){revMois+=(h.final||0);ventesMois++;}
+    });
+  });
+  var commMois=0;
+  clients.forEach(function(c){
+    (c.history||[]).forEach(function(h){
+      var pp=(h.date||'').split('/');
+      if(pp.length===3&&pp[2]+'-'+pp[1].padStart(2,'0')===mk) commMois+=(h.commission||0);
     });
   });
 
-  var stockAlertes = 0;
+  // ── CA Card ──
+  var caEl = document.getElementById('hm-ca');
+  if(caEl) {
+    caEl.innerHTML =
+      '<div class="hm-ca-label">Chiffre d\'affaires — '+monthLabel+'</div>'
+      +'<div class="hm-ca-value">'+fmtPrice(revMois)+'</div>'
+      +'<div class="hm-ca-sub">'+ventesMois+' vente'+(ventesMois!==1?'s':'')+' enregistrée'+(ventesMois!==1?'s':'')+' ce mois</div>'
+      +'<div class="hm-ca-divider"></div>'
+      +'<div class="hm-ca-stats">'
+        +'<div class="hm-stat"><div class="hm-stat-val">'+totalClients+'</div><div class="hm-stat-lbl">CLIENTS</div></div>'
+        +'<div style="width:1px;background:#2e2a22"></div>'
+        +'<div class="hm-stat"><div class="hm-stat-val" style="color:#7ac97a">'+fmtPrice(commMois)+'</div><div class="hm-stat-lbl">COMMISSIONS</div></div>'
+      +'</div>';
+  }
+
+  // ── Stock alertes ──
+  var stockAlertes=0, stockNames=[];
   try {
-    var sd = JSON.parse(localStorage.getItem('mf_stock_data')||'null');
+    var sd=JSON.parse(localStorage.getItem('mf_stock_data')||'null');
     if(sd) PRODUCTS.forEach(function(p){
-      var remis  = (sd.remises||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
-      var retour = (sd.retours||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
-      if(Math.max(0,(sd.magasin[p.id]||0)-remis+retour)<10) stockAlertes++;
+      var remis=(sd.remises||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
+      var retour=(sd.retours||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
+      var enStock=Math.max(0,(sd.magasin[p.id]||0)-remis+retour);
+      if(enStock<10){stockAlertes++;stockNames.push(p.name+' ('+enStock+')');}
     });
   } catch(e){}
 
-  el.innerHTML =
-    '<div style="padding:16px 0 8px 0">'
-      +'<div style="font-size:11px;color:#8a8070;letter-spacing:2px">MON FERMIER SARL</div>'
-      +'<div style="font-size:22px;font-weight:700;color:#fff;margin-top:4px">Bonjour 👋</div>'
-      +'<div style="font-size:13px;color:#c9a84c;margin-top:2px">'+monthLabel+'</div>'
-    +'</div>'
-    +'<div style="background:linear-gradient(135deg,#1a1208,#2a1f0a);border:1px solid #c9a84c33;border-radius:14px;padding:18px;margin-bottom:12px">'
-      +'<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:6px">CA CE MOIS</div>'
-      +'<div style="font-size:32px;font-weight:700;color:#c9a84c">'+fmtPrice(revMois)+'</div>'
-      +'<div style="display:flex;gap:16px;margin-top:10px">'
-        +'<div><div style="font-size:11px;color:#4a4640">Ventes</div><div style="font-size:15px;font-weight:700;color:#fff">'+ventesMois+'</div></div>'
-        +'<div style="width:1px;background:#2e2a22"></div>'
-        +'<div><div style="font-size:11px;color:#4a4640">Total cumulé</div><div style="font-size:15px;font-weight:700;color:#c9a84c">'+fmtPrice(revenue)+'</div></div>'
-        +'<div style="width:1px;background:#2e2a22"></div>'
-        +'<div><div style="font-size:11px;color:#4a4640">Commissions</div><div style="font-size:15px;font-weight:700;color:#7ac97a">'+fmtPrice(commMois)+'</div></div>'
-      +'</div>'
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
-      +'<div style="background:#1a2a4a;border:1px solid #3a7bd533;border-radius:12px;padding:14px">'
-        +'<div style="font-size:24px">👥</div>'
-        +'<div style="font-size:26px;font-weight:700;color:#3a7bd5;margin:4px 0">'+totalClients+'</div>'
-        +'<div style="font-size:11px;color:#4a6a9a">Clients</div>'
-        +'<div style="font-size:10px;color:#2a4a7a;margin-top:2px">'+newClientsMois+' ce mois</div>'
-      +'</div>'
-      +'<div style="background:#1a3a1a;border:1px solid #7ac97a33;border-radius:12px;padding:14px">'
-        +'<div style="font-size:24px">🏷️</div>'
-        +'<div style="font-size:26px;font-weight:700;color:#7ac97a;margin:4px 0">'+eligible+'</div>'
-        +'<div style="font-size:11px;color:#4a8a4a">Remises dispo</div>'
-        +'<div style="font-size:10px;color:#2a5a2a;margin-top:2px">clients éligibles</div>'
-      +'</div>'
-      +'<div onclick="goToStock()" style="background:'+(stockAlertes>0?'#2e0a0a':'#1a1813')+';border:1px solid '+(stockAlertes>0?'#c97a7a33':'#2e2a22')+';border-radius:12px;padding:14px;cursor:pointer">'
-        +'<div style="font-size:24px">📦</div>'
-        +'<div style="font-size:26px;font-weight:700;color:'+(stockAlertes>0?'#c97a7a':'#c9a84c')+';margin:4px 0">'+stockAlertes+'</div>'
-        +'<div style="font-size:11px;color:'+(stockAlertes>0?'#8a4a4a':'#4a4640')+'">Alertes stock</div>'
-        +'<div style="font-size:10px;color:'+(stockAlertes>0?'#6a3a3a':'#2e2a22')+';margin-top:2px">'+(stockAlertes>0?'Stock faible !':'Stock OK')+'</div>'
-      +'</div>'
-      +'<div style="background:#2a1a3a;border:1px solid #9a7ac933;border-radius:12px;padding:14px">'
-        +'<div style="font-size:24px">🎫</div>'
-        +'<div style="font-size:26px;font-weight:700;color:#9a7ac9;margin:4px 0">'+vipCount+'</div>'
-        +'<div style="font-size:11px;color:#6a4a8a">Tickets tombola</div>'
-        +'<div style="font-size:10px;color:#4a2a6a;margin-top:2px">clients VIP</div>'
-      +'</div>'
-    +'</div>';
+  var alertEl = document.getElementById('hm-stock-alert');
+  if(alertEl) {
+    if(stockAlertes>0) {
+      alertEl.style.display='block';
+      alertEl.innerHTML =
+        '<div class="hm-stock-alert-inner" onclick="goToStock()">'
+          +'<div class="hm-stock-left">'
+            +'<div class="hm-stock-icon">⚠️</div>'
+            +'<div>'
+              +'<div class="hm-stock-title">'+stockAlertes+' produit'+(stockAlertes>1?'s':'')+' en stock faible</div>'
+              +'<div class="hm-stock-sub">'+stockNames.slice(0,2).join(' · ')+'</div>'
+            +'</div>'
+          +'</div>'
+          +'<div class="hm-stock-arrow">›</div>'
+        +'</div>';
+    } else {
+      alertEl.style.display='none';
+    }
+  }
 }
+
 
 function goToStock() {
   openAdmin();
