@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.40</title>
+  <title>Mon Fermier SARL v3.41</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -914,12 +914,7 @@ function renderKPIs() {
       '<div class="hm-ca-label">Chiffre d\'affaires — '+monthLabel+'</div>'
       +'<div class="hm-ca-value">'+fmtPrice(revMois)+'</div>'
       +'<div class="hm-ca-sub">'+ventesMois+' vente'+(ventesMois!==1?'s':'')+' enregistrée'+(ventesMois!==1?'s':'')+' ce mois</div>'
-      +'<div class="hm-ca-divider"></div>'
-      +'<div class="hm-ca-stats">'
-        +'<div class="hm-stat"><div class="hm-stat-val">'+totalClients+'</div><div class="hm-stat-lbl">CLIENTS</div></div>'
-        +'<div style="width:1px;background:#2e2a22"></div>'
-        +'<div class="hm-stat"><div class="hm-stat-val" style="color:#7ac97a">'+fmtPrice(commMois)+'</div><div class="hm-stat-lbl">COMMISSIONS</div></div>'
-      +'</div>';
+      ;
   }
 
   // ── Stock alertes ──
