@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.22</title>
+  <title>Mon Fermier SARL v3.24</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -2053,18 +2053,24 @@ async function renderAdminVendors(el) {
         var prodDetail = Object.values(vs.byProduct).filter(function(p){return p.qty>0;}).map(function(p){
           return '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="font-size:11px;color:#8a8070">'+p.name+' x'+p.qty+'</span><span style="font-size:11px;font-weight:600;color:#c9a84c">'+fmtPrice(p.total)+'</span></div>';
         }).join('');
+        var vendorObj2 = vendors.find(function(v){return v.code===vs.code;});
         html += '<div style="border:1px solid #2e2a22;border-radius:10px;padding:12px;margin-bottom:10px;background:#0f0e0b">';
         html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
         html += '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">'+avatar+'</div>';
         html += '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#fff">'+vs.name+'</div>';
         html += '<div style="font-size:11px;color:#8a8070">'+vs.sales.length+' vente'+(vs.sales.length>1?'s':'')+' ce mois</div></div>';
         html += '<div style="text-align:right"><div style="font-size:16px;font-weight:700;color:#7ac97a">'+fmtPrice(vs.totalComm)+'</div>';
-        html += '<div style="font-size:10px;color:#4a4640">a payer</div></div></div>';
-        if(prodDetail) html += '<div style="border-top:1px solid #1a1813;padding-top:6px">'+prodDetail+'</div>';
-        var vendorObj = vendors.find(function(v){return v.code===vs.code;});
-        if(vendorObj && vendorObj.phone) {
-          html += '<button onclick="sendCommRecap(\'' + vs.code + '\')" style="width:100%;margin-top:8px;background:#0d1a0d;border:1px solid #25d366;color:#25d366;padding:8px;border-radius:8px;font-size:12px;font-weight:600">WA Envoyer recap</button>';
+        html += '<div style="font-size:10px;color:#4a4640">à payer</div></div></div>';
+        if(prodDetail) html += '<div style="border-top:1px solid #1a1813;padding-top:6px;margin-bottom:8px">'+prodDetail+'</div>';
+        html += '<div style="display:flex;gap:8px;margin-top:6px">';
+        if(vendorObj2 && vendorObj2.phone) {
+          html += '<button onclick="sendCommRecap(\'' + vs.code + '\')" style="flex:1;background:#0d1a0d;border:1px solid #25d366;color:#25d366;padding:8px;border-radius:8px;font-size:12px;font-weight:600">💬 WhatsApp</button>';
         }
+        if(vendorObj2) {
+          html += '<button onclick="openVendorProfile(\'' + vendorObj2.id + '\')" style="flex:1;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:8px;border-radius:8px;font-size:12px;font-weight:600">👤 Profil</button>';
+          html += '<button onclick="confirmDeleteVendorFromRecap(\'' + vendorObj2.id + '\',\'' + vs.name + '\')" style="background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700">🗑️</button>';
+        }
+        html += '</div>';
         html += '</div>';
       });
     }
@@ -2336,12 +2342,24 @@ async function renderAdminCompta(el) {
   var monthKey = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
   var monthLabel = now.toLocaleDateString("fr-FR", {month:"long", year:"numeric"});
 
+  // ── CA Global ──
+  var totalCA = 0, totalCAMois = 0;
+  clients.forEach(function(c) {
+    (c.history||[]).forEach(function(h) {
+      totalCA += (h.final||0);
+      var parts = (h.date||"").split("/");
+      if(parts.length===3 && (parts[2]+"-"+parts[1].padStart(2,"0"))===monthKey)
+        totalCAMois += (h.final||0);
+    });
+  });
+
+  // ── Commissions vendeurs ──
   var vendorComm = {};
   vendors.forEach(function(v) {
-    vendorComm[v.code] = {name:v.name, id:v.id, monthly:{}, total:0};
+    vendorComm[v.code] = {name:v.name, id:v.id, photo:v.photo, sex:v.sex, monthly:{}, total:0};
   });
   clients.forEach(function(c) {
-    c.history.forEach(function(h) {
+    (c.history||[]).forEach(function(h) {
       var vc = h.vendorCode || "ADMIN";
       if(vc === "ADMIN") return;
       if(!vendorComm[vc]) vendorComm[vc] = {name:h.vendorName||vc, id:null, monthly:{}, total:0};
@@ -2355,6 +2373,9 @@ async function renderAdminCompta(el) {
     });
   });
 
+  var totalCommMois = Object.values(vendorComm).reduce(function(s,v){ return s+(v.monthly[monthKey]||0); }, 0);
+  var totalCommAll  = Object.values(vendorComm).reduce(function(s,v){ return s+v.total; }, 0);
+
   var months6 = [];
   for(var i=0; i<6; i++) {
     var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
@@ -2362,18 +2383,46 @@ async function renderAdminCompta(el) {
     months6.push({key:mk2, label:d.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"})});
   }
 
-  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:16px">💰 Commissions — ' + monthLabel + '</div>';
+  var html = '';
+
+  // ── KPIs globaux ──
+  html += '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">📊 ' + monthLabel + '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">';
+  html += '<div class="card" style="text-align:center">';
+  html += '<div style="font-size:10px;color:#4a4640;margin-bottom:4px">CA ce mois</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:#c9a84c">'+fmtPrice(totalCAMois)+'</div>';
+  html += '<div style="font-size:10px;color:#4a4640;margin-top:4px">Total: '+fmtPrice(totalCA)+'</div>';
+  html += '</div>';
+  html += '<div class="card" style="text-align:center;background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border-color:#3d6a3d">';
+  html += '<div style="font-size:10px;color:#4a8a4a;margin-bottom:4px">Commissions à payer</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:#7ac97a">'+fmtPrice(totalCommMois)+'</div>';
+  html += '<div style="font-size:10px;color:#4a4640;margin-top:4px">Total: '+fmtPrice(totalCommAll)+'</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // ── Filtre mois ──
   html += '<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px" id="compta-months-row">';
   months6.forEach(function(m, i) {
-    html += '<button data-mk="' + m.key + '" onclick="filterComptaMonth(this)" class="compta-month-btn" style="flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;border:1px solid ' + (i===0?'#c9a84c':'#2e2a22') + ';background:' + (i===0?'#c9a84c22':'#1a1813') + ';color:' + (i===0?'#c9a84c':'#8a8070') + ';cursor:pointer">' + m.label + '</button>';
+    html += '<button data-mk="'+m.key+'" onclick="filterComptaMonth(this)" style="flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;border:1px solid '+(i===0?'#c9a84c':'#2e2a22')+';background:'+(i===0?'#c9a84c22':'#1a1813')+';color:'+(i===0?'#c9a84c':'#8a8070')+';cursor:pointer">'+m.label+'</button>';
   });
   html += '</div>';
 
-  html += '<div id="compta-vendor-list">' + buildComptaVendorList(vendorComm, monthKey) + '</div>';
+  // ── Liste vendeurs commissions ──
+  html += '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:10px">💰 Commissions par vendeur</div>';
+  html += '<div id="compta-vendor-list">'+buildComptaVendorList(vendorComm, monthKey)+'</div>';
 
-  html += '<div style="margin-top:20px"><div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:12px">📋 Barème commissions</div><div class="card" style="padding:12px">';
+  // ── Barème ──
+  html += '<div style="margin-top:20px">';
+  html += '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:10px">📋 Barème commissions</div>';
+  html += '<div class="card" style="padding:12px">';
   COMMISSIONS.forEach(function(c) {
-    html += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1813"><span style="font-size:13px;color:#fff">' + c.name + '</span><span style="font-size:13px;font-weight:700;color:#c9a84c">' + fmtPrice(c.commission||c.prime||0) + (c.prime?" (prime)":"") + '</span></div>';
+    var prod = PRODUCTS.find(function(p){ return p.id===c.productId; });
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1813">';
+    html += '<div><div style="font-size:13px;color:#fff">'+c.name+'</div>';
+    if(prod) html += '<div style="font-size:11px;color:#4a4640">Prix: '+fmtPrice(prod.price)+'</div>';
+    html += '</div>';
+    html += '<span style="font-size:14px;font-weight:700;color:#c9a84c">'+fmtPrice(c.commission||c.prime||0)+(c.prime?" (prime)":"")+'</span>';
+    html += '</div>';
   });
   html += '</div></div>';
 
@@ -2381,85 +2430,66 @@ async function renderAdminCompta(el) {
 }
 
 function buildComptaVendorList(vendorComm, mk) {
-  var entries = Object.entries(vendorComm);
+  var entries = Object.entries(vendorComm).filter(function(e){ return e[1].total > 0; });
   if(entries.length === 0) return '<div style="text-align:center;color:#4a4640;padding:30px">Aucune commission enregistrée</div>';
   entries.sort(function(a,b){ return (b[1].monthly[mk]||0)-(a[1].monthly[mk]||0); });
   var html = "";
   entries.forEach(function(entry) {
     var code=entry[0], v=entry[1];
     var mc = v.monthly[mk]||0;
-    html += '<div class="card" style="margin-bottom:10px">' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
-        '<div style="width:40px;height:40px;background:linear-gradient(135deg,#2a1f0a,#3d2e10);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">👤</div>' +
-        '<div style="flex:1"><div style="font-weight:700;font-size:14px">' + v.name + '</div><div style="font-size:11px;color:#8a8070">Code: ' + code + '</div></div>' +
-        '<div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#c9a84c">' + fmtPrice(mc) + '</div><div style="font-size:10px;color:#4a4640">ce mois</div></div>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #2e2a22">' +
-        '<div><div style="font-size:11px;color:#4a4640">Total cumulé</div><div style="font-size:13px;font-weight:600;color:#7ac97a">' + fmtPrice(v.total) + '</div></div>' +
-        '<button data-code="' + code + '" onclick="marquerPaye(this)" style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer">✅ Marquer payé</button>' +
-      '</div></div>';
+    var isPaid = v.monthly[mk+'_paid'] ? true : false;
+    var avatar = v.photo ? '<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">' : (v.sex==='Femme'?'👩':'👨');
+    html += '<div class="card" style="margin-bottom:10px;'+(isPaid?'opacity:0.6':'')+'">';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
+    html += '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid #c9a84c44;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px">'+avatar+'</div>';
+    html += '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+v.name+'</div>';
+    html += '<div style="font-size:11px;color:#8a8070">Code: '+code+'</div></div>';
+    html += '<div style="text-align:right">';
+    html += '<div style="font-size:20px;font-weight:700;color:'+(mc>0?'#c9a84c':'#4a4640')+'">'+fmtPrice(mc)+'</div>';
+    html += '<div style="font-size:10px;color:#4a4640">ce mois</div></div></div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2e2a22">';
+    html += '<div><div style="font-size:11px;color:#4a4640">Total cumulé</div>';
+    html += '<div style="font-size:13px;font-weight:600;color:#7ac97a">'+fmtPrice(v.total)+'</div></div>';
+    if(mc > 0) {
+      if(isPaid) {
+        html += '<span style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px">✅ Payé</span>';
+      } else {
+        html += '<button data-code="'+code+'" onclick="marquerPaye(this)" style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer">✅ Marquer comme payé</button>';
+      }
+    }
+    html += '</div></div>';
   });
   return html;
 }
 
-
 function filterComptaMonth(btn) {
-  var mk = btn.getAttribute("data-mk");
-  // Re-render with selected month
-  var now = new Date();
-  var months6 = [];
-  for(var i=0;i<6;i++) {
-    var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    months6.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"));
-  }
-  months6.forEach(function(m) {
-    var btn = document.getElementById("compta-m-"+m);
-    if(!btn) return;
-    btn.style.border = m===mk ? "1px solid #c9a84c" : "1px solid #2e2a22";
-    btn.style.background = m===mk ? "#c9a84c22" : "#1a1813";
-    btn.style.color = m===mk ? "#c9a84c" : "#8a8070";
+  var mk = btn.getAttribute('data-mk');
+  document.querySelectorAll('.compta-month-btn, [onclick="filterComptaMonth(this)"]').forEach(function(b) {
+    b.style.background = '#1a1813'; b.style.color = '#8a8070'; b.style.borderColor = '#2e2a22';
   });
-  // Recalculate for selected month
+  btn.style.background = '#c9a84c22'; btn.style.color = '#c9a84c'; btn.style.borderColor = '#c9a84c';
   var vendorComm = {};
-  vendors.forEach(function(v){ vendorComm[v.code]={name:v.name,monthly:{},total:0}; });
+  vendors.forEach(function(v) { vendorComm[v.code] = {name:v.name, id:v.id, photo:v.photo, sex:v.sex, monthly:{}, total:0}; });
   clients.forEach(function(c) {
-    c.history.forEach(function(h) {
+    (c.history||[]).forEach(function(h) {
       var vc = h.vendorCode||"ADMIN"; if(vc==="ADMIN") return;
-      if(!vendorComm[vc]) vendorComm[vc]={name:h.vendorName||vc,monthly:{},total:0};
-      var comm = h.commission||0;
-      if(comm>0) {
-        var parts=(h.date||"").split("/");
-        var hmk = parts.length===3?parts[2]+"-"+parts[1].padStart(2,"0"):mk;
-        vendorComm[vc].monthly[hmk]=(vendorComm[vc].monthly[hmk]||0)+comm;
-        vendorComm[vc].total+=comm;
-      }
+      if(!vendorComm[vc]) vendorComm[vc]={name:h.vendorName||vc,id:null,monthly:{},total:0};
+      var comm=h.commission||0; if(comm<=0) return;
+      var parts=(h.date||"").split("/");
+      var hmk=parts.length===3?parts[2]+"-"+parts[1].padStart(2,"0"):mk;
+      vendorComm[vc].monthly[hmk]=(vendorComm[vc].monthly[hmk]||0)+comm;
+      vendorComm[vc].total+=comm;
     });
   });
-  var list = document.getElementById("compta-vendor-list");
-  if(!list) return;
-  var html2 = "";
-  var entries = Object.entries(vendorComm).sort(function(a,b){return (b[1].monthly[mk]||0)-(a[1].monthly[mk]||0);});
-  entries.forEach(function(entry) {
-    var code=entry[0],v=entry[1];
-    var mc=v.monthly[mk]||0;
-    html2 += '<div class="card" style="margin-bottom:10px">' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
-        '<div style="width:40px;height:40px;background:linear-gradient(135deg,#2a1f0a,#3d2e10);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">👤</div>' +
-        '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+v.name+'</div><div style="font-size:11px;color:#8a8070">Code: '+code+'</div></div>' +
-        '<div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#c9a84c">'+fmtPrice(mc)+'</div><div style="font-size:10px;color:#4a4640">ce mois</div></div>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #2e2a22">' +
-        '<div style="text-align:center"><div style="font-size:11px;color:#4a4640">Total cumulé</div><div style="font-size:13px;font-weight:600;color:#7ac97a">'+fmtPrice(v.total)+'</div></div>' +
-        '<button data-code="' + code + '" onclick="marquerPaye(this)" style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer">✅ Marquer payé</button>' +
-      '</div></div>';
-  });
-  list.innerHTML = html2;
+  var el = document.getElementById('compta-vendor-list');
+  if(el) el.innerHTML = buildComptaVendorList(vendorComm, mk);
 }
 
 async function marquerPaye(btn) {
-  var vendorCode = btn.getAttribute("data-code");
-  var v = vendors.find(function(x){ return x.code === vendorCode; });
+  var code = btn.getAttribute('data-code');
+  var v = vendors.find(function(x){ return x.code===code; });
   if(!v) return;
+  if(!confirm('Confirmer le paiement des commissions de '+v.name+' ce mois ?')) return;
   var now = new Date();
   var mk = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
   var comm = v.commissions || {};
@@ -2467,7 +2497,7 @@ async function marquerPaye(btn) {
   comm[mk] = 0;
   v.commissions = comm;
   try { await db.collection("vendors").doc(v.id).update({commissions: comm}); } catch(e){}
-  showToast("✅ Commission de " + v.name + " marquée comme payée !");
+  showToast("✅ Commission de "+v.name+" marquée comme payée !");
   openAdminTab("compta");
 }
 
@@ -3669,6 +3699,16 @@ function vendorCancelSelect() {
   var bar = document.getElementById('vendor-select-bar');
   if(bar) bar.style.display = 'none';
 }
+
+function confirmDeleteVendorFromRecap(vendorId, vendorName) {
+  if(!confirm('Supprimer le vendeur ' + vendorName + ' ?')) return;
+  db.collection('vendors').doc(vendorId).delete().then(function() {
+    vendors = vendors.filter(function(v){ return v.id !== vendorId; });
+    showToast('🗑️ ' + vendorName + ' supprimé !');
+    openAdminTab('vendors');
+  }).catch(function(e){ showToast('Erreur: ' + e.message); });
+}
+
 
 async function vendorDeleteSelected() {
   if(vendorSelected.size === 0) return;
