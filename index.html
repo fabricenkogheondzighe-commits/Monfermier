@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.30</title>
+  <title>Mon Fermier SARL v3.31</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -2389,6 +2389,9 @@ async function renderAdminCompta(el) {
 
   var html = '';
 
+  // ── Bouton Rapport PDF ──
+  html += '<button onclick="generateMonthlyPDF()" style="width:100%;background:linear-gradient(135deg,#1a0a2e,#2e1a4a);border:1px solid #9a7ac944;color:#9a7ac9;padding:12px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px">📄 Générer rapport PDF du mois</button>';
+
   // ── KPIs globaux ──
   html += '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">📊 ' + monthLabel + '</div>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">';
@@ -4145,6 +4148,160 @@ function saveRetour() {
   saveStockData(stock);
   showToast('✅ Retour de '+(v?v.name:'vendeur')+' enregistré !');
   stockTab(document.querySelector('[data-tab="retours"]'));
+}
+
+
+// ═══════════════════════════════════════
+// RAPPORT PDF MENSUEL
+// ═══════════════════════════════════════
+function generateMonthlyPDF() {
+  var now = new Date();
+  var mk = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var monthLabel = now.toLocaleDateString('fr-FR',{month:'long', year:'numeric'});
+
+  // ── Données du mois ──
+  var revMois = 0, ventesMois = 0;
+  var newClients = [];
+  var prodSales = {};
+  PRODUCTS.forEach(function(p){ prodSales[p.id]={name:p.name,qty:0,ca:0}; });
+
+  clients.forEach(function(c) {
+    var pp2 = (c.createdAt||'').split('/');
+    if(pp2.length===3 && pp2[2]+'-'+pp2[1].padStart(2,'0')===mk) newClients.push(c);
+    (c.history||[]).forEach(function(h) {
+      var pp=(h.date||'').split('/');
+      if(pp.length===3 && pp[2]+'-'+pp[1].padStart(2,'0')===mk) {
+        revMois += (h.final||0); ventesMois++;
+        (h.items||[]).forEach(function(it){
+          if(prodSales[it.id]){ prodSales[it.id].qty+=(it.qty||1); prodSales[it.id].ca+=(it.price||0)*(it.qty||1); }
+        });
+      }
+    });
+  });
+
+  // Commissions du mois
+  var commMois = 0;
+  var vendorComm = {};
+  clients.forEach(function(c){
+    (c.history||[]).forEach(function(h){
+      var pp=(h.date||'').split('/');
+      if(pp.length===3 && pp[2]+'-'+pp[1].padStart(2,'0')===mk){
+        var comm = h.commission||0; commMois+=comm;
+        var vc = h.vendorCode||'ADMIN'; if(vc==='ADMIN') return;
+        if(!vendorComm[vc]) vendorComm[vc]={name:h.vendorName||vc,comm:0};
+        vendorComm[vc].comm+=comm;
+      }
+    });
+  });
+
+  // Stock
+  var stockData = null;
+  try { stockData = JSON.parse(localStorage.getItem('mf_stock_data'))||null; } catch(e){}
+
+  // Classement produits
+  var prodList = Object.values(prodSales).filter(function(p){return p.qty>0;})
+    .sort(function(a,b){return b.qty-a.qty;});
+
+  // ── Génération HTML du rapport ──
+  var html = '';
+  html += '<html><head><meta charset="UTF-8">';
+  html += '<title>Rapport '+monthLabel+'</title>';
+  html += '<style>';
+  html += 'body{font-family:Arial,sans-serif;color:#222;margin:0;padding:20px;background:#fff}';
+  html += 'h1{color:#b8860b;border-bottom:3px solid #b8860b;padding-bottom:10px}';
+  html += 'h2{color:#555;font-size:16px;margin-top:24px;border-left:4px solid #b8860b;padding-left:10px}';
+  html += '.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}';
+  html += '.kpi{background:#f9f6f0;border:1px solid #e0d5c0;border-radius:8px;padding:14px;text-align:center}';
+  html += '.kpi-val{font-size:22px;font-weight:700;color:#b8860b}';
+  html += '.kpi-lbl{font-size:11px;color:#888;margin-top:4px}';
+  html += 'table{width:100%;border-collapse:collapse;margin:12px 0}';
+  html += 'th{background:#b8860b;color:#fff;padding:8px;text-align:left;font-size:12px}';
+  html += 'td{padding:8px;border-bottom:1px solid #eee;font-size:12px}';
+  html += 'tr:nth-child(even){background:#faf8f4}';
+  html += '.badge{background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:20px;font-size:11px}';
+  html += '.alert{background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:20px;font-size:11px}';
+  html += '.footer{margin-top:40px;padding-top:10px;border-top:1px solid #ddd;font-size:10px;color:#aaa;text-align:center}';
+  html += '</style></head><body>';
+
+  // En-tête
+  html += '<h1>🌾 Mon Fermier SARL — Rapport Mensuel</h1>';
+  html += '<p style="color:#888;font-size:13px">Période : <strong>'+monthLabel+'</strong> &nbsp;|&nbsp; Généré le '+new Date().toLocaleDateString('fr-FR')+'</p>';
+
+  // KPIs
+  html += '<div class="kpis">';
+  html += '<div class="kpi"><div class="kpi-val">'+fmtPrice(revMois)+'</div><div class="kpi-lbl">CA du mois</div></div>';
+  html += '<div class="kpi"><div class="kpi-val">'+ventesMois+'</div><div class="kpi-lbl">Ventes</div></div>';
+  html += '<div class="kpi"><div class="kpi-val">'+fmtPrice(commMois)+'</div><div class="kpi-lbl">Commissions</div></div>';
+  html += '</div>';
+
+  // Classement produits
+  html += '<h2>🏆 Classement des produits vendus</h2>';
+  if(prodList.length === 0) {
+    html += '<p style="color:#888">Aucune vente ce mois.</p>';
+  } else {
+    html += '<table><tr><th>#</th><th>Produit</th><th>Quantité vendue</th><th>CA généré</th></tr>';
+    prodList.forEach(function(p, i){
+      html += '<tr><td><strong>'+(i+1)+'</strong></td><td>'+p.name+'</td><td>'+p.qty+' unité'+(p.qty>1?'s':'')+'</td><td>'+fmtPrice(p.ca)+'</td></tr>';
+    });
+    html += '</table>';
+  }
+
+  // Nouveaux clients
+  html += '<h2>👥 Nouveaux clients du mois ('+newClients.length+')</h2>';
+  if(newClients.length === 0) {
+    html += '<p style="color:#888">Aucun nouveau client ce mois.</p>';
+  } else {
+    html += '<table><tr><th>Nom</th><th>Type</th><th>Points</th><th>Date</th></tr>';
+    newClients.forEach(function(c){
+      var t = CLIENT_TYPES.find(function(x){return x.id===(c.type||'particulier');});
+      html += '<tr><td>'+c.name+'</td><td>'+(t?t.label:c.type||'')+'</td><td>'+c.points+'</td><td>'+(c.createdAt||'')+'</td></tr>';
+    });
+    html += '</table>';
+  }
+
+  // État du stock
+  html += '<h2>📦 État du stock</h2>';
+  if(!stockData) {
+    html += '<p style="color:#888">Aucune donnée de stock disponible.</p>';
+  } else {
+    html += '<table><tr><th>Produit</th><th>Emballés</th><th>Remis vendeurs</th><th>Vendus</th><th>Retours</th><th>En magasin</th></tr>';
+    PRODUCTS.forEach(function(p){
+      var emballe = stockData.emballe[p.id]||0;
+      var magasin = stockData.magasin[p.id]||0;
+      var remis   = (stockData.remises||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
+      var retour  = (stockData.retours||[]).reduce(function(s,r){return s+(r.items[p.id]||0);},0);
+      var vendu   = clients.reduce(function(s,c){return s+(c.history||[]).reduce(function(s2,h){return s2+(h.items||[]).reduce(function(s3,it){return s3+(it.id===p.id?it.qty:0);},0);},0);},0);
+      var enStock = Math.max(0, magasin - remis + retour);
+      var badge   = enStock < 10 ? '<span class="alert">⚠️ Faible</span>' : '<span class="badge">✅ OK</span>';
+      html += '<tr><td>'+p.name+'</td><td>'+emballe+'</td><td>'+remis+'</td><td>'+vendu+'</td><td>'+retour+'</td><td>'+enStock+' '+badge+'</td></tr>';
+    });
+    html += '</table>';
+  }
+
+  // Commissions vendeurs
+  html += '<h2>💰 Commissions vendeurs du mois</h2>';
+  var commList = Object.values(vendorComm).filter(function(v){return v.comm>0;}).sort(function(a,b){return b.comm-a.comm;});
+  if(commList.length === 0) {
+    html += '<p style="color:#888">Aucune commission ce mois.</p>';
+  } else {
+    html += '<table><tr><th>Vendeur</th><th>Commission à payer</th></tr>';
+    commList.forEach(function(v){
+      html += '<tr><td>'+v.name+'</td><td><strong>'+fmtPrice(v.comm)+'</strong></td></tr>';
+    });
+    html += '<tr style="background:#f9f6f0"><td><strong>TOTAL</strong></td><td><strong>'+fmtPrice(commMois)+'</strong></td></tr>';
+    html += '</table>';
+  }
+
+  html += '<div class="footer">Mon Fermier SARL &nbsp;|&nbsp; Rapport généré automatiquement &nbsp;|&nbsp; '+new Date().toLocaleString('fr-FR')+'</div>';
+  html += '</body></html>';
+
+  // ── Ouvrir dans nouvelle fenêtre et imprimer ──
+  var win = window.open('','_blank');
+  if(!win) { showToast('Autorisez les popups pour générer le PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){ win.print(); }, 500);
 }
 
 </script>
