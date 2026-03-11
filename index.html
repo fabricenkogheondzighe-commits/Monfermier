@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.42</title>
+  <title>Mon Fermier SARL v3.45</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -28,6 +28,85 @@ html,body{height:100%;background:#0f0e0b;color:#e8e0d0;font-family:Georgia,serif
 button{cursor:pointer;font-family:inherit;transition:all 0.2s}
 input{font-family:inherit;outline:none}
 .page{display:none;padding:16px;max-width:600px;margin:0 auto;padding-bottom:40px}
+
+/* ── VENDOR HOME ── */
+#page-vendor-home { padding: 0; background: linear-gradient(160deg,#0a0f1a 0%,#0f1520 60%,#0a0f1a 100%); min-height:100vh; }
+.vh-header {
+  background: linear-gradient(135deg,#0d1525,#1a2540);
+  padding: 40px 20px 28px;
+  text-align: center;
+  position: relative;
+  border-bottom: 1px solid #c9a84c22;
+}
+.vh-avatar {
+  width: 88px; height: 88px; border-radius: 50%;
+  border: 3px solid #c9a84c55;
+  margin: 0 auto 14px;
+  object-fit: cover;
+  background: #1a2540;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  box-shadow: 0 0 24px #c9a84c22;
+  overflow: hidden;
+}
+.vh-name { font-size: 22px; font-weight: 800; color: #fff; }
+.vh-code { font-size: 11px; color: #c9a84c99; letter-spacing: 3px; margin-top: 4px; }
+.vh-greeting { font-size: 13px; color: #8a9abc; margin-top: 6px; }
+.vh-logout {
+  position: absolute; top: 16px; right: 16px;
+  background: #1a2540; border: 1px solid #2e3a5a;
+  color: #8a9abc; padding: 6px 12px;
+  border-radius: 8px; font-size: 12px; cursor: pointer;
+}
+.vh-body { padding: 16px 16px 80px; }
+.vh-section-title {
+  font-size: 10px; color: #4a5a7a;
+  letter-spacing: 2px; text-transform: uppercase;
+  margin: 20px 0 10px;
+}
+.vh-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+.vh-kpi {
+  background: linear-gradient(135deg,#0d1525,#1a2540);
+  border: 1px solid #c9a84c22;
+  border-radius: 14px; padding: 16px;
+}
+.vh-kpi-val { font-size: 24px; font-weight: 800; color: #c9a84c; }
+.vh-kpi-lbl { font-size: 10px; color: #4a5a7a; margin-top: 4px; letter-spacing: 1px; }
+.vh-kpi-sub { font-size: 11px; color: #2a3a5a; margin-top: 2px; }
+.vh-objective {
+  background: linear-gradient(135deg,#0d1a10,#0a1510);
+  border: 1px solid #7ac97a22;
+  border-radius: 14px; padding: 16px; margin-bottom: 10px;
+}
+.vh-obj-bar-bg { background: #1a2a1a; border-radius: 6px; height: 8px; margin: 10px 0 6px; }
+.vh-obj-bar { background: linear-gradient(90deg,#3a7a3a,#7ac97a); height: 100%; border-radius: 6px; transition: width 0.8s; }
+.vh-client-card {
+  background: #0d1525; border: 1px solid #1a2540;
+  border-radius: 12px; padding: 14px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 8px;
+}
+.vh-client-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #1a2540; border: 1px solid #c9a84c33;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.vh-btn-sale {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg,#b8860b,#c9a84c,#e8c96a);
+  color: #0a0906; border: none; border-radius: 20px;
+  padding: 16px 40px; font-size: 15px; font-weight: 800;
+  box-shadow: 0 4px 24px #c9a84c55; cursor: pointer;
+  letter-spacing: 0.5px; z-index: 100;
+}
+.vh-info-row {
+  display: flex; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid #1a2540;
+  font-size: 13px;
+}
+.vh-info-label { color: #4a5a7a; }
+.vh-info-value { color: #fff; font-weight: 600; }
 
 /* ADMIN BACKGROUND */
 #page-admin {
@@ -629,6 +708,11 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
 
 </div>
 
+<!-- VENDOR HOME -->
+<div id="page-vendor-home" class="page fade-in">
+  <div id="vh-root"></div>
+</div>
+
 <!-- NEW CLIENT -->
 <div id="page-new-client" class="page fade-in">
   <h2 style="font-size:20px;color:#c9a84c;margin-bottom:6px">Nouveau Client</h2>
@@ -925,6 +1009,118 @@ function showWelcome() {
 }
 
 
+// ═══════════════════════════════════════
+// PAGE D'ACCUEIL VENDEUR
+// ═══════════════════════════════════════
+function renderVendorHome() {
+  var el = document.getElementById('vh-root');
+  if(!el) return;
+
+  var vendor = vendors.find(function(v){ return v.code === currentUser.code; });
+  if(!vendor) { el.innerHTML = '<p style="color:#c97a7a;padding:20px">Vendeur introuvable</p>'; return; }
+
+  var now = new Date();
+  var todayStr = now.toLocaleDateString('fr-FR');
+  var mk = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var hour = now.getHours();
+  var greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+
+  // Stats vendeur
+  var ventesTotal = 0, commTotal = 0, ventesMois = 0, commMois = 0, ventesAujourdhui = 0;
+  var mesClients = [];
+
+  clients.forEach(function(c) {
+    var isMyClient = false;
+    (c.history||[]).forEach(function(h) {
+      if((h.vendorCode||'') !== vendor.code) return;
+      ventesTotal++;
+      commTotal += (h.commission||0);
+      var pp = (h.date||'').split('/');
+      if(pp.length===3 && pp[2]+'-'+pp[1].padStart(2,'0') === mk) { ventesMois++; commMois+=(h.commission||0); }
+      if((h.date||'') === todayStr) ventesAujourdhui++;
+      isMyClient = true;
+    });
+    if(isMyClient) mesClients.push(c);
+  });
+
+  // Objectif mensuel : 20 ventes
+  var OBJECTIF = 20;
+  var pct = Math.min(100, Math.round((ventesMois/OBJECTIF)*100));
+
+  // Photo
+  var photoHtml = vendor.photo
+    ? '<img src="'+vendor.photo+'" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid #c9a84c55;box-shadow:0 0 24px #c9a84c22">'
+    : '<div class="vh-avatar">👤</div>';
+
+  var html = '';
+
+  // ── Header ──
+  html += '<div class="vh-header">';
+  html += '<button class="vh-logout" onclick="logout()">Déconnexion</button>';
+  html += '<div style="margin:0 auto 14px;width:88px">'+photoHtml+'</div>';
+  html += '<div class="vh-name">'+vendor.name+'</div>';
+  html += '<div class="vh-code">CODE : '+vendor.code+'</div>';
+  html += '<div class="vh-greeting">'+greeting+' 👋 — '+now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+'</div>';
+  html += '</div>';
+
+  html += '<div class="vh-body">';
+
+  // ── KPIs ──
+  html += '<div class="vh-section-title">📊 Mes statistiques</div>';
+  html += '<div class="vh-kpi-grid">';
+  html += '<div class="vh-kpi"><div class="vh-kpi-val">'+ventesAujourdhui+'</div><div class="vh-kpi-lbl">VENTES DU JOUR</div></div>';
+  html += '<div class="vh-kpi"><div class="vh-kpi-val" style="color:#7ac97a">'+fmtPrice(commMois)+'</div><div class="vh-kpi-lbl">COMMISSIONS CE MOIS</div></div>';
+  html += '<div class="vh-kpi"><div class="vh-kpi-val">'+ventesMois+'</div><div class="vh-kpi-lbl">VENTES CE MOIS</div></div>';
+  html += '<div class="vh-kpi"><div class="vh-kpi-val" style="color:#9a7ac9">'+fmtPrice(commTotal)+'</div><div class="vh-kpi-lbl">TOTAL COMMISSIONS</div></div>';
+  html += '</div>';
+
+  // ── Objectif du mois ──
+  html += '<div class="vh-section-title">🎯 Objectif du mois</div>';
+  html += '<div class="vh-objective">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+  html += '<div style="font-size:13px;color:#a0c4a0">'+ventesMois+' / '+OBJECTIF+' ventes</div>';
+  html += '<div style="font-size:14px;font-weight:700;color:'+(pct>=100?'#7ac97a':'#c9a84c')+'">'+pct+'%</div>';
+  html += '</div>';
+  html += '<div class="vh-obj-bar-bg"><div class="vh-obj-bar" style="width:'+pct+'%"></div></div>';
+  html += '<div style="font-size:11px;color:#2a5a2a">'+(pct>=100?'Objectif atteint !' : (OBJECTIF-ventesMois)+' vente(s) restante(s)')+'</div>';
+  html += '</div>';
+
+  // ── Mes informations ──
+  html += '<div class="vh-section-title">👤 Mes informations</div>';
+  html += '<div class="card" style="margin-bottom:10px">';
+  html += '<div class="vh-info-row"><span class="vh-info-label">Nom</span><span class="vh-info-value">'+vendor.name+'</span></div>';
+  html += '<div class="vh-info-row"><span class="vh-info-label">Code vendeur</span><span class="vh-info-value">'+vendor.code+'</span></div>';
+  if(vendor.phone) html += '<div class="vh-info-row"><span class="vh-info-label">Téléphone</span><span class="vh-info-value">'+vendor.phone+'</span></div>';
+  if(vendor.email) html += '<div class="vh-info-row"><span class="vh-info-label">Email</span><span class="vh-info-value">'+vendor.email+'</span></div>';
+  html += '<div class="vh-info-row" style="border:none"><span class="vh-info-label">Statut</span><span class="vh-info-value" style="color:'+(vendor.suspended?'#c97a7a':'#7ac97a')+'">'+(vendor.suspended?'⛔ Suspendu':'✅ Actif')+'</span></div>';
+  html += '</div>';
+
+  // ── Mes clients récents ──
+  html += '<div class="vh-section-title">👥 Mes clients ('+mesClients.length+')</div>';
+  if(mesClients.length === 0) {
+    html += '<div style="color:#4a5a7a;font-size:13px;padding:16px;text-align:center">Aucun client encore</div>';
+  } else {
+    mesClients.slice(0,5).forEach(function(c) {
+      var initials = (c.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+      html += '<div class="vh-client-card">';
+      html += '<div class="vh-client-avatar">'+initials+'</div>';
+      html += '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#fff">'+c.name+'</div>';
+      html += '<div style="font-size:11px;color:#4a5a7a;margin-top:2px">'+c.points+' pts · '+fmtPrice(c.totalSpent||0)+'</div></div>';
+      html += '<div style="font-size:11px;color:#c9a84c">'+((c.history||[]).filter(function(h){return (h.vendorCode||'')===vendor.code;}).length)+' vente(s)</div>';
+      html += '</div>';
+    });
+    if(mesClients.length > 5) html += '<div style="text-align:center;font-size:12px;color:#4a5a7a;margin-top:8px">+ '+(mesClients.length-5)+' autres clients</div>';
+  }
+
+  html += '</div>';
+
+  // ── Bouton vente ──
+  html += '<button class="vh-btn-sale" onclick="showPage(\'page-new-client\')">➕ Enregistrer une vente</button>';
+
+  el.innerHTML = html;
+}
+
+
 function renderHome() {
   showWelcome();
   startClock();
@@ -1086,6 +1282,12 @@ function openNewClient() {
   showPage("page-new-client");
 }
 
+function openNewClientFromAdmin() {
+  // Mémoriser qu'on vient de l'admin pour y revenir après
+  localStorage.setItem('mf_from_admin', '1');
+  showPage("page-new-client");
+}
+
 function previewNewClient() {
   var name = (document.getElementById("nc-name")||{value:""}).value.trim();
   if(!name) { showToast("Le nom est obligatoire", true); return; }
@@ -1144,6 +1346,8 @@ async function addClient() {
   showToast("Client " + client.name + " créé !");
   renderClientProfile();
   showPage("page-client");
+  // Nettoyer le flag admin
+  localStorage.removeItem('mf_from_admin');
 }
 
 // ═══════════════════════════════════════
@@ -2130,9 +2334,13 @@ function onLoginSuccess() {
   var urgentAppts = appts.filter(function(a){ var d=new Date(a.date+"T00:00:00"); return a.date>=todayStr && Math.ceil((d-new Date(todayStr))/86400000)<=2; });
   if(urgentAppts.length>0) showToast("📅 " + urgentAppts.length + " alerte(s) commande imminente !");
   
-  // Hide KPIs for vendors
-  renderHome();
-  showPage("page-home", false);
+  if(currentUser.role === 'vendor') {
+    showPage('page-vendor-home', false);
+    setTimeout(function(){ renderVendorHome(); }, 100);
+  } else {
+    renderHome();
+    showPage('page-home', false);
+  }
 }
 
 function logout() {
@@ -2186,7 +2394,10 @@ function renderAdminClients(el) {
     return !search || c.name.toLowerCase().includes(search) || (c.code||'').toLowerCase().includes(search);
   });
   
-  var html = '<div style="display:flex;gap:8px;margin-bottom:12px"><input id="admin-client-search" type="text" placeholder="🔍 Rechercher..." oninput="adminSearchClients()" style="flex:1;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box"><button onclick="openNewClient()" style="flex-shrink:0;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;border:none">➕</button></div>';
+  var html = '';
+  // Bouton nouveau client bien visible
+  html += '<button onclick="openNewClientFromAdmin()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:12px;font-size:14px;font-weight:800;border:none;margin-bottom:12px;box-shadow:0 4px 16px #c9a84c44">➕ Nouveau client</button>';
+  html += '<div style="display:flex;gap:8px;margin-bottom:12px"><input id="admin-client-search" type="text" placeholder="🔍 Rechercher un client..." oninput="adminSearchClients()" style="flex:1;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box"></div>';
   
   if(filtered.length === 0) {
     html += '<div style="text-align:center;color:#4a4640;padding:40px">Aucun client trouvé</div>';
@@ -4755,8 +4966,8 @@ updateOfflineBanner();
     <div id="confirm-payment-content" style="background:#0f0e0b;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center"></div>
     <div style="font-size:12px;color:#8a8070;text-align:center;margin-bottom:16px">Confirmez-vous avoir bien reçu ce paiement ?</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button type="button" onclick="closeConfirmPayment()" style="background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;padding:12px;border-radius:8px;font-size:13px;font-weight:600">❌ Pas encore</button>
-      <button type="button" onclick="confirmPaymentAndSale()" style="background:linear-gradient(135deg,#1a6b2a,#25d366);color:#fff;padding:12px;border-radius:8px;font-size:13px;font-weight:700;border:none">✅ Oui, reçu !</button>
+      <button type="button" onclick="closeConfirmPayment()" style="background:#2e0505;border:2px solid #c9202066;color:#ff6666;padding:14px;border-radius:12px;font-size:14px;font-weight:700">❌ Pas encore</button>
+      <button type=<button type="button" onclick="confirmPaymentAndSale()" style="background:linear-gradient(135deg,#1a6b1a,#2db52d);color:#fff;padding:14px;border-radius:12px;font-size:14px;font-weight:800;box-shadow:0 4px 16px #2db52d44">✅ Oui, reçu !</button>
     </div>
   </div>
 </div>
