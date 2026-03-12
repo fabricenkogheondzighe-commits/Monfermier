@@ -658,15 +658,18 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
     <button class="btn-ghost" onclick="goHome()">← Retour</button>
   </div>
   <!-- TABS ROW 1 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-    <button id="admin-tab-clients" onclick="openAdminTab('clients')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      👥<br><span style="font-size:10px">Clients</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+    <button id="admin-tab-vente" onclick="openAdminTab('vente')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      🛒<br><span style="font-size:9px">Vente</span>
     </button>
-    <button id="admin-tab-vendors" onclick="openAdminTab('vendors')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      👨‍💼<br><span style="font-size:10px">Vendeurs</span>
+    <button id="admin-tab-clients" onclick="openAdminTab('clients')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      👥<br><span style="font-size:9px">Clients</span>
     </button>
-    <button id="admin-tab-charts" onclick="openAdminTab('charts')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      📊<br><span style="font-size:10px">Graphiques</span>
+    <button id="admin-tab-vendors" onclick="openAdminTab('vendors')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      👨‍💼<br><span style="font-size:9px">Vendeurs</span>
+    </button>
+    <button id="admin-tab-charts" onclick="openAdminTab('charts')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      📊<br><span style="font-size:9px">Stats</span>
     </button>
   </div>
   <!-- TABS ROW 2 -->
@@ -2427,12 +2430,11 @@ async function openAdmin() {
 
 async function renderAdmin() {
   await loadVendors();
-  // Default to clients tab
-  openAdminTab("clients");
+  openAdminTab("vente");
 }
 
 function openAdminTab(tab) {
-  ["clients","vendors","charts","compta","calendar","calc","stock"].forEach(function(t) {
+  ["vente","clients","vendors","charts","compta","calendar","calc","stock"].forEach(function(t) {
     var btn = document.getElementById("admin-tab-" + t);
     if(!btn) return;
     btn.style.background = t === tab ? "linear-gradient(135deg,#b8860b,#c9a84c)" : "#1a1813";
@@ -2441,7 +2443,8 @@ function openAdminTab(tab) {
   });
   var el = document.getElementById("admin-tab-content");
   if(!el) return;
-  if(tab === "clients") renderAdminClients(el);
+  if(tab === "vente") renderAdminVente(el);
+  else if(tab === "clients") renderAdminClients(el);
   else if(tab === "vendors") renderAdminVendors(el);
   else if(tab === "charts") renderAdminCharts(el);
   else if(tab === "compta") renderAdminCompta(el);
@@ -2455,27 +2458,104 @@ function adminSearchClients() {
   if(el) renderAdminClients(el);
 }
 
+// ═══════════════════════════════════════
+// ADMIN TAB : VENTE
+// ═══════════════════════════════════════
+function renderAdminVente(el) {
+  var q = (document.getElementById('admin-vente-search') || {value:''}).value || '';
+  var results = q.trim()
+    ? clients.filter(function(c) {
+        return c.name.toLowerCase().includes(q.toLowerCase()) ||
+               (c.code||'').toLowerCase().includes(q.toLowerCase()) ||
+               (c.phone||'').includes(q);
+      })
+    : [];
+
+  var html =
+    '<div style="font-size:13px;color:#8a8070;margin-bottom:12px">Recherchez un client pour démarrer une vente, ou créez-en un nouveau.</div>' +
+
+    // Recherche
+    '<div style="position:relative;margin-bottom:12px">' +
+      '<input id="admin-vente-search" type="text" placeholder="🔍 Nom, code ou téléphone..." ' +
+        'oninput="renderAdminVente(document.getElementById(\'admin-tab-content\'))" ' +
+        'value="' + q.replace(/"/g,'&quot;') + '" ' +
+        'style="width:100%;background:#0f0e0b;border:1px solid #c9a84c55;color:#fff;padding:12px 14px;border-radius:10px;font-size:15px;box-sizing:border-box">' +
+    '</div>';
+
+  if(q.trim() && results.length === 0) {
+    // Aucun résultat → proposer création directe
+    html +=
+      '<div style="background:#1a1813;border:1px solid #c9a84c33;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px">' +
+        '<div style="font-size:14px;color:#8a8070;margin-bottom:12px">Aucun client trouvé pour "<strong style="color:#c9a84c">' + q + '</strong>"</div>' +
+        '<button id="btn-av-create" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:14px;font-weight:800;border:none">➕ Créer "' + q + '" et faire une vente</button>' +
+      '</div>';
+  } else if(results.length > 0) {
+    html += '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:8px">RÉSULTATS (' + results.length + ')</div>';
+    results.forEach(function(c) {
+      var t = getType(c.type);
+      var av = initials(c.name);
+      var isP = (c.type||'particulier') === 'particulier';
+      html +=
+        '<div style="display:flex;align-items:center;gap:10px;background:#1a1813;border:1px solid #2e2a22;border-radius:12px;padding:12px;margin-bottom:8px">' +
+          '<div class="avatar" style="width:42px;height:42px;font-size:16px;background:linear-gradient(135deg,#2a2520,#3a3028);color:#8a8070;border-color:#2e2a22;flex-shrink:0">' + av + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-weight:700;font-size:14px;color:#fff">' + c.name + '</div>' +
+            '<div style="font-size:11px;color:#4a4640;margin-top:2px">' +
+              (c.phone ? c.phone + ' · ' : '') +
+              '<span style="background:' + t.bg + ';color:' + t.color + ';border-radius:20px;padding:1px 7px;font-size:10px">' + t.icon + ' ' + t.label + '</span>' +
+              (isP ? ' · ' + (c.points||0) + ' pts' : '') +
+            '</div>' +
+          '</div>' +
+          '<button onclick="openSale(\'' + c.id + '\')" style="background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:800;white-space:nowrap">💰 Vendre</button>' +
+        '</div>';
+    });
+  }
+
+  // Bouton créer nouveau client (toujours visible en bas)
+  html +=
+    '<div style="margin-top:8px;border-top:1px solid #2e2a22;padding-top:12px">' +
+      '<button id="btn-av-new" style="width:100%;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:13px;border-radius:10px;font-size:14px;font-weight:700">➕ Nouveau client</button>' +
+    '</div>';
+
+  el.innerHTML = html;
+
+  // Listeners après injection HTML
+  var btnCreate = document.getElementById('btn-av-create');
+  if(btnCreate) btnCreate.addEventListener('click', function() {
+    // Pré-remplir le nom dans le modal avec la recherche
+    openNewClientFromAdmin();
+    setTimeout(function() {
+      var nm = document.getElementById('nc-name');
+      if(nm) { nm.value = q; nm.focus(); }
+    }, 100);
+  });
+
+  var btnNew = document.getElementById('btn-av-new');
+  if(btnNew) btnNew.addEventListener('click', function() { openNewClientFromAdmin(); });
+
+  // Focus sur la recherche
+  var searchEl = document.getElementById('admin-vente-search');
+  if(searchEl && !q) searchEl.focus();
+}
+
 function renderAdminClients(el) {
   var searchEl = document.getElementById('admin-client-search');
   var search = searchEl ? searchEl.value.toLowerCase() : '';
 
-  // L'admin voit les clients avec qui il a fait au moins une vente,
-  // OU les clients qu'il a créés (sans aucune vente encore)
-  var adminClients = clients.filter(function(c) {
-    var hasAdminSale = (c.history||[]).some(function(h) {
-      return (h.vendorCode || 'ADMIN') === 'ADMIN';
-    });
-    var createdByAdmin = !c.createdBy || c.createdBy === 'ADMIN';
-    return hasAdminSale || (createdByAdmin && c.history.length === 0);
+  // Tous les clients sans exception
+  var filtered = clients.filter(function(c) {
+    return !search || c.name.toLowerCase().includes(search) ||
+           (c.code||'').toLowerCase().includes(search) ||
+           (c.phone||'').includes(search);
   });
 
-  var filtered = adminClients.filter(function(c) {
-    return !search || c.name.toLowerCase().includes(search) || (c.code||'').toLowerCase().includes(search);
-  });
-
-  var html = '';
-  html += '<button id="btn-new-client-admin" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:12px;font-size:14px;font-weight:800;border:none;margin-bottom:12px;box-shadow:0 4px 16px #c9a84c44">➕ Nouveau client</button>';
-  html += '<div style="display:flex;gap:8px;margin-bottom:12px"><input id="admin-client-search" type="text" placeholder="🔍 Rechercher un client..." oninput="adminSearchClients()" style="flex:1;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box"></div>';
+  var html =
+    '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+      '<input id="admin-client-search" type="text" placeholder="🔍 Rechercher un client..." ' +
+        'oninput="adminSearchClients()" ' +
+        'style="flex:1;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box">' +
+    '</div>' +
+    '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">TOUS LES CLIENTS (' + filtered.length + ')</div>';
 
   if(filtered.length === 0) {
     html += '<div style="text-align:center;color:#4a4640;padding:40px">Aucun client trouvé</div>';
@@ -2484,30 +2564,31 @@ function renderAdminClients(el) {
       var t = getType(c.type);
       var av = initials(c.name);
       var isP = (c.type||'particulier') === 'particulier';
-      // Compter uniquement les ventes de l'admin pour ce client
-      var adminSales = (c.history||[]).filter(function(h){ return (h.vendorCode||'ADMIN') === 'ADMIN'; });
-      var adminSpent = adminSales.reduce(function(s,h){ return s+(h.final||0); }, 0);
-      html += '<div class="client-card" style="cursor:pointer;margin-bottom:8px" onclick="adminClientMenu(this)" data-id="' + c.id + '">'
-        + '<div class="avatar" style="background:linear-gradient(135deg,#2a2520,#3a3028);color:#8a8070;border-color:#2e2a22;width:44px;height:44px;font-size:18px">' + av + '</div>'
-        + '<div style="flex:1;min-width:0">'
-          + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-            + '<span style="font-weight:600;font-size:14px">' + c.name + '</span>'
-            + '<span class="tag tag-gold" style="font-size:10px">' + (c.code||'') + '</span>'
-            + '<span style="background:' + t.bg + ';color:' + t.color + ';border-radius:20px;padding:2px 8px;font-size:10px">' + t.icon + ' ' + t.label + '</span>'
-          + '</div>'
-          + '<div style="font-size:11px;color:#4a4640;margin-top:3px">'
-            + adminSales.length + ' vente' + (adminSales.length>1?'s':'') + ' avec moi · ' + fmtPrice(adminSpent)
-            + (isP ? ' · ' + (c.points||0) + ' pts' : '')
-          + '</div>'
-        + '</div>'
-        + '<span style="color:#4a4640;font-size:18px">›</span>'
-      + '</div>';
+      // Identifier le créateur
+      var creator = c.createdBy || 'ADMIN';
+      var creatorLabel = creator === 'ADMIN' ? '👑 Admin' : '👤 ' + creator;
+      html +=
+        '<div class="client-card" style="cursor:pointer;margin-bottom:8px" onclick="adminClientMenu(this)" data-id="' + c.id + '">' +
+          '<div class="avatar" style="background:linear-gradient(135deg,#2a2520,#3a3028);color:#8a8070;border-color:#2e2a22;width:44px;height:44px;font-size:18px">' + av + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+              '<span style="font-weight:600;font-size:14px">' + c.name + '</span>' +
+              '<span class="tag tag-gold" style="font-size:10px">' + (c.code||'') + '</span>' +
+              '<span style="background:' + t.bg + ';color:' + t.color + ';border-radius:20px;padding:2px 8px;font-size:10px">' + t.icon + ' ' + t.label + '</span>' +
+            '</div>' +
+            '<div style="font-size:11px;color:#4a4640;margin-top:3px">' +
+              c.history.length + ' achat' + (c.history.length>1?'s':'') +
+              ' · ' + fmtPrice(c.totalSpent) +
+              (isP ? ' · ' + (c.points||0) + ' pts' : '') +
+              ' · <span style="color:#6a6050">' + creatorLabel + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<span style="color:#4a4640;font-size:18px">›</span>' +
+        '</div>';
     });
   }
+
   el.innerHTML = html;
-  // Attacher le listener APRÈS injection du HTML (évite les problèmes onclick inline sur Android)
-  var btnNew = document.getElementById('btn-new-client-admin');
-  if(btnNew) btnNew.addEventListener('click', function() { openNewClientFromAdmin(); });
   if(searchEl) {
     var newSearch = document.getElementById('admin-client-search');
     if(newSearch) { newSearch.value = search; newSearch.focus(); }
