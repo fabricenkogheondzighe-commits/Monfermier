@@ -1546,9 +1546,10 @@ async function saveEditClient() {
 // ═══════════════════════════════════════
 function openSale(id) {
   currentClient = clients.find(c=>c.id===id);
+  if(!currentClient) { showToast('Client introuvable', true); return; }
   cart = []; rewardChoice = null;
-  renderSale();
   showPage("page-sale");
+  setTimeout(function(){ renderSale(); }, 50);
 }
 
 function cartTotal() { return cart.reduce((s,i)=>s+i.price*i.qty,0); }
@@ -1600,6 +1601,7 @@ function selectReward(choice) {
 }
 
 function renderSale() {
+  try {
   const c = currentClient;
   if(!c) { showPage('page-home'); return; }
   const total = cartTotal();
@@ -1609,9 +1611,10 @@ function renderSale() {
   const finalTotal = total - discount;
 
   // Payment selector
-  document.getElementById("payment-selector").innerHTML = `
+  var psEl = document.getElementById("payment-selector");
+  if(psEl) psEl.innerHTML = `
     <div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:8px">MODE DE PAIEMENT</div>
-    <div style="display:flex;gap:6px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
       ${PAYMENT_MODES.map(p=>`
         <button class="payment-btn ${selectedPayment===p.id?"selected":""}" onclick="selectPayment('${p.id}')">
           <div style="font-size:16px;margin-bottom:3px">${p.icon}</div>${p.label}
@@ -1700,6 +1703,11 @@ function renderSale() {
     </button>
     ${elig&&!rewardChoice?`<div style="font-size:11px;color:#8a8070;text-align:center;margin-top:8px">Veuillez choisir une récompense ci-dessus</div>`:""}
   </div>`;
+  } catch(err) {
+    console.error('renderSale error:', err);
+    var ps = document.getElementById('page-sale');
+    if(ps) ps.innerHTML = '<div style="padding:30px;text-align:center;color:#c97a7a">Erreur: ' + err.message + '</div>';
+  }
 }
 
 // ═══════════════════════════════════════
@@ -2492,8 +2500,8 @@ function renderAdminVente(el) {
     currentClient = client;
     cart = []; rewardChoice = null;
     showToast('✅ ' + name + ' créé ! Faites la vente.');
-    renderSale();
     showPage('page-sale');
+    setTimeout(function(){ renderSale(); }, 50);
     try {
       var data = Object.assign({}, client); delete data.id;
       var ref = await db.collection('clients').add(data);
@@ -3191,13 +3199,17 @@ function renderAdminCalendar(el) {
   var prodRows = PRODUCTS.map(function(p){
     var comm = COMMISSIONS.find(function(c){ return c.productId===p.id; });
     var commLabel = comm ? ' (+'+fmtPrice(comm.commission||comm.prime||0)+')' : '';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #1a1813">' +
+    return '<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1a1813">' +
       '<div style="flex:1">' +
         '<div style="font-size:13px;color:#fff">'+p.name+'</div>' +
         '<div style="font-size:11px;color:#8a8070">'+fmtPrice(p.price)+commLabel+'</div>' +
       '</div>' +
-      '<input type="number" id="cal-qty-'+p.id+'" min="0" value="0" ' +
-        'style="width:64px;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:8px;border-radius:8px;font-size:14px;text-align:center">' +
+      '<div style="display:flex;align-items:center;gap:0">' +
+        '<button type="button" onclick="calQtyChange('+p.id+',-1)" style="width:32px;height:32px;background:#2e2a22;border:none;color:#c9a84c;font-size:18px;font-weight:700;border-radius:8px 0 0 8px;cursor:pointer;line-height:1">−</button>' +
+        '<div id="cal-qty-display-'+p.id+'" style="min-width:32px;height:32px;background:#0f0e0b;border-top:1px solid #2e2a22;border-bottom:1px solid #2e2a22;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center"></div>' +
+        '<input type="hidden" id="cal-qty-'+p.id+'" value="0">' +
+        '<button type="button" onclick="calQtyChange('+p.id+',1)" style="width:32px;height:32px;background:#2e2a22;border:none;color:#c9a84c;font-size:18px;font-weight:700;border-radius:0 8px 8px 0;cursor:pointer;line-height:1">+</button>' +
+      '</div>' +
     '</div>';
   }).join('');
 
@@ -3258,7 +3270,7 @@ function renderAdminCalendar(el) {
       '<button type="button" onclick="previewCalOrder(\'whatsapp\')" style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:12px;border-radius:8px;font-size:13px;font-weight:600">📲 Devis WhatsApp</button>' +
       '<button type="button" onclick="previewCalOrder(\'email\')" style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:12px;border-radius:8px;font-size:13px;font-weight:600">✉️ Devis Email</button>' +
     '</div>' +
-    '<button type="button" onclick="showConfirmOrder()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
+    '<button type="button" id="btn-save-order" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
   '</div>';
 
   // ── COMMANDES À VENIR ──
@@ -3345,6 +3357,10 @@ function renderAdminCalendar(el) {
 
   el.innerHTML = html;
 
+  // Attacher le bouton principal via .onclick (le plus fiable sur Android)
+  var btnSave = document.getElementById('btn-save-order');
+  if(btnSave) btnSave.onclick = function(){ showConfirmOrder(); };
+
   // Init état formulaire
   calPayStatus = 'paid';
   calPayMode   = 'especes';
@@ -3355,6 +3371,19 @@ function renderAdminCalendar(el) {
 // ── États locaux formulaire ──
 var calPayStatus = 'paid';
 var calPayMode   = 'especes';
+
+function calQtyChange(pid, delta) {
+  var inp = document.getElementById('cal-qty-' + pid);
+  var disp = document.getElementById('cal-qty-display-' + pid);
+  if(!inp) return;
+  var val = Math.max(0, (parseInt(inp.value)||0) + delta);
+  inp.value = val;
+  if(disp) {
+    disp.textContent = val > 0 ? val : '';
+    disp.style.color = val > 0 ? '#c9a84c' : '#fff';
+    disp.style.fontWeight = val > 0 ? '800' : '400';
+  }
+}
 
 function setCalPay(val) {
   calPayStatus = val;
@@ -4522,6 +4551,7 @@ loadVendors();
 showPage("page-login", false);
 
 // ── Exposer toutes les fonctions globalement (fix Android PWA) ──
+window.calQtyChange = calQtyChange;
 window.setCalPay = setCalPay;
 window.setCalMode = setCalMode;
 window.showConfirmOrder = showConfirmOrder;
