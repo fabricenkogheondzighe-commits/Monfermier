@@ -1627,7 +1627,7 @@ function renderSale() {
       '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:8px">MODE DE PAIEMENT</div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
         PAYMENT_MODES.map(function(p){
-          return '<button class="payment-btn ' + (selectedPayment===p.id?'selected':'') + '" onclick="selectPayment('' + p.id + '')">' +
+          return '<button class="payment-btn ' + (selectedPayment===p.id?'selected':'') + '" data-action="selectPayment" data-arg="' + p.id + '">' +
             '<div style="font-size:16px;margin-bottom:3px">' + p.icon + '</div>' + p.label +
           '</button>';
         }).join('') +
@@ -1647,12 +1647,12 @@ function renderSale() {
         '</div>' +
         (inCart ?
           '<div style="display:flex;align-items:center;gap:10px">' +
-            '<button class="btn-outline" style="padding:6px 12px;font-size:16px" onclick="updateQty(' + p.id + ',-1)">−</button>' +
+            '<button class="btn-outline" style="padding:6px 12px;font-size:16px" data-action="updateQtyMinus" data-arg="' + p.id + '">−</button>' +
             '<span style="font-weight:700;font-size:16px;min-width:24px;text-align:center">' + inCart.qty + '</span>' +
-            '<button class="btn-outline" style="padding:6px 12px;font-size:16px" onclick="updateQty(' + p.id + ',1)">+</button>' +
+            '<button class="btn-outline" style="padding:6px 12px;font-size:16px" data-action="updateQtyPlus" data-arg="' + p.id + '">+</button>' +
           '</div>'
           :
-          '<button class="btn-outline" onclick="addToCart(' + p.id + ')">Ajouter</button>'
+          '<button class="btn-outline" data-action="addToCart" data-arg="' + p.id + '">Ajouter</button>'
         ) +
       '</div>';
     }).join('') +
@@ -1664,20 +1664,20 @@ function renderSale() {
     rewardHtml =
       '<div style="font-size:12px;color:#7ac97a;letter-spacing:2px;margin-bottom:10px">✦ CE CLIENT A 50 POINTS — CHOISISSEZ SA RÉCOMPENSE</div>' +
       '<div class="reward-grid">' +
-        '<div class="reward-card" onclick="selectReward('discount')" style="' + (rewardChoice==='discount'?'border-color:#7ac97a;background:linear-gradient(135deg,#1a3d2a,#1f4d32)':'') + '">' +
+        '<div class="reward-card" data-action="selectReward" data-arg="discount" style="' + (rewardChoice==='discount'?'border-color:#7ac97a;background:linear-gradient(135deg,#1a3d2a,#1f4d32)':'') + '">' +
           (rewardChoice==='discount'?'<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#7ac97a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0f0e0b;font-weight:700">✓</div>':'') +
           '<div style="font-size:28px;margin-bottom:8px">🏷️</div>' +
           '<div style="font-weight:700;font-size:14px;color:' + (rewardChoice==='discount'?'#7ac97a':'#e8e0d0') + '">Remise 5%</div>' +
           '<div style="font-size:12px;color:#8a8070;margin-top:4px">Économie de <span style="color:#c9a84c">' + fmtPrice(Math.floor(total*DISCOUNT)) + '</span></div>' +
         '</div>' +
-        '<div class="reward-card" onclick="selectReward('gift')" style="' + (rewardChoice==='gift'?'border-color:#c9a84c;background:linear-gradient(135deg,#2a1f0a,#3d2e10)':'') + '">' +
+        '<div class="reward-card" data-action="selectReward" data-arg="gift" style="' + (rewardChoice==='gift'?'border-color:#c9a84c;background:linear-gradient(135deg,#2a1f0a,#3d2e10)':'') + '">' +
           (rewardChoice==='gift'?'<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#c9a84c;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0f0e0b;font-weight:700">✓</div>':'') +
           '<div style="font-size:28px;margin-bottom:8px">🎁</div>' +
           '<div style="font-weight:700;font-size:14px;color:' + (rewardChoice==='gift'?'#c9a84c':'#e8e0d0') + '">Cadeau offert</div>' +
           '<div style="font-size:12px;color:#8a8070;margin-top:4px">' + GIFT.name + '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="reward-card" onclick="selectReward('vip')" style="margin-top:8px;' + (rewardChoice==='vip'?'border-color:#a07ad5;background:linear-gradient(135deg,#1a0a2e,#2e1060)':'') + '">' +
+      '<div class="reward-card" data-action="selectReward" data-arg="vip" style="margin-top:8px;' + (rewardChoice==='vip'?'border-color:#a07ad5;background:linear-gradient(135deg,#1a0a2e,#2e1060)':'') + '">' +
         (rewardChoice==='vip'?'<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#a07ad5;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700">✓</div>':'') +
         '<div style="display:flex;align-items:center;gap:12px">' +
           '<div style="font-size:32px">🏆</div>' +
@@ -4629,6 +4629,11 @@ document.addEventListener('click', function(e) {
     case 'showConfirmOrder': showConfirmOrder(); break;
     case 'confirmSale': confirmSale(); break;
     case 'saveNewClientAndSell': saveNewClientAndSell(); break;
+    case 'selectPayment': selectPayment(arg); break;
+    case 'selectReward': selectReward(arg); break;
+    case 'addToCart': addToCart(parseInt(arg)); break;
+    case 'updateQtyMinus': updateQty(parseInt(arg), -1); break;
+    case 'updateQtyPlus': updateQty(parseInt(arg), 1); break;
     case 'previewCalOrderWA':    previewCalOrder('whatsapp'); break;
     case 'previewCalOrderEmail': previewCalOrder('email'); break;
     // Vendeurs
