@@ -890,8 +890,9 @@ let pageHistory = ["page-home"];
 // STORAGE - FIREBASE
 // ═══════════════════════════════════════
 function loadData() {
-  // Show loading
-  document.getElementById("clients-list").innerHTML = `<div style="text-align:center;padding:40px;color:#4a4640">
+  // Show loading only if on home page
+  var listEl = document.getElementById("clients-list");
+  if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:40px;color:#4a4640">
     <div class="spinner" style="margin:0 auto 16px"></div>Chargement des clients...</div>`;
   
   db.collection("clients").orderBy("name").onSnapshot(snapshot => {
@@ -899,12 +900,14 @@ function loadData() {
     snapshot.forEach(doc => {
       clients.push({id: doc.id, ...doc.data()});
     });
-    renderHome();
+    // Ne rafraîchir l'accueil que si l'admin est sur page-home
+    if(currentUser && currentUser.role === "admin") {
+      var homePage = document.getElementById("page-home");
+      if(homePage && homePage.classList.contains("active")) renderHome();
+    }
   }, error => {
     console.error("Erreur Firebase:", error);
-    // Fallback to localStorage
     try { clients = JSON.parse(localStorage.getItem("mfs_clients") || "[]"); } catch(e) { clients = []; }
-    renderHome();
   });
 }
 
@@ -2320,7 +2323,7 @@ async function loadVendors() {
   } catch(e) { vendors = []; }
 }
 
-function login() {
+async function login() {
   const code = document.getElementById("login-code").value.trim().toUpperCase();
   const password = document.getElementById("login-password").value.trim();
   const errEl = document.getElementById("login-error");
@@ -2338,6 +2341,13 @@ function login() {
     return;
   }
   
+  // Recharger les vendeurs si la liste est vide (Firebase peut être lent au démarrage)
+  if(vendors.length === 0) {
+    errEl.textContent = "Vérification en cours…";
+    errEl.style.display = "block";
+    await loadVendors();
+  }
+
   // Vendor login
   const vendor = vendors.find(v => v.code === code && v.password === password);
   if(vendor) {
@@ -2345,7 +2355,7 @@ function login() {
       errEl.textContent = "Compte suspendu. Contactez l\'administrateur.";
       errEl.style.display = "block"; return;
     }
-    currentUser = {code:vendor.code, name:vendor.name, role:"vendor"};
+    currentUser = {code:vendor.code, name:vendor.name, role:"vendor", vendorId:vendor.id};
     errEl.style.display = "none";
     onLoginSuccess();
     return;
@@ -2356,23 +2366,30 @@ function login() {
 }
 
 function onLoginSuccess() {
-  // Update header
   const badge = document.getElementById("user-badge");
   const logoutBtn = document.getElementById("logout-btn");
   const adminBtn = document.getElementById("admin-btn");
   if(badge) badge.textContent = currentUser.role==="admin" ? "👑 Admin" : "👤 " + currentUser.name;
   if(logoutBtn) logoutBtn.style.display = "block";
   if(adminBtn) adminBtn.style.display = currentUser.role==="admin" ? "block" : "none";
-  // Check upcoming appointments
+
+  // Alertes commandes imminentes
   var todayStr = new Date().toISOString().split("T")[0];
   var appts = JSON.parse(localStorage.getItem("mf_appointments")||"[]");
-  var urgentAppts = appts.filter(function(a){ var d=new Date(a.date+"T00:00:00"); return a.date>=todayStr && Math.ceil((d-new Date(todayStr))/86400000)<=2; });
-  if(urgentAppts.length>0) showToast("📅 " + urgentAppts.length + " alerte(s) commande imminente !");
-  
+  var urgentAppts = appts.filter(function(a){
+    var d = new Date(a.date+"T00:00:00");
+    return a.date >= todayStr && Math.ceil((d - new Date(todayStr)) / 86400000) <= 2;
+  });
+  if(urgentAppts.length > 0) setTimeout(function(){ showToast("📅 " + urgentAppts.length + " alerte(s) commande imminente !"); }, 1000);
+
   if(currentUser.role === 'vendor') {
+    // Vendeur → page vendeur IMMÉDIATEMENT, puis charger données
     showPage('page-vendor-home', false);
-    setTimeout(function(){ renderVendorHome(); }, 100);
+    loadData(); // Charger les clients pour que le vendeur puisse faire des ventes
+    setTimeout(function(){ renderVendorHome(); }, 300);
   } else {
+    // Admin → accueil admin
+    loadData();
     renderHome();
     showPage('page-home', false);
   }
@@ -4366,10 +4383,9 @@ function renderVip() {
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
-loadVendors();
-loadData();
+loadVendors(); // Charger les vendeurs pour le login
 renderTypeGrid("nc-type-grid", selectedType, "selectNewClientType");
-// Show login page first
+// Toujours démarrer sur la page login
 showPage("page-login", false);
 
 var vendorSelectMode = false;
