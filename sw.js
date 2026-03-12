@@ -1,4 +1,4 @@
-const CACHE = 'monfermier-v202603120002';
+const CACHE = 'monfermier-v202603120035';
 const FILES = ['./', './index.html'];
 
 self.addEventListener('install', function(e) {
