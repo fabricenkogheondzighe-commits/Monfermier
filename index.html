@@ -2474,7 +2474,7 @@ function renderAdminClients(el) {
   });
 
   var html = '';
-  html += '<button onclick="openNewClientFromAdmin()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:12px;font-size:14px;font-weight:800;border:none;margin-bottom:12px;box-shadow:0 4px 16px #c9a84c44">➕ Nouveau client</button>';
+  html += '<button id="btn-new-client-admin" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:12px;font-size:14px;font-weight:800;border:none;margin-bottom:12px;box-shadow:0 4px 16px #c9a84c44">➕ Nouveau client</button>';
   html += '<div style="display:flex;gap:8px;margin-bottom:12px"><input id="admin-client-search" type="text" placeholder="🔍 Rechercher un client..." oninput="adminSearchClients()" style="flex:1;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box"></div>';
 
   if(filtered.length === 0) {
@@ -2505,6 +2505,9 @@ function renderAdminClients(el) {
     });
   }
   el.innerHTML = html;
+  // Attacher le listener APRÈS injection du HTML (évite les problèmes onclick inline sur Android)
+  var btnNew = document.getElementById('btn-new-client-admin');
+  if(btnNew) btnNew.addEventListener('click', function() { openNewClientFromAdmin(); });
   if(searchEl) {
     var newSearch = document.getElementById('admin-client-search');
     if(newSearch) { newSearch.value = search; newSearch.focus(); }
@@ -4460,9 +4463,7 @@ function renderVip() {
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
-loadVendors(); // Charger les vendeurs pour le login
-renderTypeGrid("nc-type-grid", selectedType, "selectNewClientType");
-// Toujours démarrer sur la page login
+loadVendors();
 showPage("page-login", false);
 
 var vendorSelectMode = false;
