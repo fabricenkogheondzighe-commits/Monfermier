@@ -2461,7 +2461,17 @@ function adminSearchClients() {
 // ═══════════════════════════════════════
 // ADMIN TAB : VENTE
 // ═══════════════════════════════════════
+var adminVenteMode = 'search'; // 'search' ou 'create'
+
 function renderAdminVente(el) {
+  el = el || document.getElementById('admin-tab-content');
+  if(!el) return;
+
+  if(adminVenteMode === 'create') {
+    renderAdminVenteCreate(el);
+    return;
+  }
+
   var q = (document.getElementById('admin-vente-search') || {value:''}).value || '';
   var results = q.trim()
     ? clients.filter(function(c) {
@@ -2473,21 +2483,18 @@ function renderAdminVente(el) {
 
   var html =
     '<div style="font-size:13px;color:#8a8070;margin-bottom:12px">Recherchez un client pour démarrer une vente, ou créez-en un nouveau.</div>' +
-
-    // Recherche
-    '<div style="position:relative;margin-bottom:12px">' +
+    '<div style="margin-bottom:12px">' +
       '<input id="admin-vente-search" type="text" placeholder="🔍 Nom, code ou téléphone..." ' +
-        'oninput="renderAdminVente(document.getElementById(\'admin-tab-content\'))" ' +
+        'oninput="renderAdminVente()" ' +
         'value="' + q.replace(/"/g,'&quot;') + '" ' +
         'style="width:100%;background:#0f0e0b;border:1px solid #c9a84c55;color:#fff;padding:12px 14px;border-radius:10px;font-size:15px;box-sizing:border-box">' +
     '</div>';
 
   if(q.trim() && results.length === 0) {
-    // Aucun résultat → proposer création directe
     html +=
       '<div style="background:#1a1813;border:1px solid #c9a84c33;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px">' +
-        '<div style="font-size:14px;color:#8a8070;margin-bottom:12px">Aucun client trouvé pour "<strong style="color:#c9a84c">' + q + '</strong>"</div>' +
-        '<button id="btn-av-create" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:14px;font-weight:800;border:none">➕ Créer "' + q + '" et faire une vente</button>' +
+        '<div style="font-size:14px;color:#8a8070;margin-bottom:12px">Aucun client "<strong style="color:#c9a84c">' + q + '</strong>"</div>' +
+        '<button id="btn-av-create" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:14px;font-weight:800;border:none">➕ Créer et faire une vente</button>' +
       '</div>';
   } else if(results.length > 0) {
     html += '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:8px">RÉSULTATS (' + results.length + ')</div>';
@@ -2511,31 +2518,79 @@ function renderAdminVente(el) {
     });
   }
 
-  // Bouton créer nouveau client (toujours visible en bas)
   html +=
-    '<div style="margin-top:8px;border-top:1px solid #2e2a22;padding-top:12px">' +
+    '<div style="margin-top:12px;border-top:1px solid #2e2a22;padding-top:12px">' +
       '<button id="btn-av-new" style="width:100%;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:13px;border-radius:10px;font-size:14px;font-weight:700">➕ Nouveau client</button>' +
     '</div>';
 
   el.innerHTML = html;
 
-  // Listeners après injection HTML
-  var btnCreate = document.getElementById('btn-av-create');
-  if(btnCreate) btnCreate.addEventListener('click', function() {
-    // Pré-remplir le nom dans le modal avec la recherche
-    openNewClientFromAdmin();
+  document.getElementById('btn-av-new') && document.getElementById('btn-av-new').addEventListener('click', function() {
+    adminVenteMode = 'create';
+    renderAdminVente();
+  });
+  document.getElementById('btn-av-create') && document.getElementById('btn-av-create').addEventListener('click', function() {
+    adminVenteMode = 'create';
+    renderAdminVente();
     setTimeout(function() {
-      var nm = document.getElementById('nc-name');
-      if(nm) { nm.value = q; nm.focus(); }
-    }, 100);
+      var nm = document.getElementById('av-nc-name');
+      if(nm) { nm.value = q; }
+    }, 50);
   });
 
-  var btnNew = document.getElementById('btn-av-new');
-  if(btnNew) btnNew.addEventListener('click', function() { openNewClientFromAdmin(); });
+  var s = document.getElementById('admin-vente-search');
+  if(s && !q) s.focus();
+}
 
-  // Focus sur la recherche
-  var searchEl = document.getElementById('admin-vente-search');
-  if(searchEl && !q) searchEl.focus();
+function renderAdminVenteCreate(el) {
+  var inpStyle = 'width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px';
+  el.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' +
+      '<button id="btn-av-back" style="background:#2e2a22;border:none;color:#c9a84c;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700">← Retour</button>' +
+      '<div style="font-size:16px;font-weight:700;color:#c9a84c">➕ Nouveau client</div>' +
+    '</div>' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1px">NOM COMPLET *</label>' +
+    '<input id="av-nc-name" class="input" placeholder="Ex: Jean Dupont" style="' + inpStyle + '">' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1px">📞 TÉLÉPHONE</label>' +
+    '<input id="av-nc-phone" class="input" type="tel" placeholder="+225 07 00 00 00" style="' + inpStyle + '">' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1px">✉️ EMAIL</label>' +
+    '<input id="av-nc-email" class="input" type="email" placeholder="jean@email.com" style="' + inpStyle + '">' +
+    '<label style="display:block;margin-bottom:10px;font-size:11px;color:#8a8070;letter-spacing:1px">🏷️ TYPE DE CLIENT *</label>' +
+    '<div class="type-grid" id="av-nc-type-grid" style="margin-bottom:16px"></div>' +
+    '<button id="btn-av-save" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:800;border:none">✅ Créer le client</button>';
+
+  renderTypeGrid('av-nc-type-grid', selectedType, 'selectNewClientType');
+
+  document.getElementById('btn-av-back').addEventListener('click', function() {
+    adminVenteMode = 'search';
+    renderAdminVente();
+  });
+
+  document.getElementById('btn-av-save').addEventListener('click', async function() {
+    var name = (document.getElementById('av-nc-name').value || '').trim();
+    if(!name) { showToast('Le nom est obligatoire', true); return; }
+    if(clients.find(function(c){ return c.name.toLowerCase() === name.toLowerCase(); })) {
+      showToast('Ce client existe déjà !', true); return;
+    }
+    var client = {
+      id: Date.now().toString(),
+      code: genCode(), name: name,
+      phone: (document.getElementById('av-nc-phone').value || '').trim(),
+      email: (document.getElementById('av-nc-email').value || '').trim(),
+      type: selectedType,
+      createdBy: currentUser ? currentUser.code : 'ADMIN',
+      points: 0, totalSpent: 0, history: [], vipTickets: 0, totalVipPoints: 0
+    };
+    try {
+      var ref = await db.collection('clients').add((function(){ var d=Object.assign({},client); delete d.id; return d; })());
+      client.id = ref.id;
+    } catch(e) {}
+    clients.push(client);
+    showToast('✅ Client ' + name + ' créé !');
+    adminVenteMode = 'search';
+    // Lancer la vente directement
+    openSale(client.id);
+  });
 }
 
 function renderAdminClients(el) {
