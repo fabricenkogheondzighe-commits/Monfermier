@@ -660,7 +660,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
   <!-- TABS ROW 1 -->
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">
     <button id="admin-tab-vente" onclick="openAdminTab('vente')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      🛒<br><span style="font-size:9px">Vente</span>
+      ➕<br><span style="font-size:9px">Nouveau</span>
     </button>
     <button id="admin-tab-clients" onclick="openAdminTab('clients')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
       👥<br><span style="font-size:9px">Clients</span>
@@ -1601,6 +1601,7 @@ function selectReward(choice) {
 
 function renderSale() {
   const c = currentClient;
+  if(!c) { showPage('page-home'); return; }
   const total = cartTotal();
   const earned = cartPoints();
   const elig = isEligible();
@@ -1739,26 +1740,16 @@ async function confirmSale() {
   if(!c) return;
   const total = cartTotal();
   const final = total - (isEligible() && rewardChoice==="discount" ? Math.floor(total*DISCOUNT) : 0);
-  const isElectronic = selectedPayment !== "especes";
   const pm = PAYMENT_MODES.find(p => p.id === selectedPayment);
+  const pmLabel = pm ? pm.icon + " " + pm.label : "💵 Espèces";
 
-  // Si paiement électronique, afficher vérification encaissement d'abord
-  if(isElectronic) {
-    const pmLabel = pm ? pm.icon + " " + pm.label : selectedPayment;
-    const payModal = document.getElementById("confirm-payment-modal");
-    const payContent = document.getElementById("confirm-payment-content");
-    if(payContent) payContent.innerHTML =
-      buildSaleConfirmHTML(c, final, total, pm) +
-      "<div style='font-size:12px;color:#c97a7a;margin-top:10px;padding:10px;background:#2e0a0a;border-radius:8px;border:1px solid #6a1a1a;text-align:center'>⚠️ Confirmez que le paiement <strong>" + pmLabel + "</strong> a bien été reçu sur votre téléphone.</div>";
-    if(payModal) payModal.style.display = "flex";
-    return;
-  }
-
-  // Paiement espèces
-  const modal = document.getElementById("confirm-sale-modal");
-  const mc = document.getElementById("confirm-sale-content");
-  if(mc) mc.innerHTML = buildSaleConfirmHTML(c, final, total, pm);
-  if(modal) modal.style.display = "flex";
+  // Toujours afficher la popup rouge de confirmation
+  const payModal = document.getElementById("confirm-payment-modal");
+  const payContent = document.getElementById("confirm-payment-content");
+  if(payContent) payContent.innerHTML =
+    buildSaleConfirmHTML(c, final, total, pm) +
+    "<div style='font-size:13px;color:#c97a7a;margin-top:12px;padding:12px;background:#2e0a0a;border-radius:10px;border:2px solid #8a2020;text-align:center;font-weight:700'>⚠️ Avez-vous bien reçu <span style='color:#c9a84c'>" + fmtPrice(final) + "</span> en <strong>" + pmLabel + "</strong> ?</div>";
+  if(payModal) payModal.style.display = "flex";
 }
 
 function closeConfirmPayment() {
@@ -2459,146 +2450,59 @@ function adminSearchClients() {
 }
 
 // ═══════════════════════════════════════
-// ADMIN TAB : VENTE
+// ADMIN TAB : NOUVEAU CLIENT + VENTE
 // ═══════════════════════════════════════
-var adminVenteMode = 'search'; // 'search' ou 'create'
 
 function renderAdminVente(el) {
   el = el || document.getElementById('admin-tab-content');
   if(!el) return;
+  selectedType = 'particulier';
+  var inpStyle = 'width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:12px 14px;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:14px';
 
-  if(adminVenteMode === 'create') {
-    renderAdminVenteCreate(el);
-    return;
-  }
-
-  var q = (document.getElementById('admin-vente-search') || {value:''}).value || '';
-  var results = q.trim()
-    ? clients.filter(function(c) {
-        return c.name.toLowerCase().includes(q.toLowerCase()) ||
-               (c.code||'').toLowerCase().includes(q.toLowerCase()) ||
-               (c.phone||'').includes(q);
-      })
-    : [];
-
-  var html =
-    '<div style="font-size:13px;color:#8a8070;margin-bottom:12px">Recherchez un client pour démarrer une vente, ou créez-en un nouveau.</div>' +
-    '<div style="margin-bottom:12px">' +
-      '<input id="admin-vente-search" type="text" placeholder="🔍 Nom, code ou téléphone..." ' +
-        'oninput="renderAdminVente()" ' +
-        'value="' + q.replace(/"/g,'&quot;') + '" ' +
-        'style="width:100%;background:#0f0e0b;border:1px solid #c9a84c55;color:#fff;padding:12px 14px;border-radius:10px;font-size:15px;box-sizing:border-box">' +
-    '</div>';
-
-  if(q.trim() && results.length === 0) {
-    html +=
-      '<div style="background:#1a1813;border:1px solid #c9a84c33;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px">' +
-        '<div style="font-size:14px;color:#8a8070;margin-bottom:12px">Aucun client "<strong style="color:#c9a84c">' + q + '</strong>"</div>' +
-        '<button id="btn-av-create" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:14px;font-weight:800;border:none">➕ Créer et faire une vente</button>' +
-      '</div>';
-  } else if(results.length > 0) {
-    html += '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:8px">RÉSULTATS (' + results.length + ')</div>';
-    results.forEach(function(c) {
-      var t = getType(c.type);
-      var av = initials(c.name);
-      var isP = (c.type||'particulier') === 'particulier';
-      html +=
-        '<div style="display:flex;align-items:center;gap:10px;background:#1a1813;border:1px solid #2e2a22;border-radius:12px;padding:12px;margin-bottom:8px">' +
-          '<div class="avatar" style="width:42px;height:42px;font-size:16px;background:linear-gradient(135deg,#2a2520,#3a3028);color:#8a8070;border-color:#2e2a22;flex-shrink:0">' + av + '</div>' +
-          '<div style="flex:1;min-width:0">' +
-            '<div style="font-weight:700;font-size:14px;color:#fff">' + c.name + '</div>' +
-            '<div style="font-size:11px;color:#4a4640;margin-top:2px">' +
-              (c.phone ? c.phone + ' · ' : '') +
-              '<span style="background:' + t.bg + ';color:' + t.color + ';border-radius:20px;padding:1px 7px;font-size:10px">' + t.icon + ' ' + t.label + '</span>' +
-              (isP ? ' · ' + (c.points||0) + ' pts' : '') +
-            '</div>' +
-          '</div>' +
-          '<button onclick="openSale(\'' + c.id + '\')" style="background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:800;white-space:nowrap">💰 Vendre</button>' +
-        '</div>';
-    });
-  }
-
-  html +=
-    '<div style="margin-top:12px;border-top:1px solid #2e2a22;padding-top:12px">' +
-      '<button id="btn-av-new" style="width:100%;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:13px;border-radius:10px;font-size:14px;font-weight:700">➕ Nouveau client</button>' +
-    '</div>';
-
-  el.innerHTML = html;
-
-  document.getElementById('btn-av-new') && document.getElementById('btn-av-new').addEventListener('click', function() {
-    adminVenteMode = 'create';
-    renderAdminVente();
-  });
-  document.getElementById('btn-av-create') && document.getElementById('btn-av-create').addEventListener('click', function() {
-    adminVenteMode = 'create';
-    renderAdminVente();
-    setTimeout(function() {
-      var nm = document.getElementById('av-nc-name');
-      if(nm) { nm.value = q; }
-    }, 50);
-  });
-
-  var s = document.getElementById('admin-vente-search');
-  if(s && !q) s.focus();
-}
-
-function renderAdminVenteCreate(el) {
-  var inpStyle = 'width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px';
   el.innerHTML =
-    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' +
-      '<button id="btn-av-back" style="background:#2e2a22;border:none;color:#c9a84c;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700">← Retour</button>' +
-      '<div style="font-size:16px;font-weight:700;color:#c9a84c">➕ Nouveau client</div>' +
-    '</div>' +
-    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1px">NOM COMPLET *</label>' +
+    '<div style="font-size:13px;color:#8a8070;margin-bottom:16px">Créez un nouveau client puis faites directement la vente.</div>' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">NOM COMPLET *</label>' +
     '<input id="av-nc-name" class="input" placeholder="Ex: Jean Dupont" style="' + inpStyle + '">' +
-    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1px">📞 TÉLÉPHONE</label>' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">📞 TÉLÉPHONE</label>' +
     '<input id="av-nc-phone" class="input" type="tel" placeholder="+225 07 00 00 00" style="' + inpStyle + '">' +
-    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1px">✉️ EMAIL</label>' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">✉️ EMAIL</label>' +
     '<input id="av-nc-email" class="input" type="email" placeholder="jean@email.com" style="' + inpStyle + '">' +
-    '<label style="display:block;margin-bottom:10px;font-size:11px;color:#8a8070;letter-spacing:1px">🏷️ TYPE DE CLIENT *</label>' +
-    '<div class="type-grid" id="av-nc-type-grid" style="margin-bottom:16px"></div>' +
-    '<button id="btn-av-save" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:800;border:none">✅ Créer le client</button>';
+    '<label style="display:block;margin-bottom:10px;font-size:11px;color:#8a8070;letter-spacing:1.5px">🏷️ TYPE DE CLIENT *</label>' +
+    '<div class="type-grid" id="av-nc-type-grid" style="margin-bottom:20px"></div>' +
+    '<button id="btn-av-save" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:15px;border-radius:12px;font-size:15px;font-weight:800;border:none;box-shadow:0 4px 16px #c9a84c44">✅ Créer le client et faire la vente</button>';
 
   renderTypeGrid('av-nc-type-grid', selectedType, 'selectNewClientType');
 
-  document.getElementById('btn-av-back').addEventListener('click', function() {
-    adminVenteMode = 'search';
-    renderAdminVente();
-  });
-
-  document.getElementById('btn-av-save').addEventListener('click', async function() {
+  document.getElementById('btn-av-save').onclick = async function() {
     var name = (document.getElementById('av-nc-name').value || '').trim();
     if(!name) { showToast('Le nom est obligatoire', true); return; }
     if(clients.find(function(c){ return c.name.toLowerCase() === name.toLowerCase(); })) {
       showToast('Ce client existe déjà !', true); return;
     }
-    var tmpId = Date.now().toString();
+    var tmpId = 'tmp_' + Date.now();
     var client = {
-      id: tmpId,
-      code: genCode(), name: name,
+      id: tmpId, code: genCode(), name: name,
       phone: (document.getElementById('av-nc-phone').value || '').trim(),
       email: (document.getElementById('av-nc-email').value || '').trim(),
-      type: selectedType,
+      type: selectedType || 'particulier',
       createdBy: currentUser ? currentUser.code : 'ADMIN',
       points: 0, totalSpent: 0, history: [], vipTickets: 0, totalVipPoints: 0
     };
     clients.push(client);
-    showToast('✅ Client ' + name + ' créé !');
-    adminVenteMode = 'search';
-    // Lancer la vente immédiatement avec l'id temporaire (Firebase sync en arrière-plan)
-    openSale(tmpId);
-    // Sync Firebase en arrière-plan
+    currentClient = client;
+    cart = []; rewardChoice = null;
+    showToast('✅ ' + name + ' créé ! Faites la vente.');
+    renderSale();
+    showPage('page-sale');
     try {
       var data = Object.assign({}, client); delete data.id;
       var ref = await db.collection('clients').add(data);
-      // Mettre à jour l'id dans le tableau
       var idx = clients.findIndex(function(c){ return c.id === tmpId; });
       if(idx !== -1) clients[idx].id = ref.id;
       if(currentClient && currentClient.id === tmpId) currentClient.id = ref.id;
-    } catch(e) { console.warn('Firebase sync error', e); }
-  });
+    } catch(e) {}
+  };
 }
-
 function renderAdminClients(el) {
   var searchEl = document.getElementById('admin-client-search');
   var search = searchEl ? searchEl.value.toLowerCase() : '';
@@ -3329,20 +3233,20 @@ function renderAdminCalendar(el) {
     // Statut paiement
     '<div style="font-size:11px;color:#8a8070;margin-bottom:8px;letter-spacing:1px">STATUT PAIEMENT</div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">' +
-      '<button type="button" id="cal-pay-paid"     class="payment-btn selected" style="font-size:11px;padding:10px 4px">✅ Payé</button>' +
-      '<button type="button" id="cal-pay-unpaid"   class="payment-btn"          style="font-size:11px;padding:10px 4px">❌ Non payé</button>' +
-      '<button type="button" id="cal-pay-delivery" class="payment-btn"          style="font-size:11px;padding:10px 4px">🚚 À livraison</button>' +
+      '<button type="button" id="cal-pay-paid"     class="payment-btn selected" style="font-size:11px;padding:10px 4px" onclick="setCalPay(\'paid\')">✅ Payé</button>' +
+      '<button type="button" id="cal-pay-unpaid"   class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalPay(\'unpaid\')">❌ Non payé</button>' +
+      '<button type="button" id="cal-pay-delivery" class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalPay(\'delivery\')">🚚 À livraison</button>' +
     '</div>' +
 
-    // Mode paiement (masqué si "non payé")
+    // Mode paiement
     '<div id="cal-pay-mode-wrap">' +
       '<div style="font-size:11px;color:#8a8070;margin-bottom:8px;letter-spacing:1px">MODE DE PAIEMENT</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">' +
-        '<button type="button" id="cal-mode-especes" class="payment-btn selected" style="font-size:11px;padding:10px 4px">💵 Espèces</button>' +
-        '<button type="button" id="cal-mode-airtel"  class="payment-btn"          style="font-size:11px;padding:10px 4px">📱 Airtel Money</button>' +
-        '<button type="button" id="cal-mode-moov"    class="payment-btn"          style="font-size:11px;padding:10px 4px">📱 Moov Money</button>' +
-        '<button type="button" id="cal-mode-card"    class="payment-btn"          style="font-size:11px;padding:10px 4px">💳 Carte crédit</button>' +
-        '<button type="button" id="cal-mode-cheque"  class="payment-btn"          style="font-size:11px;padding:10px 4px">📄 Chèque</button>' +
+        '<button type="button" id="cal-mode-especes" class="payment-btn selected" style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'especes\')">💵 Espèces</button>' +
+        '<button type="button" id="cal-mode-airtel"  class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'airtel\')">📱 Airtel Money</button>' +
+        '<button type="button" id="cal-mode-moov"    class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'moov\')">📱 Moov Money</button>' +
+        '<button type="button" id="cal-mode-card"    class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'card\')">💳 Carte crédit</button>' +
+        '<button type="button" id="cal-mode-cheque"  class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'cheque\')">📄 Chèque</button>' +
       '</div>' +
     '</div>' +
 
@@ -3351,11 +3255,10 @@ function renderAdminCalendar(el) {
 
     // Boutons action
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
-      '<button type="button" id="btn-devis-wa"    style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:12px;border-radius:8px;font-size:13px;font-weight:600">📲 Devis WhatsApp</button>' +
-      '<button type="button" id="btn-devis-email" style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:12px;border-radius:8px;font-size:13px;font-weight:600">✉️ Devis Email</button>' +
+      '<button type="button" onclick="previewCalOrder(\'whatsapp\')" style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:12px;border-radius:8px;font-size:13px;font-weight:600">📲 Devis WhatsApp</button>' +
+      '<button type="button" onclick="previewCalOrder(\'email\')" style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:12px;border-radius:8px;font-size:13px;font-weight:600">✉️ Devis Email</button>' +
     '</div>' +
-    '<button type="button" id="btn-save-order" ' +
-      'style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
+    '<button type="button" onclick="showConfirmOrder()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
   '</div>';
 
   // ── COMMANDES À VENIR ──
@@ -3442,31 +3345,6 @@ function renderAdminCalendar(el) {
 
   el.innerHTML = html;
 
-  // ── Attacher TOUS les listeners après injection HTML ──
-  // Statut paiement
-  var cp = document.getElementById('cal-pay-paid');
-  var cu = document.getElementById('cal-pay-unpaid');
-  var cd = document.getElementById('cal-pay-delivery');
-  if(cp) cp.addEventListener('click', function(){ setCalPay('paid'); });
-  if(cu) cu.addEventListener('click', function(){ setCalPay('unpaid'); });
-  if(cd) cd.addEventListener('click', function(){ setCalPay('delivery'); });
-
-  // Mode paiement
-  ['especes','airtel','moov','card','cheque'].forEach(function(m){
-    var b = document.getElementById('cal-mode-'+m);
-    if(b) b.addEventListener('click', function(){ setCalMode(m); });
-  });
-
-  // Devis
-  var bwa = document.getElementById('btn-devis-wa');
-  var bem = document.getElementById('btn-devis-email');
-  if(bwa) bwa.addEventListener('click', function(){ previewCalOrder('whatsapp'); });
-  if(bem) bem.addEventListener('click', function(){ previewCalOrder('email'); });
-
-  // Enregistrer
-  var bso = document.getElementById('btn-save-order');
-  if(bso) bso.addEventListener('click', function(){ showConfirmOrder(); });
-
   // Init état formulaire
   calPayStatus = 'paid';
   calPayMode   = 'especes';
@@ -3544,24 +3422,34 @@ function showConfirmOrder() {
   if(!order) return;
   calPendingOrder = order;
 
-  var modeLabels = {airtel:'Airtel Money',moov:'Moov Money',card:'Carte crédit',cheque:'Chèque'};
+  var modeLabels = {especes:'💵 Espèces', airtel:'📱 Airtel Money', moov:'📲 Moov Money', card:'💳 Carte crédit', cheque:'📄 Chèque'};
   var payLbl = order.payStatus==='paid'?'✅ Payé':order.payStatus==='unpaid'?'❌ Non payé':'🚚 À la livraison';
   var modeLbl = order.payMode ? ' — '+(modeLabels[order.payMode]||order.payMode) : '';
-  var itemsHtml = order.items.map(function(it){ return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span>'+it.qty+'× '+it.name+'</span><span style="color:#c9a84c">'+fmtPrice(it.price*it.qty)+'</span></div>'; }).join('');
+  var itemsHtml = order.items.map(function(it){
+    return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #1a1813"><span>'+it.qty+'× '+it.name+'</span><span style="color:#c9a84c;font-weight:600">'+fmtPrice(it.price*it.qty)+'</span></div>';
+  }).join('');
 
   var html =
-    '<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">'+order.client+'</div>' +
-    (order.phone ? '<div style="font-size:12px;color:#8a8070;margin-bottom:8px">📞 '+order.phone+'</div>' : '') +
-    '<div style="border-top:1px solid #2e2a22;padding-top:8px;margin-bottom:8px">'+itemsHtml+'</div>' +
-    '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;border-top:1px solid #2e2a22;padding-top:8px;margin-bottom:8px">' +
-      '<span>Total</span><span style="color:#c9a84c">'+fmtPrice(order.totalPrice)+'</span>' +
+    '<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:2px">'+order.client+'</div>' +
+    (order.phone ? '<div style="font-size:12px;color:#8a8070;margin-bottom:10px">📞 '+order.phone+'</div>' : '<div style="margin-bottom:10px"></div>') +
+    '<div style="margin-bottom:10px">'+itemsHtml+'</div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;border-top:2px solid #c9a84c44;padding-top:10px;margin-bottom:10px">' +
+      '<span>TOTAL</span><span style="color:#c9a84c">'+fmtPrice(order.totalPrice)+'</span>' +
     '</div>' +
     '<div style="font-size:12px;color:#8a8070;margin-bottom:4px">📅 Livraison : <strong style="color:#fff">'+new Date(order.date+"T00:00:00").toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"long"})+'</strong></div>' +
-    '<div style="font-size:12px;color:#8a8070">'+payLbl+modeLbl+'</div>';
+    '<div style="font-size:12px;margin-bottom:6px">'+payLbl+modeLbl+'</div>';
+
+  // Si payé → ajouter alerte rouge confirmation argent
+  if(order.payStatus === 'paid') {
+    var modeStr = modeLabels[order.payMode] || order.payMode || 'Espèces';
+    html += '<div style="margin-top:10px;padding:12px;background:#2e0a0a;border:2px solid #8a2020;border-radius:10px;text-align:center">' +
+      '<div style="font-size:13px;color:#c97a7a;font-weight:700;margin-bottom:4px">⚠️ CONFIRMATION PAIEMENT</div>' +
+      '<div style="font-size:13px;color:#fff">Avez-vous bien reçu <strong style="color:#c9a84c">'+fmtPrice(order.totalPrice)+'</strong><br>en <strong>'+modeStr+'</strong> ?</div>' +
+    '</div>';
+  }
 
   document.getElementById('confirm-order-content').innerHTML = html;
-  var modal = document.getElementById('confirm-order-modal');
-  modal.style.display = 'flex';
+  document.getElementById('confirm-order-modal').style.display = 'flex';
 }
 
 function closeConfirmOrder() {
@@ -4632,6 +4520,65 @@ function renderVip() {
 // ═══════════════════════════════════════
 loadVendors();
 showPage("page-login", false);
+
+// ── Exposer toutes les fonctions globalement (fix Android PWA) ──
+window.setCalPay = setCalPay;
+window.setCalMode = setCalMode;
+window.showConfirmOrder = showConfirmOrder;
+window.closeConfirmOrder = closeConfirmOrder;
+window.confirmSaveOrder = confirmSaveOrder;
+window.previewCalOrder = previewCalOrder;
+window.openNewClientModal = openNewClientModal;
+window.closeNewClientModal = closeNewClientModal;
+window.openNewClientFromAdmin = openNewClientFromAdmin;
+window.previewNewClient = previewNewClient;
+window.addClient = addClient;
+window.openSale = openSale;
+window.addToCart = addToCart;
+window.updateQty = updateQty;
+window.selectPayment = selectPayment;
+window.selectReward = selectReward;
+window.confirmSale = confirmSale;
+window.openAdminTab = openAdminTab;
+window.renderAdminVente = renderAdminVente;
+window.openAdmin = openAdmin;
+window.goBack = goBack;
+window.goHome = goHome;
+window.logout = logout;
+window.login = login;
+window.vpTab = vpTab;
+window.setCalPay = setCalPay;
+window.setCalMode = setCalMode;
+window.selectNewClientType = selectNewClientType;
+window.openEditClient = openEditClient;
+window.saveEditClient = saveEditClient;
+window.adminClientMenu = adminClientMenu;
+window.adminClientMenu_view = adminClientMenu_view;
+window.adminClientMenu_edit = adminClientMenu_edit;
+window.adminClientMenu_delete = adminClientMenu_delete;
+window.adminClientMenu_sale = adminClientMenu_sale;
+window.closeAdminActionModal = closeAdminActionModal;
+window.closeAdminConfirmModal = closeAdminConfirmModal;
+window.openClient = openClient;
+window.openVendorProfile = openVendorProfile;
+window.openEditVendor = openEditVendor;
+window.saveVendor = saveVendor;
+window.quickToggleSuspend = quickToggleSuspend;
+window.deleteVendorById = deleteVendorById;
+window.recalcVendorCommissions = recalcVendorCommissions;
+window.sendCommRecap = sendCommRecap;
+window.confirmDeleteVendorFromRecap = confirmDeleteVendorFromRecap;
+window.openAddVendor = openAddVendor;
+window.filterComptaMonth = filterComptaMonth;
+window.marquerPaye = marquerPaye;
+window.generateMonthlyPDF = generateMonthlyPDF;
+window.stockTab = stockTab;
+window.saveEmballage = saveEmballage;
+window.saveRemise = saveRemise;
+window.saveRetour = saveRetour;
+window.calcInput = calcInput;
+window.adminSearchClients = adminSearchClients;
+window.setTypeFilter = setTypeFilter;
 
 // ── Délégation globale d'événements (fix Android onclick inline) ──
 document.addEventListener('click', function(e) {
