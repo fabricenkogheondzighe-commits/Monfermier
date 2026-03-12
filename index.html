@@ -729,7 +729,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
     <hr>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn-gold" style="flex:1" onclick="previewNewClient()">Créer le client</button>
-      <button class="btn-ghost" onclick="cancelNewClient()">Annuler</button>
+      <button class="btn-ghost" onclick="goHome()">Annuler</button>
     </div>
   </div>
 </div>
@@ -1278,34 +1278,14 @@ function selectEditType(id) { editType=id; renderTypeGrid("ec-type-grid",editTyp
 // ADD CLIENT
 // ═══════════════════════════════════════
 
-function cancelNewClient() {
-  if(localStorage.getItem('mf_from_admin') === '1') {
-    localStorage.removeItem('mf_from_admin');
-    showPage('page-admin', false);
-    setTimeout(function(){ renderAdmin(); }, 100);
-  } else {
-    goHome();
-  }
-}
-
-
 function openNewClient() {
   showPage("page-new-client");
 }
 
 function openNewClientFromAdmin() {
-  // Fermer l'admin et aller au formulaire
+  // Mémoriser qu'on vient de l'admin pour y revenir après
   localStorage.setItem('mf_from_admin', '1');
-  // Cacher toutes les pages
-  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  // Afficher page-new-client
-  var p = document.getElementById('page-new-client');
-  if(p) { p.classList.add('active'); p.classList.add('fade-in'); }
-  // Gérer le bouton retour
-  var backBtn = document.getElementById('back-btn');
-  if(backBtn) backBtn.style.display = 'block';
-  // Scroll en haut
-  window.scrollTo(0, 0);
+  showPage("page-new-client");
 }
 
 function previewNewClient() {
