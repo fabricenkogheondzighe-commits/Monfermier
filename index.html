@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.47</title>
+  <title>Mon Fermier SARL v3.48</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -28,9 +28,15 @@ html,body{height:100%;background:#0f0e0b;color:#e8e0d0;font-family:Georgia,serif
 button{cursor:pointer;font-family:inherit;transition:all 0.2s}
 input{font-family:inherit;outline:none}
 .page{display:none;padding:16px;max-width:600px;margin:0 auto;padding-bottom:40px}
-#page-new-client, #page-client, #page-sale, #page-sale-result {
-  background: #0f0e0b;
+#page-new-client, #page-client, #page-sale, #page-sale-result,
+#page-login, #page-vendor-home, #page-vendor-profile {
+  background: #0f0e0b !important;
   min-height: 100vh;
+}
+/* Reset admin background when leaving */
+body.on-admin #page-new-client,
+body.on-admin #page-client {
+  background: #0f0e0b !important;
 }
 
 /* ── VENDOR HOME ── */
@@ -959,6 +965,8 @@ function showPage(id, addHistory=true) {
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   const page = document.getElementById(id);
   if(page) { page.classList.add("active"); page.classList.add("fade-in"); }
+  // Reset background selon page
+  document.body.style.background = id === "page-admin" ? "" : "#0f0e0b";
   const backBtn = document.getElementById("back-btn");
   backBtn.style.display = id === "page-home" ? "none" : "block";
   var homeBtn = document.getElementById("home-btn");
