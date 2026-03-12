@@ -2572,8 +2572,9 @@ function renderAdminVenteCreate(el) {
     if(clients.find(function(c){ return c.name.toLowerCase() === name.toLowerCase(); })) {
       showToast('Ce client existe déjà !', true); return;
     }
+    var tmpId = Date.now().toString();
     var client = {
-      id: Date.now().toString(),
+      id: tmpId,
       code: genCode(), name: name,
       phone: (document.getElementById('av-nc-phone').value || '').trim(),
       email: (document.getElementById('av-nc-email').value || '').trim(),
@@ -2581,15 +2582,20 @@ function renderAdminVenteCreate(el) {
       createdBy: currentUser ? currentUser.code : 'ADMIN',
       points: 0, totalSpent: 0, history: [], vipTickets: 0, totalVipPoints: 0
     };
-    try {
-      var ref = await db.collection('clients').add((function(){ var d=Object.assign({},client); delete d.id; return d; })());
-      client.id = ref.id;
-    } catch(e) {}
     clients.push(client);
     showToast('✅ Client ' + name + ' créé !');
     adminVenteMode = 'search';
-    // Lancer la vente directement
-    openSale(client.id);
+    // Lancer la vente immédiatement avec l'id temporaire (Firebase sync en arrière-plan)
+    openSale(tmpId);
+    // Sync Firebase en arrière-plan
+    try {
+      var data = Object.assign({}, client); delete data.id;
+      var ref = await db.collection('clients').add(data);
+      // Mettre à jour l'id dans le tableau
+      var idx = clients.findIndex(function(c){ return c.id === tmpId; });
+      if(idx !== -1) clients[idx].id = ref.id;
+      if(currentClient && currentClient.id === tmpId) currentClient.id = ref.id;
+    } catch(e) { console.warn('Firebase sync error', e); }
   });
 }
 
@@ -3348,7 +3354,7 @@ function renderAdminCalendar(el) {
       '<button type="button" onclick="previewCalOrder(\'whatsapp\')" style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:12px;border-radius:8px;font-size:13px;font-weight:600">📲 Devis WhatsApp</button>' +
       '<button type="button" onclick="previewCalOrder(\'email\')"    style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:12px;border-radius:8px;font-size:13px;font-weight:600">✉️ Devis Email</button>' +
     '</div>' +
-    '<button type="button" onclick="showConfirmOrder()" ' +
+    '<button type="button" id="btn-save-order" ' +
       'style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
   '</div>';
 
@@ -3435,6 +3441,10 @@ function renderAdminCalendar(el) {
   }
 
   el.innerHTML = html;
+
+  // Listener bouton Enregistrer (évite les problèmes onclick inline sur Android)
+  var btnSaveOrder = document.getElementById('btn-save-order');
+  if(btnSaveOrder) btnSaveOrder.addEventListener('click', function(){ showConfirmOrder(); });
 
   // Init état formulaire
   calPayStatus = 'paid';
