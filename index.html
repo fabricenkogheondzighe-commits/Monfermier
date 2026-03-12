@@ -1707,12 +1707,16 @@ function renderSale() {
         '<hr>' +
         '<div style="display:flex;justify-content:space-between;font-weight:700;font-size:18px;margin-bottom:10px"><span>TOTAL</span><span style="color:#c9a84c">' + fmtPrice(finalTotal) + '</span></div>' +
         '<div style="font-size:12px;color:#4a4640;margin-bottom:14px">Points gagnés : <span style="color:#c9a84c">+' + earned + ' pts</span></div>' +
-        '<button id="btn-confirm-sale" data-action="confirmSale" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:800;border:none;opacity:' + (canConfirm?1:0.4) + '">✓ Confirmer · ' + fmtPrice(finalTotal) + '</button>' +
+        '<button id="btn-confirm-sale" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:800;border:none;opacity:' + (canConfirm?1:0.4) + '">✓ Confirmer · ' + fmtPrice(finalTotal) + '</button>' +
         (elig && !rewardChoice ? '<div style="font-size:11px;color:#8a8070;text-align:center;margin-top:8px">Veuillez choisir une récompense ci-dessus</div>' : '') +
       '</div>';
   }
 
   page.innerHTML = clientHtml + pmHtml + prodsHtml + rewardHtml + cartHtml;
+
+  // Attacher bouton confirmer (.onclick = méthode la plus fiable sur Android)
+  var btnC = document.getElementById('btn-confirm-sale');
+  if(btnC && canConfirm) btnC.onclick = function(){ confirmSale(); };
 }
 
 
@@ -2483,9 +2487,12 @@ function renderAdminVente(el) {
     '<input id="av-nc-email" class="input" type="email" placeholder="jean@email.com" style="' + inpStyle + '">' +
     '<label style="display:block;margin-bottom:10px;font-size:11px;color:#8a8070;letter-spacing:1.5px">🏷️ TYPE DE CLIENT *</label>' +
     '<div class="type-grid" id="av-nc-type-grid" style="margin-bottom:20px"></div>' +
-    '<button id="btn-av-save" data-action="saveNewClientAndSell" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:15px;border-radius:12px;font-size:15px;font-weight:800;border:none;box-shadow:0 4px 16px #c9a84c44">✅ Créer le client et faire la vente</button>';
+    '<button id="btn-av-save" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:15px;border-radius:12px;font-size:15px;font-weight:800;border:none;box-shadow:0 4px 16px #c9a84c44">✅ Créer le client et faire la vente</button>';
 
   renderTypeGrid('av-nc-type-grid', selectedType, 'selectNewClientType');
+
+  var btnAv = document.getElementById('btn-av-save');
+  if(btnAv) btnAv.onclick = function(){ saveNewClientAndSell(); };
 }
 
 async function saveNewClientAndSell() {
@@ -3276,7 +3283,7 @@ function renderAdminCalendar(el) {
       '<button type="button" onclick="previewCalOrder(\'whatsapp\')" style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:12px;border-radius:8px;font-size:13px;font-weight:600">📲 Devis WhatsApp</button>' +
       '<button type="button" onclick="previewCalOrder(\'email\')" style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:12px;border-radius:8px;font-size:13px;font-weight:600">✉️ Devis Email</button>' +
     '</div>' +
-    '<button type="button" id="btn-save-order" data-action="showConfirmOrder" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
+    '<button type="button" id="btn-save-order" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
   '</div>';
 
   // ── COMMANDES À VENIR ──
