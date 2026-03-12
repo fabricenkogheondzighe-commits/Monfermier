@@ -721,26 +721,6 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
 </div>
 
 <!-- NEW CLIENT -->
-<div id="page-new-client" class="page fade-in">
-  <h2 style="font-size:20px;color:#c9a84c;margin-bottom:6px">Nouveau Client</h2>
-  <p style="font-size:13px;color:#4a4640;margin-bottom:20px">Renseignez les coordonnées pour fidéliser ce client</p>
-  <div class="card">
-    <label style="display:block;margin-bottom:8px;font-size:11px;color:#8a8070;letter-spacing:1.5px">NOM COMPLET *</label>
-    <input class="input" id="nc-name" placeholder="Ex: Jean Dupont" style="margin-bottom:16px">
-    <label style="display:block;margin-bottom:8px;font-size:11px;color:#8a8070;letter-spacing:1.5px">📞 TÉLÉPHONE</label>
-    <input class="input" id="nc-phone" placeholder="+225 07 00 00 00" type="tel" style="margin-bottom:16px">
-    <label style="display:block;margin-bottom:8px;font-size:11px;color:#8a8070;letter-spacing:1.5px">✉️ EMAIL</label>
-    <input class="input" id="nc-email" placeholder="jean@email.com" type="email" style="margin-bottom:16px">
-    <label style="display:block;margin-bottom:10px;font-size:11px;color:#8a8070;letter-spacing:1.5px">🏷️ TYPE DE CLIENT *</label>
-    <div class="type-grid" id="nc-type-grid"></div>
-    <hr>
-    <div style="display:flex;gap:10px;margin-top:4px">
-      <button class="btn-gold" style="flex:1" onclick="previewNewClient()">Créer le client</button>
-      <button class="btn-ghost" onclick="goHome()">Annuler</button>
-    </div>
-  </div>
-</div>
-
 <!-- CLIENT PROFILE -->
 <div id="page-client" class="page fade-in">
   <div id="client-profile-content"></div>
@@ -1146,7 +1126,7 @@ function renderVendorHome() {
   html += '</div>';
 
   // ── Bouton vente ──
-  html += '<button class="vh-btn-sale" onclick="showPage(\'page-new-client\')">➕ Enregistrer une vente</button>';
+  html += '<button class="vh-btn-sale" onclick="openNewClientModal()">➕ Enregistrer une vente</button>';
 
   el.innerHTML = html;
 }
@@ -1256,7 +1236,7 @@ function renderClients() {
     el.innerHTML=`<div class="empty-state"><div style="font-size:56px;margin-bottom:16px">🌾</div>
       <div style="font-size:18px;color:#8a8070;margin-bottom:8px">Aucun client enregistré</div>
       <div style="font-size:13px;color:#4a4640;margin-bottom:24px">Commencez par ajouter votre premier client fidèle</div>
-      <button class="btn-gold" onclick="showPage('page-new-client')">+ Créer le premier client</button></div>`;
+      <button class="btn-gold" onclick="openNewClientModal()">+ Créer le premier client</button></div>`;
     return;
   }
   if(list.length===0) { el.innerHTML=`<div class="card" style="text-align:center;color:#4a4640;font-size:14px">Aucun résultat</div>`; return; }
@@ -1309,13 +1289,29 @@ function selectEditType(id) { editType=id; renderTypeGrid("ec-type-grid",editTyp
 // ADD CLIENT
 // ═══════════════════════════════════════
 
+function openNewClientModal() {
+  // Vider le formulaire
+  var nm = document.getElementById('nc-name'); if(nm) nm.value = '';
+  var np = document.getElementById('nc-phone'); if(np) np.value = '';
+  var ne = document.getElementById('nc-email'); if(ne) ne.value = '';
+  selectedType = 'particulier';
+  renderTypeGrid('nc-type-grid', selectedType, 'selectNewClientType');
+  var modal = document.getElementById('new-client-modal');
+  if(modal) modal.style.display = 'flex';
+}
+
+function closeNewClientModal() {
+  var modal = document.getElementById('new-client-modal');
+  if(modal) modal.style.display = 'none';
+}
+
 function openNewClient() {
-  showPage("page-new-client");
+  openNewClientModal();
 }
 
 function openNewClientFromAdmin() {
   localStorage.setItem('mf_from_admin', '1');
-  showPage("page-new-client");
+  openNewClientModal();
 }
 
 function previewNewClient() {
@@ -1369,16 +1365,22 @@ async function addClient() {
     clients.push(client);
     saveData();
   }
-  document.getElementById("nc-name").value="";
-  document.getElementById("nc-phone").value="";
-  document.getElementById("nc-email").value="";
-  selectedType="particulier";
-  currentClient = client;
-  showToast("Client " + client.name + " créé !");
-  renderClientProfile();
-  showPage("page-client");
-  // Nettoyer le flag admin
+  selectedType = "particulier";
+  showToast("✅ Client " + client.name + " créé !");
+
+  var fromAdmin = localStorage.getItem('mf_from_admin');
   localStorage.removeItem('mf_from_admin');
+  closeNewClientModal();
+
+  if(fromAdmin) {
+    // Rester sur l'admin et rafraîchir la liste clients
+    openAdminTab('clients');
+  } else {
+    // Depuis la page d'accueil vendeur/admin : ouvrir le profil du client
+    currentClient = client;
+    renderClientProfile();
+    showPage("page-client");
+  }
 }
 
 // ═══════════════════════════════════════
@@ -2521,12 +2523,19 @@ function adminClientMenu(el) {
   title.textContent = c.name;
   modal.dataset.clientId = clientId;
   btns.innerHTML = 
+    '<button onclick="adminClientMenu_sale()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:8px;text-align:left">💰 Faire une vente</button>' +
     '<button onclick="adminClientMenu_view()" style="width:100%;background:#1a2a1a;border:1px solid #3d6a3d;color:#7ac97a;padding:14px;border-radius:10px;font-size:14px;font-weight:600;margin-bottom:8px;text-align:left">👁️ Voir le profil &amp; historique</button>' +
     '<button onclick="adminClientMenu_edit()" style="width:100%;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:14px;border-radius:10px;font-size:14px;font-weight:600;margin-bottom:8px;text-align:left">✏️ Modifier</button>' +
     '<button onclick="adminClientMenu_delete()" style="width:100%;background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;padding:14px;border-radius:10px;font-size:14px;font-weight:600;text-align:left">🗑️ Supprimer</button>';
   modal.style.display = 'flex';
 }
 
+
+function adminClientMenu_sale() {
+  var id = document.getElementById('admin-action-modal').dataset.clientId;
+  closeAdminActionModal();
+  openSale(id);
+}
 
 function adminClientMenu_view() {
   var id = document.getElementById('admin-action-modal').dataset.clientId;
@@ -5248,7 +5257,7 @@ updateOfflineBanner();
 </div>
 
 <!-- CONFIRM CLIENT MODAL -->
-<div id="confirm-client-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:999;align-items:center;justify-content:center;padding:20px">
+<div id="confirm-client-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000000cc;z-index:1200;align-items:center;justify-content:center;padding:20px">
   <div style="background:#1a1813;border:2px solid #c9a84c;border-radius:16px;padding:24px;width:100%;max-width:400px">
     <div style="font-size:14px;color:#c9a84c;font-weight:700;margin-bottom:16px;text-align:center">⚠️ Vérifiez les informations</div>
     <div id="confirm-client-content" style="background:#0f0e0b;border-radius:10px;padding:14px;margin-bottom:16px"></div>
@@ -5308,6 +5317,30 @@ updateOfflineBanner();
 </div>
 
 <div id="vendor-select-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a0a0a;border-top:2px solid #c97a7a;padding:14px 16px;z-index:1000;align-items:center;justify-content:space-between;gap:10px"><span id="vendor-select-count" style="color:#fff;font-size:14px;font-weight:600">0 selectionne</span><div style="display:flex;gap:8px"><button onclick="vendorCancelSelect()" style="background:#2e2a22;border:none;color:#8a8070;padding:10px 16px;border-radius:8px;font-size:13px">Annuler</button><button onclick="vendorDeleteSelected()" style="background:#6a1a1a;border:none;color:#c97a7a;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700">Supprimer</button></div></div>
+
+<!-- MODAL NOUVEAU CLIENT (admin) -->
+<div id="new-client-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000000dd;z-index:1100;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto">
+  <div style="background:#1a1813;border:1px solid #c9a84c44;border-radius:16px;padding:20px;width:100%;max-width:500px;margin-top:60px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h2 style="font-size:18px;color:#c9a84c;margin:0">➕ Nouveau Client</h2>
+      <button onclick="closeNewClientModal()" style="background:#2e2a22;border:none;color:#8a8070;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
+    </div>
+    <label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">NOM COMPLET *</label>
+    <input class="input" id="nc-name" placeholder="Ex: Jean Dupont" style="margin-bottom:14px;width:100%;box-sizing:border-box">
+    <label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">📞 TÉLÉPHONE</label>
+    <input class="input" id="nc-phone" placeholder="+225 07 00 00 00" type="tel" style="margin-bottom:14px;width:100%;box-sizing:border-box">
+    <label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">✉️ EMAIL</label>
+    <input class="input" id="nc-email" placeholder="jean@email.com" type="email" style="margin-bottom:14px;width:100%;box-sizing:border-box">
+    <label style="display:block;margin-bottom:10px;font-size:11px;color:#8a8070;letter-spacing:1.5px">🏷️ TYPE DE CLIENT *</label>
+    <div class="type-grid" id="nc-type-grid"></div>
+    <hr style="border-color:#2e2a22;margin:14px 0">
+    <div style="display:flex;gap:10px">
+      <button class="btn-gold" style="flex:1" onclick="previewNewClient()">✅ Créer le client</button>
+      <button class="btn-ghost" onclick="closeNewClientModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
 </body>
 
 
