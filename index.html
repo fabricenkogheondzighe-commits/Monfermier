@@ -463,7 +463,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
 
 
 
-<div id="page-login" class="page active fade-in">
+<div id="page-login" class="page fade-in">
   <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
     <div style="font-size:64px;margin-bottom:16px">🌾</div>
     <div style="font-size:11px;color:#c9a84c;letter-spacing:3px;margin-bottom:8px">PROGRAMME DE FIDÉLITÉ</div>
@@ -688,7 +688,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
 </div>
 
 <!-- HOME -->
-<div id="page-home" class="page active fade-in">
+<div id="page-home" class="page fade-in">
 <div id="home-root">
 
   <!-- HEADER -->
@@ -962,17 +962,17 @@ function showToast(msg, err) {
 // NAVIGATION
 // ═══════════════════════════════════════
 function showPage(id, addHistory=true) {
-  // Retirer la classe active de toutes les pages + effacer tout style inline display
+  // Cacher TOUTES les pages explicitement
   document.querySelectorAll(".page").forEach(function(p) {
     p.classList.remove("active");
-    p.style.display = "";   // laisser le CSS .page{display:none} s'appliquer
+    p.style.display = "none";
   });
 
-  // Activer la page cible
+  // Afficher UNIQUEMENT la page cible
   var page = document.getElementById(id);
   if(page) {
+    page.style.display = "block";
     page.classList.add("active");
-    page.classList.add("fade-in");
   }
 
   // Background body
@@ -3184,10 +3184,11 @@ function renderAdminCalendar(el) {
     '<div id="cal-pay-mode-wrap">' +
       '<div style="font-size:11px;color:#8a8070;margin-bottom:8px;letter-spacing:1px">MODE DE PAIEMENT</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">' +
-        '<button type="button" id="cal-mode-airtel" onclick="setCalMode(\'airtel\')" class="payment-btn selected" style="font-size:11px;padding:10px 4px">📱 Airtel Money</button>' +
-        '<button type="button" id="cal-mode-moov"   onclick="setCalMode(\'moov\')"   class="payment-btn"          style="font-size:11px;padding:10px 4px">📱 Moov Money</button>' +
-        '<button type="button" id="cal-mode-card"   onclick="setCalMode(\'card\')"   class="payment-btn"          style="font-size:11px;padding:10px 4px">💳 Carte crédit</button>' +
-        '<button type="button" id="cal-mode-cheque" onclick="setCalMode(\'cheque\')" class="payment-btn"          style="font-size:11px;padding:10px 4px">📄 Chèque</button>' +
+        '<button type="button" id="cal-mode-especes" onclick="setCalMode(\'especes\')" class="payment-btn selected" style="font-size:11px;padding:10px 4px">💵 Espèces</button>' +
+        '<button type="button" id="cal-mode-airtel"  onclick="setCalMode(\'airtel\')"  class="payment-btn"          style="font-size:11px;padding:10px 4px">📱 Airtel Money</button>' +
+        '<button type="button" id="cal-mode-moov"    onclick="setCalMode(\'moov\')"    class="payment-btn"          style="font-size:11px;padding:10px 4px">📱 Moov Money</button>' +
+        '<button type="button" id="cal-mode-card"    onclick="setCalMode(\'card\')"    class="payment-btn"          style="font-size:11px;padding:10px 4px">💳 Carte crédit</button>' +
+        '<button type="button" id="cal-mode-cheque"  onclick="setCalMode(\'cheque\')"  class="payment-btn"          style="font-size:11px;padding:10px 4px">📄 Chèque</button>' +
       '</div>' +
     '</div>' +
 
@@ -3289,14 +3290,14 @@ function renderAdminCalendar(el) {
 
   // Init état formulaire
   calPayStatus = 'paid';
-  calPayMode   = 'airtel';
+  calPayMode   = 'especes';
   updateCalPayButtons();
   updateCalModeButtons();
 }
 
 // ── États locaux formulaire ──
 var calPayStatus = 'paid';
-var calPayMode   = 'airtel';
+var calPayMode   = 'especes';
 
 function setCalPay(val) {
   calPayStatus = val;
@@ -3316,7 +3317,7 @@ function updateCalPayButtons() {
   });
 }
 function updateCalModeButtons() {
-  ['airtel','moov','card','cheque'].forEach(function(v){
+  ['especes','airtel','moov','card','cheque'].forEach(function(v){
     var b = document.getElementById('cal-mode-'+v);
     if(b) { b.className = 'payment-btn' + (calPayMode===v?' selected':''); }
   });
