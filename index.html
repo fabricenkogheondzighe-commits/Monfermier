@@ -126,8 +126,6 @@ body.on-admin #page-client {
     radial-gradient(ellipse at 90% 20%, #5a200088 0%, transparent 45%),
     radial-gradient(ellipse at 50% 100%, #2a100066 0%, transparent 60%),
     linear-gradient(160deg, #1a0d00 0%, #0f0a05 40%, #1a0d00 100%);
-  position: relative;
-  isolation: isolate;
 }
 #page-admin::before {
   content: '';
@@ -137,9 +135,7 @@ body.on-admin #page-client {
     radial-gradient(circle at 20% 30%, #c9a84c06 0%, transparent 40%),
     radial-gradient(circle at 80% 70%, #e87a2006 0%, transparent 40%);
   pointer-events: none;
-  z-index: 0;
 }
-#page-admin > * { position: relative; z-index: 1; }
 
 /* Admin cards upgrade */
 #page-admin .card {
@@ -966,29 +962,21 @@ function showToast(msg, err) {
 // NAVIGATION
 // ═══════════════════════════════════════
 function showPage(id, addHistory=true) {
-  // Cacher toutes les pages
+  // Retirer la classe active de toutes les pages + effacer tout style inline display
   document.querySelectorAll(".page").forEach(function(p) {
     p.classList.remove("active");
-    // Forcer page-admin à se masquer complètement quand on quitte
-    if(p.id === "page-admin" && id !== "page-admin") {
-      p.style.display = "none";
-    } else if(p.id !== "page-admin") {
-      p.style.display = "";
-    }
+    p.style.display = "";   // laisser le CSS .page{display:none} s'appliquer
   });
 
-  // Afficher la page cible
-  const page = document.getElementById(id);
+  // Activer la page cible
+  var page = document.getElementById(id);
   if(page) {
-    page.style.display = "";
     page.classList.add("active");
     page.classList.add("fade-in");
   }
 
-  // Reset background
+  // Background body
   if(id === "page-admin") {
-    // Réafficher page-admin
-    if(page) page.style.display = "";
     document.body.style.background = '';
     document.body.style.backgroundImage = '';
   } else {
@@ -998,7 +986,7 @@ function showPage(id, addHistory=true) {
 
   window.scrollTo(0, 0);
 
-  const backBtn = document.getElementById("back-btn");
+  var backBtn = document.getElementById("back-btn");
   if(backBtn) backBtn.style.display = id === "page-home" ? "none" : "block";
   var homeBtn = document.getElementById("home-btn");
   if(homeBtn) homeBtn.style.display = (id === "page-home" || !currentUser) ? "none" : "block";
@@ -1322,21 +1310,11 @@ function selectEditType(id) { editType=id; renderTypeGrid("ec-type-grid",editTyp
 // ═══════════════════════════════════════
 
 function openNewClient() {
-  // Reset complet état body
-  document.body.style.background = '#0f0e0b';
-  document.body.style.backgroundImage = 'none';
-  document.body.className = '';
-  window.scrollTo(0, 0);
   showPage("page-new-client");
 }
 
 function openNewClientFromAdmin() {
   localStorage.setItem('mf_from_admin', '1');
-  // Reset complet état body pour sortir du mode admin
-  document.body.style.background = '#0f0e0b';
-  document.body.style.backgroundImage = 'none';
-  document.body.className = '';
-  window.scrollTo(0, 0);
   showPage("page-new-client");
 }
 
