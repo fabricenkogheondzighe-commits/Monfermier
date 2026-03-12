@@ -786,12 +786,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
 
 <!-- SALE -->
 <div id="page-sale" class="page fade-in">
-  <div id="sale-client-info" style="margin-bottom:16px"></div>
-  <div id="payment-selector" style="margin-bottom:16px"></div>
-  <div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">PRODUITS</div>
-  <div id="products-list"></div>
-  <div id="reward-section"></div>
-  <div id="cart-summary"></div>
+  <div id="page-sale-inner"></div>
 </div>
 
 <!-- SALE RESULT -->
@@ -1601,114 +1596,125 @@ function selectReward(choice) {
 }
 
 function renderSale() {
-  try {
+  var page = document.getElementById('page-sale-inner');
+  if(!page) return;
   const c = currentClient;
   if(!c) { showPage('page-home'); return; }
+
   const total = cartTotal();
   const earned = cartPoints();
   const elig = isEligible();
   const discount = elig && rewardChoice==="discount" ? Math.floor(total*DISCOUNT) : 0;
   const finalTotal = total - discount;
+  const canConfirm = cart.length > 0 && (!elig || rewardChoice);
 
-  // Payment selector
-  var psEl = document.getElementById("payment-selector");
-  if(psEl) psEl.innerHTML = `
-    <div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:8px">MODE DE PAIEMENT</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${PAYMENT_MODES.map(p=>`
-        <button class="payment-btn ${selectedPayment===p.id?"selected":""}" onclick="selectPayment('${p.id}')">
-          <div style="font-size:16px;margin-bottom:3px">${p.icon}</div>${p.label}
-        </button>`).join("")}
-    </div>`;
+  // ── En-tête client
+  var clientHtml =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<div class="avatar" style="background:linear-gradient(135deg,#2a2520,#3a3028);color:#8a8070;border-color:#2e2a22">' + initials(c.name) + '</div>' +
+        '<div>' +
+          '<div style="font-size:18px;font-weight:700">' + c.name + '</div>' +
+          '<div style="font-size:12px;color:#4a4640;margin-top:3px">' + (c.points||0) + ' pts · ' + (c.code||'') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<button onclick="goHome()" style="background:none;border:none;color:#8a8070;font-size:13px;cursor:pointer">← Retour</button>' +
+    '</div>';
 
-  // Client info
-  document.getElementById("sale-client-info").innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px">
-      <div class="avatar" style="background:linear-gradient(135deg,#2a2520,#3a3028);color:#8a8070;border-color:#2e2a22">${initials(c.name)}</div>
-      <div>
-        <div style="font-size:18px;font-weight:700">${c.name}</div>
-        <div style="font-size:12px;color:#4a4640;margin-top:3px">${c.points} pts actuels · ${c.code}</div>
-      </div>
-    </div>`;
+  // ── Modes de paiement
+  var pmHtml =
+    '<div style="margin-bottom:16px">' +
+      '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:8px">MODE DE PAIEMENT</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+        PAYMENT_MODES.map(function(p){
+          return '<button class="payment-btn ' + (selectedPayment===p.id?'selected':'') + '" onclick="selectPayment('' + p.id + '')">' +
+            '<div style="font-size:16px;margin-bottom:3px">' + p.icon + '</div>' + p.label +
+          '</button>';
+        }).join('') +
+      '</div>' +
+    '</div>';
 
-  // Products
-  document.getElementById("products-list").innerHTML = PRODUCTS.map(p=>{
-    const inCart = cart.find(i=>i.id===p.id);
-    return `<div class="product-row">
-      <div>
-        <div style="font-weight:600;font-size:14px">${p.name}</div>
-        <div style="font-size:12px;color:#c9a84c;margin-top:2px">${fmtPrice(p.price)}</div>
-      </div>
-      ${inCart?`
-        <div style="display:flex;align-items:center;gap:10px">
-          <button class="btn-outline" style="padding:6px 12px;font-size:16px" onclick="updateQty(${p.id},-1)">−</button>
-          <span style="font-weight:700;font-size:16px;min-width:24px;text-align:center">${inCart.qty}</span>
-          <button class="btn-outline" style="padding:6px 12px;font-size:16px" onclick="updateQty(${p.id},1)">+</button>
-        </div>`:`<button class="btn-outline" onclick="addToCart(${p.id})">Ajouter</button>`}
-    </div>`;
-  }).join("");
+  // ── Produits
+  var prodsHtml =
+    '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">PRODUITS</div>' +
+    '<div id="products-list">' +
+    PRODUCTS.map(function(p){
+      var inCart = cart.find(function(i){ return i.id===p.id; });
+      return '<div class="product-row">' +
+        '<div>' +
+          '<div style="font-weight:600;font-size:14px">' + p.name + '</div>' +
+          '<div style="font-size:12px;color:#c9a84c;margin-top:2px">' + fmtPrice(p.price) + '</div>' +
+        '</div>' +
+        (inCart ?
+          '<div style="display:flex;align-items:center;gap:10px">' +
+            '<button class="btn-outline" style="padding:6px 12px;font-size:16px" onclick="updateQty(' + p.id + ',-1)">−</button>' +
+            '<span style="font-weight:700;font-size:16px;min-width:24px;text-align:center">' + inCart.qty + '</span>' +
+            '<button class="btn-outline" style="padding:6px 12px;font-size:16px" onclick="updateQty(' + p.id + ',1)">+</button>' +
+          '</div>'
+          :
+          '<button class="btn-outline" onclick="addToCart(' + p.id + ')">Ajouter</button>'
+        ) +
+      '</div>';
+    }).join('') +
+    '</div>';
 
-  // Reward section
-  const rewardEl = document.getElementById("reward-section");
-  if(elig && cart.length>0) {
-    rewardEl.innerHTML = `
-      <div style="font-size:12px;color:#7ac97a;letter-spacing:2px;margin-bottom:10px">✦ CE CLIENT A 50 POINTS — CHOISISSEZ SA RÉCOMPENSE</div>
-      <div class="reward-grid">
-        <div class="reward-card" onclick="selectReward('discount')" style="${rewardChoice==="discount"?`border-color:#7ac97a;background:linear-gradient(135deg,#1a3d2a,#1f4d32)`:``}">
-          ${rewardChoice==="discount"?`<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#7ac97a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0f0e0b;font-weight:700">✓</div>`:""}
-          <div style="font-size:28px;margin-bottom:8px">🏷️</div>
-          <div style="font-weight:700;font-size:14px;color:${rewardChoice==="discount"?"#7ac97a":"#e8e0d0"}">Remise 5%</div>
-          <div style="font-size:12px;color:#8a8070;margin-top:4px">Économie de <span style="color:#c9a84c">${fmtPrice(Math.floor(total*DISCOUNT))}</span></div>
-        </div>
-        <div class="reward-card" onclick="selectReward('gift')" style="${rewardChoice==="gift"?`border-color:#c9a84c;background:linear-gradient(135deg,#2a1f0a,#3d2e10)`:``}">
-          ${rewardChoice==="gift"?`<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#c9a84c;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0f0e0b;font-weight:700">✓</div>`:""}
-          <div style="font-size:28px;margin-bottom:8px">🎁</div>
-          <div style="font-weight:700;font-size:14px;color:${rewardChoice==="gift"?"#c9a84c":"#e8e0d0"}">Cadeau offert</div>
-          <div style="font-size:12px;color:#8a8070;margin-top:4px">${GIFT.name}</div>
-        </div>
-      </div>
-      <div class="reward-card" onclick="selectReward('vip')" style="margin-top:8px;${rewardChoice==="vip"?`border-color:#a07ad5;background:linear-gradient(135deg,#1a0a2e,#2e1060)`:``}">
-        ${rewardChoice==="vip"?`<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#a07ad5;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700">✓</div>`:""}
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="font-size:32px">🏆</div>
-          <div style="text-align:left">
-            <div style="font-weight:700;font-size:14px;color:${rewardChoice==="vip"?"#a07ad5":"#e8e0d0"}">Continuer vers le VIP</div>
-            <div style="font-size:12px;color:#8a8070;margin-top:3px">Garder mes points et viser <span style="color:#a07ad5">1 000 pts</span> pour la tombola 🎰</div>
-            <div style="font-size:11px;color:#6a3da8;margin-top:3px">Solde actuel : ${currentClient.points + cartPoints()} pts → encore ${Math.max(0, VIP_THRESHOLD - (currentClient.points + cartPoints()))} pts</div>
-          </div>
-        </div>
-      </div>
-      ${!rewardChoice?`<div style="font-size:12px;color:#c9a84c;text-align:center;margin-top:10px;margin-bottom:6px">↑ Sélectionnez une option pour continuer</div>`:""}`;
-  } else { rewardEl.innerHTML=""; }
-
-  // Cart summary
-  const cartEl = document.getElementById("cart-summary");
-  if(cart.length===0) { cartEl.innerHTML=`<div style="text-align:center;color:#4a4640;font-size:13px;padding:16px">Ajoutez des produits pour commencer</div>`; return; }
-  
-  const canConfirm = !elig || rewardChoice;
-  cartEl.innerHTML = `<div class="card" style="border-color:${elig?"#3d6a3d":"#2e2a22"}">
-    <div style="font-size:12px;color:#8a8070;letter-spacing:1px;margin-bottom:12px">RÉCAPITULATIF</div>
-    ${cart.map(i=>`<div style="display:flex;justify-content:space-between;font-size:13px;color:#8a8070;margin-bottom:6px"><span>${i.qty}× ${i.name}</span><span>${fmtPrice(i.price*i.qty)}</span></div>`).join("")}
-    ${rewardChoice==="gift"?`<div style="display:flex;justify-content:space-between;font-size:13px;color:#c9a84c;margin-bottom:6px"><span>🎁 ${GIFT.name}</span><span style="color:#7ac97a">Offert</span></div>`:""}
-    <hr>
-    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Sous-total</span><span>${fmtPrice(total)}</span></div>
-    ${elig&&rewardChoice==="discount"?`<div style="display:flex;justify-content:space-between;font-size:13px;color:#7ac97a;margin-bottom:6px"><span>🏷️ Remise 5%</span><span>-${fmtPrice(discount)}</span></div>`:""}
-    <hr>
-    <div style="display:flex;justify-content:space-between;font-weight:700;font-size:18px;margin-bottom:10px">
-      <span>TOTAL</span><span style="color:#c9a84c">${fmtPrice(finalTotal)}</span>
-    </div>
-    <div style="font-size:12px;color:#4a4640;margin-bottom:14px">Points gagnés : <span style="color:#c9a84c">+${earned} pts</span></div>
-    <button class="btn-gold" style="width:100%;padding:14px;opacity:${canConfirm?1:0.4}" onclick="${canConfirm?"confirmSale()":"void(0)"}">
-      ✓ Confirmer · ${fmtPrice(finalTotal)}
-    </button>
-    ${elig&&!rewardChoice?`<div style="font-size:11px;color:#8a8070;text-align:center;margin-top:8px">Veuillez choisir une récompense ci-dessus</div>`:""}
-  </div>`;
-  } catch(err) {
-    console.error('renderSale error:', err);
-    var ps = document.getElementById('page-sale');
-    if(ps) ps.innerHTML = '<div style="padding:30px;text-align:center;color:#c97a7a">Erreur: ' + err.message + '</div>';
+  // ── Récompense
+  var rewardHtml = '';
+  if(elig && cart.length > 0) {
+    rewardHtml =
+      '<div style="font-size:12px;color:#7ac97a;letter-spacing:2px;margin-bottom:10px">✦ CE CLIENT A 50 POINTS — CHOISISSEZ SA RÉCOMPENSE</div>' +
+      '<div class="reward-grid">' +
+        '<div class="reward-card" onclick="selectReward('discount')" style="' + (rewardChoice==='discount'?'border-color:#7ac97a;background:linear-gradient(135deg,#1a3d2a,#1f4d32)':'') + '">' +
+          (rewardChoice==='discount'?'<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#7ac97a;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0f0e0b;font-weight:700">✓</div>':'') +
+          '<div style="font-size:28px;margin-bottom:8px">🏷️</div>' +
+          '<div style="font-weight:700;font-size:14px;color:' + (rewardChoice==='discount'?'#7ac97a':'#e8e0d0') + '">Remise 5%</div>' +
+          '<div style="font-size:12px;color:#8a8070;margin-top:4px">Économie de <span style="color:#c9a84c">' + fmtPrice(Math.floor(total*DISCOUNT)) + '</span></div>' +
+        '</div>' +
+        '<div class="reward-card" onclick="selectReward('gift')" style="' + (rewardChoice==='gift'?'border-color:#c9a84c;background:linear-gradient(135deg,#2a1f0a,#3d2e10)':'') + '">' +
+          (rewardChoice==='gift'?'<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#c9a84c;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0f0e0b;font-weight:700">✓</div>':'') +
+          '<div style="font-size:28px;margin-bottom:8px">🎁</div>' +
+          '<div style="font-weight:700;font-size:14px;color:' + (rewardChoice==='gift'?'#c9a84c':'#e8e0d0') + '">Cadeau offert</div>' +
+          '<div style="font-size:12px;color:#8a8070;margin-top:4px">' + GIFT.name + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="reward-card" onclick="selectReward('vip')" style="margin-top:8px;' + (rewardChoice==='vip'?'border-color:#a07ad5;background:linear-gradient(135deg,#1a0a2e,#2e1060)':'') + '">' +
+        (rewardChoice==='vip'?'<div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#a07ad5;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700">✓</div>':'') +
+        '<div style="display:flex;align-items:center;gap:12px">' +
+          '<div style="font-size:32px">🏆</div>' +
+          '<div style="text-align:left">' +
+            '<div style="font-weight:700;font-size:14px;color:' + (rewardChoice==='vip'?'#a07ad5':'#e8e0d0') + '">Continuer vers le VIP</div>' +
+            '<div style="font-size:12px;color:#8a8070;margin-top:3px">Garder mes points et viser <span style="color:#a07ad5">1 000 pts</span></div>' +
+            '<div style="font-size:11px;color:#6a3da8;margin-top:3px">Solde : ' + (c.points + cartPoints()) + ' pts → encore ' + Math.max(0, VIP_THRESHOLD - (c.points + cartPoints())) + ' pts</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      (!rewardChoice ? '<div style="font-size:12px;color:#c9a84c;text-align:center;margin-top:10px">↑ Sélectionnez une option pour continuer</div>' : '');
   }
+
+  // ── Récapitulatif panier
+  var cartHtml = '';
+  if(cart.length === 0) {
+    cartHtml = '<div style="text-align:center;color:#4a4640;font-size:13px;padding:16px">Ajoutez des produits pour commencer</div>';
+  } else {
+    cartHtml =
+      '<div class="card" style="border-color:' + (elig?'#3d6a3d':'#2e2a22') + ';margin-top:16px">' +
+        '<div style="font-size:12px;color:#8a8070;letter-spacing:1px;margin-bottom:12px">RÉCAPITULATIF</div>' +
+        cart.map(function(i){ return '<div style="display:flex;justify-content:space-between;font-size:13px;color:#8a8070;margin-bottom:6px"><span>' + i.qty + '× ' + i.name + '</span><span>' + fmtPrice(i.price*i.qty) + '</span></div>'; }).join('') +
+        (rewardChoice==='gift' ? '<div style="display:flex;justify-content:space-between;font-size:13px;color:#c9a84c;margin-bottom:6px"><span>🎁 ' + GIFT.name + '</span><span style="color:#7ac97a">Offert</span></div>' : '') +
+        '<hr>' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Sous-total</span><span>' + fmtPrice(total) + '</span></div>' +
+        (elig && rewardChoice==='discount' ? '<div style="display:flex;justify-content:space-between;font-size:13px;color:#7ac97a;margin-bottom:6px"><span>🏷️ Remise 5%</span><span>-' + fmtPrice(discount) + '</span></div>' : '') +
+        '<hr>' +
+        '<div style="display:flex;justify-content:space-between;font-weight:700;font-size:18px;margin-bottom:10px"><span>TOTAL</span><span style="color:#c9a84c">' + fmtPrice(finalTotal) + '</span></div>' +
+        '<div style="font-size:12px;color:#4a4640;margin-bottom:14px">Points gagnés : <span style="color:#c9a84c">+' + earned + ' pts</span></div>' +
+        '<button id="btn-confirm-sale" data-action="confirmSale" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:800;border:none;opacity:' + (canConfirm?1:0.4) + '">✓ Confirmer · ' + fmtPrice(finalTotal) + '</button>' +
+        (elig && !rewardChoice ? '<div style="font-size:11px;color:#8a8070;text-align:center;margin-top:8px">Veuillez choisir une récompense ci-dessus</div>' : '') +
+      '</div>';
+  }
+
+  page.innerHTML = clientHtml + pmHtml + prodsHtml + rewardHtml + cartHtml;
 }
+
 
 // ═══════════════════════════════════════
 // CONFIRM SALE
@@ -2477,11 +2483,12 @@ function renderAdminVente(el) {
     '<input id="av-nc-email" class="input" type="email" placeholder="jean@email.com" style="' + inpStyle + '">' +
     '<label style="display:block;margin-bottom:10px;font-size:11px;color:#8a8070;letter-spacing:1.5px">🏷️ TYPE DE CLIENT *</label>' +
     '<div class="type-grid" id="av-nc-type-grid" style="margin-bottom:20px"></div>' +
-    '<button id="btn-av-save" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:15px;border-radius:12px;font-size:15px;font-weight:800;border:none;box-shadow:0 4px 16px #c9a84c44">✅ Créer le client et faire la vente</button>';
+    '<button id="btn-av-save" data-action="saveNewClientAndSell" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:15px;border-radius:12px;font-size:15px;font-weight:800;border:none;box-shadow:0 4px 16px #c9a84c44">✅ Créer le client et faire la vente</button>';
 
   renderTypeGrid('av-nc-type-grid', selectedType, 'selectNewClientType');
+}
 
-  document.getElementById('btn-av-save').onclick = async function() {
+async function saveNewClientAndSell() {
     var name = (document.getElementById('av-nc-name').value || '').trim();
     if(!name) { showToast('Le nom est obligatoire', true); return; }
     if(clients.find(function(c){ return c.name.toLowerCase() === name.toLowerCase(); })) {
@@ -2509,7 +2516,6 @@ function renderAdminVente(el) {
       if(idx !== -1) clients[idx].id = ref.id;
       if(currentClient && currentClient.id === tmpId) currentClient.id = ref.id;
     } catch(e) {}
-  };
 }
 function renderAdminClients(el) {
   var searchEl = document.getElementById('admin-client-search');
@@ -3270,7 +3276,7 @@ function renderAdminCalendar(el) {
       '<button type="button" onclick="previewCalOrder(\'whatsapp\')" style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:12px;border-radius:8px;font-size:13px;font-weight:600">📲 Devis WhatsApp</button>' +
       '<button type="button" onclick="previewCalOrder(\'email\')" style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:12px;border-radius:8px;font-size:13px;font-weight:600">✉️ Devis Email</button>' +
     '</div>' +
-    '<button type="button" id="btn-save-order" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
+    '<button type="button" id="btn-save-order" data-action="showConfirmOrder" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
   '</div>';
 
   // ── COMMANDES À VENIR ──
@@ -4621,6 +4627,8 @@ document.addEventListener('click', function(e) {
     case 'setCalPay':    setCalPay(arg); break;
     case 'setCalMode':   setCalMode(arg); break;
     case 'showConfirmOrder': showConfirmOrder(); break;
+    case 'confirmSale': confirmSale(); break;
+    case 'saveNewClientAndSell': saveNewClientAndSell(); break;
     case 'previewCalOrderWA':    previewCalOrder('whatsapp'); break;
     case 'previewCalOrderEmail': previewCalOrder('email'); break;
     // Vendeurs
