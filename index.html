@@ -130,7 +130,7 @@ body.on-admin #page-client {
 }
 #page-admin::before {
   content: '';
-  position: fixed;
+  position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background-image:
     radial-gradient(circle at 20% 30%, #c9a84c06 0%, transparent 40%),
@@ -966,7 +966,12 @@ function showPage(id, addHistory=true) {
   const page = document.getElementById(id);
   if(page) { page.classList.add("active"); page.classList.add("fade-in"); }
   // Reset background selon page
-  document.body.style.background = id === "page-admin" ? "" : "#0f0e0b";
+  if(id === "page-admin") {
+    document.body.style.background = '';
+  } else {
+    document.body.style.background = '#0f0e0b';
+    document.body.style.backgroundImage = 'none';
+  }
   const backBtn = document.getElementById("back-btn");
   backBtn.style.display = id === "page-home" ? "none" : "block";
   var homeBtn = document.getElementById("home-btn");
