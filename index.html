@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0e0b"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="Mon Fermier"/>
-  <title>Mon Fermier SARL v3.46</title>
+  <title>Mon Fermier SARL v3.47</title>
   <link rel="manifest" href="data:application/json,{
   &quot;name&quot;: &quot;Mon Fermier SARL&quot;,
   &quot;short_name&quot;: &quot;Mon Fermier&quot;,
@@ -28,6 +28,10 @@ html,body{height:100%;background:#0f0e0b;color:#e8e0d0;font-family:Georgia,serif
 button{cursor:pointer;font-family:inherit;transition:all 0.2s}
 input{font-family:inherit;outline:none}
 .page{display:none;padding:16px;max-width:600px;margin:0 auto;padding-bottom:40px}
+#page-new-client, #page-client, #page-sale, #page-sale-result {
+  background: #0f0e0b;
+  min-height: 100vh;
+}
 
 /* ── VENDOR HOME ── */
 #page-vendor-home { padding: 0; background: linear-gradient(160deg,#0a0f1a 0%,#0f1520 60%,#0a0f1a 100%); min-height:100vh; }
@@ -2353,6 +2357,7 @@ function logout() {
 
 async function openAdmin() {
   if(!currentUser || currentUser.role !== "admin") { showToast("Accès refusé", true); return; }
+  document.body.style.background = '';
   showPage("page-admin");
   await renderAdmin();
 }
