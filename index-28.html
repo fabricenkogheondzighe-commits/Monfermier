@@ -1282,6 +1282,7 @@ function renderTypeGrid(containerId, currentType, onSelectFn) {
 }
 
 function selectNewClientType(id) { selectedType=id; renderTypeGrid("nc-type-grid",selectedType,"selectNewClientType"); }
+function selectAdminVenteType(id) { selectedType=id; renderTypeGrid("av-nc-type-grid",selectedType,"selectAdminVenteType"); }
 function selectEditType(id) { editType=id; renderTypeGrid("ec-type-grid",editType,"selectEditType"); }
 
 // ═══════════════════════════════════════
@@ -1544,8 +1545,8 @@ function openSale(id) {
   currentClient = clients.find(c=>c.id===id);
   if(!currentClient) { showToast('Client introuvable', true); return; }
   cart = []; rewardChoice = null;
+  renderSale();
   showPage("page-sale");
-  setTimeout(function(){ renderSale(); }, 50);
 }
 
 function cartTotal() { return cart.reduce((s,i)=>s+i.price*i.qty,0); }
@@ -2490,7 +2491,7 @@ function renderAdminVente(el) {
     '<div class="type-grid" id="av-nc-type-grid" style="margin-bottom:20px"></div>' +
     '<button id="btn-av-save" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:15px;border-radius:12px;font-size:15px;font-weight:800;border:none;box-shadow:0 4px 16px #c9a84c44">✅ Créer le client et faire la vente</button>';
 
-  renderTypeGrid('av-nc-type-grid', selectedType, 'selectNewClientType');
+  renderTypeGrid('av-nc-type-grid', selectedType, 'selectAdminVenteType');
 
   var btnAv = document.getElementById('btn-av-save');
   if(btnAv) btnAv.onclick = function(){ saveNewClientAndSell(); };
@@ -2515,8 +2516,8 @@ function saveNewClientAndSell() {
     currentClient = client;
     cart = []; rewardChoice = null;
     showToast('✅ ' + name + ' créé ! Faites la vente.');
+    renderSale();
     showPage('page-sale');
-    setTimeout(function(){ renderSale(); }, 200);
     // Firebase en background pur (pas de await qui bloque le thread)
     var dataToSave = Object.assign({}, client); delete dataToSave.id;
     db.collection('clients').add(dataToSave).then(function(ref) {
@@ -4596,6 +4597,7 @@ window.vpTab = vpTab;
 window.setCalPay = setCalPay;
 window.setCalMode = setCalMode;
 window.selectNewClientType = selectNewClientType;
+window.selectAdminVenteType = selectAdminVenteType;
 window.openEditClient = openEditClient;
 window.saveEditClient = saveEditClient;
 window.adminClientMenu = adminClientMenu;
