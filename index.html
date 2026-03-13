@@ -356,30 +356,6 @@ body.on-admin #page-client {
 /* POINTS BAR */
 .bar-bg{background:#0f0e0b;border-radius:20px;height:6px;overflow:hidden;flex:1}
 .bar{height:100%;border-radius:20px;transition:width 0.5s}
-/* ONGLETS ADMIN */
-.adm-tab{padding:11px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer;text-align:center;line-height:1.4;-webkit-tap-highlight-color:transparent;transition:all .12s}
-.adm-tab span{display:block;font-size:9px;margin-top:2px;font-weight:500}
-.adm-tab.active{background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;border-color:transparent}
-.adm-tab:active{opacity:.85;transform:scale(.97)}
-.adm-inp{width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#e8e0d0;padding:12px 14px;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px;font-family:inherit}
-.adm-inp:focus{border-color:#c9a84c66;outline:none}
-.adm-inp::placeholder{color:#4a4640}
-.adm-lbl{display:block;font-size:11px;color:#8a8070;letter-spacing:1.5px;margin-bottom:6px}
-.adm-btn{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:opacity .12s}
-.adm-btn:active{opacity:.85}
-.adm-btn-gold{background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906}
-.adm-btn-green{background:linear-gradient(135deg,#128c3e,#25d366);color:#fff}
-.adm-btn-red{background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a}
-.adm-btn-outline{background:transparent;border:1px solid #c9a84c55;color:#c9a84c}
-.adm-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.adm-section{font-size:11px;color:#8a8070;letter-spacing:2px;margin:14px 0 10px}
-.adm-card{background:#1a1813;border:1px solid #2e2a22;border-radius:12px;padding:14px;margin-bottom:10px}
-.adm-card-gold{background:linear-gradient(135deg,#1a1208,#0f0e0b);border-color:#c9a84c33}
-.adm-card-green{background:linear-gradient(135deg,#0d1a0d,#0f0e0b);border-color:#3d6a3d}
-.adm-vendor-card{background:#1a1813;border:1px solid #2e2a22;border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color .15s}
-.adm-vendor-card:active{border-color:#c9a84c66}
-.adm-pay-btn{padding:10px 6px;border-radius:8px;border:2px solid #2e2a22;background:#0f0e0b;color:#4a4640;font-size:11px;font-weight:600;text-align:center;cursor:pointer;transition:all .12s;font-family:inherit}
-.adm-pay-btn.active{border-color:#c9a84c;background:#2a1f0a;color:#c9a84c}
 /* CLIENT CARD */
 .client-card{background:#1a1813;border:1px solid #2e2a22;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer}
 .client-card.eligible{background:linear-gradient(135deg,#1a2e1a,#1a1813);border-color:#3d6a3d}
@@ -677,24 +653,41 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
 
 <!-- ADMIN PAGE -->
 <div id="page-admin" class="page fade-in">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <h2 style="font-size:18px;color:#c9a84c;font-weight:800">⚙️ Bureau Admin</h2>
-    <button class="btn-ghost" onclick="goHome()">🏠 Accueil</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <h2 style="font-size:20px;color:#c9a84c">⚙️ Bureau Admin</h2>
+    <button class="btn-ghost" onclick="goHome()">← Retour</button>
   </div>
-
-  <!-- GRILLE ONGLETS 4x2 -->
-  <div id="admin-tabs-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">
-    <button class="adm-tab" id="atab-vente"    onclick="openAdminTab('vente')">➕<br><span>Nouveau</span></button>
-    <button class="adm-tab" id="atab-clients"  onclick="openAdminTab('clients')">👥<br><span>Clients</span></button>
-    <button class="adm-tab" id="atab-vendors"  onclick="openAdminTab('vendors')">👨‍💼<br><span>Vendeurs</span></button>
-    <button class="adm-tab" id="atab-charts"   onclick="openAdminTab('charts')">📊<br><span>Stats</span></button>
-    <button class="adm-tab" id="atab-compta"   onclick="openAdminTab('compta')">💰<br><span>Compta</span></button>
-    <button class="adm-tab" id="atab-calendar" onclick="openAdminTab('calendar')">📦<br><span>Commandes</span></button>
-    <button class="adm-tab" id="atab-calc"     onclick="openAdminTab('calc')">🧮<br><span>Calcul.</span></button>
-    <button class="adm-tab" id="atab-stock"    onclick="openAdminTab('stock')">🗃️<br><span>Stock</span></button>
+  <!-- TABS ROW 1 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+    <button id="admin-tab-vente" onclick="openAdminTab('vente')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      ➕<br><span style="font-size:9px">Nouveau</span>
+    </button>
+    <button id="admin-tab-clients" onclick="openAdminTab('clients')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      👥<br><span style="font-size:9px">Clients</span>
+    </button>
+    <button id="admin-tab-vendors" onclick="openAdminTab('vendors')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      👨‍💼<br><span style="font-size:9px">Vendeurs</span>
+    </button>
+    <button id="admin-tab-charts" onclick="openAdminTab('charts')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      📊<br><span style="font-size:9px">Stats</span>
+    </button>
   </div>
-
-  <div id="admin-tab-content" class="fade-in"></div>
+  <!-- TABS ROW 2 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+    <button id="admin-tab-compta" onclick="openAdminTab('compta')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      💰<br><span style="font-size:10px">Compta</span>
+    </button>
+    <button id="admin-tab-calendar" onclick="openAdminTab('calendar')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      📦<br><span style="font-size:10px">Commandes</span>
+    </button>
+    <button id="admin-tab-calc" onclick="openAdminTab('calc')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      🧮<br><span style="font-size:10px">Calculatrice</span>
+    </button>
+    <button id="admin-tab-stock" onclick="openAdminTab('stock')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
+      📦<br><span style="font-size:10px">Stock</span>
+    </button>
+  </div>
+  <div id="admin-tab-content"></div>
 </div>
 
 <!-- HOME -->
@@ -716,36 +709,14 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
   <!-- ALERTE STOCK -->
   <div id="hm-stock-alert" style="display:none"></div>
 
-  <!-- ACTIONS RAPIDES -->
-  <div class="hm-actions" id="hm-actions" style="display:none">
-    <button class="hm-btn-primary" onclick="openNewClientModal()">
-      <span class="hm-btn-icon">➕</span>
-      <span class="hm-btn-label">Nouvelle vente / Créer client</span>
-    </button>
-    <div class="hm-btn-row">
-      <button class="hm-btn-secondary" onclick="openScanner()">📷 Scanner QR</button>
-      <button class="hm-btn-secondary hm-btn-vip" onclick="openVip()">🏆 Tableau VIP</button>
-    </div>
-  </div>
-
-  <!-- RECHERCHE + FILTRE + LISTE -->
-  <div id="hm-client-section" style="display:none">
-    <div class="hm-search-wrap">
-      <input class="hm-search" id="clients-search" placeholder="🔍 Rechercher un client..." oninput="filterClientsSearch(this.value)">
-    </div>
-    <div id="type-filter-bar"></div>
-    <div id="clients-list"></div>
-  </div>
-
   <!-- BOUTON ADMIN -->
-  <div style="margin:16px 16px 0">
+  <div style="margin:24px 16px 0">
     <button id="admin-btn" onclick="openAdmin()" style="display:none;width:100%;padding:16px;background:linear-gradient(135deg,#1a0a2e,#2e1a4a);border:1px solid #9a7ac966;border-radius:16px;color:#c9a84c;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 20px #9a7ac922">
       ⚙️ &nbsp; Espace Administrateur
     </button>
   </div>
 
 </div>
-</div><!-- /page-home -->
 
 <!-- VENDOR HOME -->
 <div id="page-vendor-home" class="page fade-in">
@@ -961,9 +932,8 @@ function showToast(msg, err) {
   t.textContent = msg;
   t.style.display = "block";
   t.style.borderColor = err ? "#c97a7a44" : "#c9a84c44";
-  t.style.background = err ? "#2e0a0a" : "#1a1813";
   clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(()=>{ t.style.display="none"; }, err ? 4000 : 2500);
+  window._toastTimer = setTimeout(()=>{ t.style.display="none"; }, 3000);
 }
 
 // ═══════════════════════════════════════
@@ -1161,16 +1131,9 @@ function renderVendorHome() {
 
 
 function renderHome() {
-  // Afficher les sections cachées de la home
-  var actEl = document.getElementById('hm-actions');
-  var secEl = document.getElementById('hm-client-section');
-  if(actEl) actEl.style.display = 'block';
-  if(secEl) secEl.style.display = 'block';
   showWelcome();
   startClock();
   renderKPIs();
-  renderTypeFilter();
-  renderClients();
 }
 
 function renderKPIs() {
@@ -1262,11 +1225,10 @@ function setTypeFilter(id) { typeFilter=id; renderHome(); }
 
 function renderClients() {
   const el = document.getElementById("clients-list");
-  if(!el) return;
-  const q = (document.getElementById("clients-search")||document.getElementById("search-input")||{}).value||"";
+  const q = (document.getElementById("search-input")||{}).value||"";
   let list = clients;
   if(typeFilter!=="tous") list = list.filter(c=>(c.type||"particulier")===typeFilter);
-  if(q.trim()) { const ql=q.toLowerCase(); list=list.filter(c=>c.name.toLowerCase().includes(ql)||(c.code||"").toLowerCase().includes(ql)); }
+  if(q.trim()) { const ql=q.toLowerCase(); list=list.filter(c=>c.name.toLowerCase().includes(ql)||c.code.toLowerCase().includes(ql)); }
   
   if(clients.length===0) {
     el.innerHTML=`<div class="empty-state"><div style="font-size:56px;margin-bottom:16px">🌾</div>
@@ -1304,10 +1266,6 @@ function renderClients() {
   }).join("");
 }
 
-function filterClientsSearch(q) {
-  renderClients();
-}
-
 // ═══════════════════════════════════════
 // TYPE GRID HELPER
 // ═══════════════════════════════════════
@@ -1323,7 +1281,6 @@ function renderTypeGrid(containerId, currentType, onSelectFn) {
 }
 
 function selectNewClientType(id) { selectedType=id; renderTypeGrid("nc-type-grid",selectedType,"selectNewClientType"); }
-function selectAdminVenteType(id) { selectedType=id; renderTypeGrid("av-nc-type-grid",selectedType,"selectAdminVenteType"); }
 function selectEditType(id) { editType=id; renderTypeGrid("ec-type-grid",editType,"selectEditType"); }
 
 // ═══════════════════════════════════════
@@ -1586,12 +1543,8 @@ function openSale(id) {
   currentClient = clients.find(c=>c.id===id);
   if(!currentClient) { showToast('Client introuvable', true); return; }
   cart = []; rewardChoice = null;
-  // Rendre d'abord, puis afficher dans le prochain frame pour forcer le flush Android
-  renderSale();
-  requestAnimationFrame(function() {
-    showPage("page-sale");
-    window.scrollTo(0, 0);
-  });
+  showPage("page-sale");
+  setTimeout(function(){ renderSale(); }, 50);
 }
 
 function cartTotal() { return cart.reduce((s,i)=>s+i.price*i.qty,0); }
@@ -1646,11 +1599,7 @@ function renderSale() {
   var page = document.getElementById('page-sale-inner');
   if(!page) return;
   const c = currentClient;
-  if(!c) {
-    // Ne pas rediriger si on est en train d'initialiser
-    page.innerHTML = '<div style="padding:40px;text-align:center;color:#4a4640">Chargement...</div>';
-    return;
-  }
+  if(!c) { showPage('page-home'); return; }
 
   const total = cartTotal();
   const earned = cartPoints();
@@ -2493,29 +2442,24 @@ async function renderAdmin() {
   openAdminTab("vente");
 }
 
-var _currentAdminTab = "vente";
-
 function openAdminTab(tab) {
-  _currentAdminTab = tab;
   ["vente","clients","vendors","charts","compta","calendar","calc","stock"].forEach(function(t) {
-    var btn = document.getElementById("atab-" + t);
+    var btn = document.getElementById("admin-tab-" + t);
     if(!btn) return;
-    if(t === tab) btn.classList.add("active");
-    else          btn.classList.remove("active");
+    btn.style.background = t === tab ? "linear-gradient(135deg,#b8860b,#c9a84c)" : "#1a1813";
+    btn.style.color = t === tab ? "#0a0906" : "#8a8070";
+    btn.style.border = t === tab ? "none" : "1px solid #2e2a22";
   });
   var el = document.getElementById("admin-tab-content");
   if(!el) return;
-  el.classList.remove("fade-in");
-  void el.offsetWidth; // reflow pour relancer l'animation
-  el.classList.add("fade-in");
-  if(tab === "vente")    renderAdminVente(el);
-  else if(tab === "clients")   renderAdminClients(el);
-  else if(tab === "vendors")   renderAdminVendors(el);
-  else if(tab === "charts")    renderAdminCharts(el);
-  else if(tab === "compta")    renderAdminCompta(el);
-  else if(tab === "calendar")  renderAdminCalendar(el);
-  else if(tab === "calc")      renderAdminCalc(el);
-  else if(tab === "stock")     renderAdminStock(el);
+  if(tab === "vente") renderAdminVente(el);
+  else if(tab === "clients") renderAdminClients(el);
+  else if(tab === "vendors") renderAdminVendors(el);
+  else if(tab === "charts") renderAdminCharts(el);
+  else if(tab === "compta") renderAdminCompta(el);
+  else if(tab === "calendar") renderAdminCalendar(el);
+  else if(tab === "calc") renderAdminCalc(el);
+  else if(tab === "stock") renderAdminStock(el);
 }
 
 function adminSearchClients() {
@@ -2531,23 +2475,24 @@ function renderAdminVente(el) {
   el = el || document.getElementById('admin-tab-content');
   if(!el) return;
   selectedType = 'particulier';
+  var inpStyle = 'width:100%;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:12px 14px;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:14px';
 
   el.innerHTML =
-    '<p class="adm-section" style="margin-top:0">NOUVEAU CLIENT + VENTE DIRECTE</p>' +
-    '<label class="adm-lbl">NOM COMPLET *</label>' +
-    '<input id="av-nc-name" class="adm-inp" placeholder="Ex: Jean Dupont">' +
-    '<label class="adm-lbl">📞 TÉLÉPHONE</label>' +
-    '<input id="av-nc-phone" class="adm-inp" type="tel" placeholder="+241 07 00 00 00">' +
-    '<label class="adm-lbl">✉️ EMAIL</label>' +
-    '<input id="av-nc-email" class="adm-inp" type="email" placeholder="jean@email.com">' +
-    '<label class="adm-lbl" style="margin-bottom:10px">🏷️ TYPE DE CLIENT</label>' +
+    '<div style="font-size:13px;color:#8a8070;margin-bottom:16px">Créez un nouveau client puis faites directement la vente.</div>' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">NOM COMPLET *</label>' +
+    '<input id="av-nc-name" class="input" placeholder="Ex: Jean Dupont" style="' + inpStyle + '">' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">📞 TÉLÉPHONE</label>' +
+    '<input id="av-nc-phone" class="input" type="tel" placeholder="+225 07 00 00 00" style="' + inpStyle + '">' +
+    '<label style="display:block;margin-bottom:6px;font-size:11px;color:#8a8070;letter-spacing:1.5px">✉️ EMAIL</label>' +
+    '<input id="av-nc-email" class="input" type="email" placeholder="jean@email.com" style="' + inpStyle + '">' +
+    '<label style="display:block;margin-bottom:10px;font-size:11px;color:#8a8070;letter-spacing:1.5px">🏷️ TYPE DE CLIENT *</label>' +
     '<div class="type-grid" id="av-nc-type-grid" style="margin-bottom:20px"></div>' +
-    '<button id="btn-av-save" class="adm-btn adm-btn-gold" style="font-size:15px;padding:16px;box-shadow:0 4px 16px #c9a84c33">✅ Créer le client et faire la vente</button>';
+    '<button id="btn-av-save" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:15px;border-radius:12px;font-size:15px;font-weight:800;border:none;box-shadow:0 4px 16px #c9a84c44">✅ Créer le client et faire la vente</button>';
 
-  renderTypeGrid('av-nc-type-grid', selectedType, 'selectAdminVenteType');
+  renderTypeGrid('av-nc-type-grid', selectedType, 'selectNewClientType');
 
-  // .onclick = le plus fiable sur Android WebView
-  document.getElementById('btn-av-save').onclick = saveNewClientAndSell;
+  var btnAv = document.getElementById('btn-av-save');
+  if(btnAv) btnAv.onclick = function(){ saveNewClientAndSell(); };
 }
 
 function saveNewClientAndSell() {
@@ -2569,11 +2514,8 @@ function saveNewClientAndSell() {
     currentClient = client;
     cart = []; rewardChoice = null;
     showToast('✅ ' + name + ' créé ! Faites la vente.');
-    renderSale();
-    requestAnimationFrame(function() {
-      showPage('page-sale');
-      window.scrollTo(0, 0);
-    });
+    showPage('page-sale');
+    setTimeout(function(){ renderSale(); }, 200);
     // Firebase en background pur (pas de await qui bloque le thread)
     var dataToSave = Object.assign({}, client); delete dataToSave.id;
     db.collection('clients').add(dataToSave).then(function(ref) {
@@ -2586,6 +2528,7 @@ function renderAdminClients(el) {
   var searchEl = document.getElementById('admin-client-search');
   var search = searchEl ? searchEl.value.toLowerCase() : '';
 
+  // Tous les clients sans exception
   var filtered = clients.filter(function(c) {
     return !search || c.name.toLowerCase().includes(search) ||
            (c.code||'').toLowerCase().includes(search) ||
@@ -2593,24 +2536,29 @@ function renderAdminClients(el) {
   });
 
   var html =
-    '<input id="admin-client-search" type="text" placeholder="🔍 Rechercher (nom, code, tél.)" ' +
-      'oninput="adminSearchClients()" ' +
-      'class="adm-inp" style="margin-bottom:10px">' +
-    '<div class="adm-section">TOUS LES CLIENTS (' + filtered.length + ')</div>';
+    '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+      '<input id="admin-client-search" type="text" placeholder="🔍 Rechercher un client..." ' +
+        'oninput="adminSearchClients()" ' +
+        'style="flex:1;background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;box-sizing:border-box">' +
+    '</div>' +
+    '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">TOUS LES CLIENTS (' + filtered.length + ')</div>';
 
   if(filtered.length === 0) {
     html += '<div style="text-align:center;color:#4a4640;padding:40px">Aucun client trouvé</div>';
   } else {
     filtered.forEach(function(c) {
       var t = getType(c.type);
+      var av = initials(c.name);
       var isP = (c.type||'particulier') === 'particulier';
-      var creator = (c.createdBy || 'ADMIN') === 'ADMIN' ? '👑 Admin' : '👤 ' + (c.createdBy||'');
+      // Identifier le créateur
+      var creator = c.createdBy || 'ADMIN';
+      var creatorLabel = creator === 'ADMIN' ? '👑 Admin' : '👤 ' + creator;
       html +=
-        '<div class="client-card" onclick="adminClientMenu(this)" data-id="' + c.id + '">' +
-          '<div class="avatar" style="background:#2a2520;color:#8a8070;border-color:#2e2a22">' + initials(c.name) + '</div>' +
+        '<div class="client-card" style="cursor:pointer;margin-bottom:8px" onclick="adminClientMenu(this)" data-id="' + c.id + '">' +
+          '<div class="avatar" style="background:linear-gradient(135deg,#2a2520,#3a3028);color:#8a8070;border-color:#2e2a22;width:44px;height:44px;font-size:18px">' + av + '</div>' +
           '<div style="flex:1;min-width:0">' +
             '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
-              '<span style="font-weight:700;font-size:14px">' + c.name + '</span>' +
+              '<span style="font-weight:600;font-size:14px">' + c.name + '</span>' +
               '<span class="tag tag-gold" style="font-size:10px">' + (c.code||'') + '</span>' +
               '<span style="background:' + t.bg + ';color:' + t.color + ';border-radius:20px;padding:2px 8px;font-size:10px">' + t.icon + ' ' + t.label + '</span>' +
             '</div>' +
@@ -2618,7 +2566,7 @@ function renderAdminClients(el) {
               c.history.length + ' achat' + (c.history.length>1?'s':'') +
               ' · ' + fmtPrice(c.totalSpent) +
               (isP ? ' · ' + (c.points||0) + ' pts' : '') +
-              ' · <span style="color:#6a6050">' + creator + '</span>' +
+              ' · <span style="color:#6a6050">' + creatorLabel + '</span>' +
             '</div>' +
           '</div>' +
           '<span style="color:#4a4640;font-size:18px">›</span>' +
@@ -2627,10 +2575,12 @@ function renderAdminClients(el) {
   }
 
   el.innerHTML = html;
-  // Restaurer la valeur de recherche et le focus
-  var inp = document.getElementById('admin-client-search');
-  if(inp) { inp.value = search; if(searchEl) inp.focus(); }
+  if(searchEl) {
+    var newSearch = document.getElementById('admin-client-search');
+    if(newSearch) { newSearch.value = search; newSearch.focus(); }
+  }
 }
+
 
 function adminClientMenu(el) {
   var clientId = el.getAttribute('data-id');
@@ -2638,238 +2588,314 @@ function adminClientMenu(el) {
   if(!c) return;
   var modal = document.getElementById('admin-action-modal');
   var title = document.getElementById('admin-action-title');
-  var btns  = document.getElementById('admin-action-btns');
-  if(!modal) return;
+  var btns = document.getElementById('admin-action-btns');
+  if(!modal || !title || !btns) return;
   title.textContent = c.name;
   modal.dataset.clientId = clientId;
-  btns.innerHTML =
-    '<button class="adm-btn adm-btn-gold" style="text-align:left;margin-bottom:8px" onclick="adminClientMenu_sale()">💰 Faire une vente</button>' +
-    '<button class="adm-btn adm-btn-green" style="text-align:left;margin-bottom:8px;background:#1a2a1a;border:1px solid #3d6a3d;color:#7ac97a" onclick="adminClientMenu_view()">👁️ Voir le profil &amp; historique</button>' +
-    '<button class="adm-btn adm-btn-outline" style="text-align:left;margin-bottom:8px" onclick="adminClientMenu_edit()">✏️ Modifier</button>' +
-    '<button class="adm-btn adm-btn-red" style="text-align:left" onclick="adminClientMenu_delete()">🗑️ Supprimer</button>';
+  btns.innerHTML = 
+    '<button onclick="adminClientMenu_sale()" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:8px;text-align:left">💰 Faire une vente</button>' +
+    '<button onclick="adminClientMenu_view()" style="width:100%;background:#1a2a1a;border:1px solid #3d6a3d;color:#7ac97a;padding:14px;border-radius:10px;font-size:14px;font-weight:600;margin-bottom:8px;text-align:left">👁️ Voir le profil &amp; historique</button>' +
+    '<button onclick="adminClientMenu_edit()" style="width:100%;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:14px;border-radius:10px;font-size:14px;font-weight:600;margin-bottom:8px;text-align:left">✏️ Modifier</button>' +
+    '<button onclick="adminClientMenu_delete()" style="width:100%;background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;padding:14px;border-radius:10px;font-size:14px;font-weight:600;text-align:left">🗑️ Supprimer</button>';
   modal.style.display = 'flex';
 }
 
+
 function adminClientMenu_sale() {
   var id = document.getElementById('admin-action-modal').dataset.clientId;
-  closeAdminActionModal(); openSale(id);
+  closeAdminActionModal();
+  openSale(id);
 }
+
 function adminClientMenu_view() {
   var id = document.getElementById('admin-action-modal').dataset.clientId;
   closeAdminActionModal();
-  currentClient = clients.find(function(x){ return x.id === id; });
-  if(currentClient) openClient(id);
+  var c = clients.find(function(x){ return x.id === id; });
+  if(!c) return;
+  currentClient = c;
+  openClient(id);
 }
+
 function adminClientMenu_edit() {
   var id = document.getElementById('admin-action-modal').dataset.clientId;
   closeAdminActionModal();
-  currentClient = clients.find(function(x){ return x.id === id; });
-  if(currentClient) openEditClient();
+  var c = clients.find(function(x){ return x.id === id; });
+  if(!c) return;
+  currentClient = c;
+  openEditClient();
 }
+
 function adminClientMenu_delete() {
   var id = document.getElementById('admin-action-modal').dataset.clientId;
   closeAdminActionModal();
   var c = clients.find(function(x){ return x.id === id; });
   if(!c) return;
-  var modal = document.getElementById('admin-confirm-modal');
-  var msg   = document.getElementById('admin-confirm-msg');
-  var ok    = document.getElementById('admin-confirm-ok');
-  if(!modal) return;
+  var modal = document.getElementById("admin-confirm-modal");
+  var msg = document.getElementById("admin-confirm-msg");
+  var ok = document.getElementById("admin-confirm-ok");
+  if(!modal || !msg || !ok) return;
   msg.textContent = 'Supprimer "' + c.name + '" définitivement ?';
   ok.onclick = async function() {
     closeAdminConfirmModal();
-    try { await db.collection('clients').doc(id).delete(); } catch(e) {}
-    clients = clients.filter(function(x){ return x.id !== id; });
-    showToast('✅ Client supprimé');
-    openAdminTab('clients');
+    try { await db.collection("clients").doc(id).delete(); } catch(e) {}
+    clients = clients.filter(x => x.id !== id);
+    showToast("✅ Client supprimé");
+    openAdminTab("clients");
   };
-  modal.style.display = 'flex';
+  modal.style.display = "flex";
 }
+
 function closeAdminActionModal() {
-  var m = document.getElementById('admin-action-modal'); if(m) m.style.display = 'none';
+  var m = document.getElementById("admin-action-modal"); if(m) m.style.display = "none";
 }
 function closeAdminConfirmModal() {
-  var m = document.getElementById('admin-confirm-modal'); if(m) m.style.display = 'none';
+  var m = document.getElementById("admin-confirm-modal"); if(m) m.style.display = "none";
 }
 
 async function renderAdminVendors(el) {
   await loadVendors();
 
+  // ── Calcul commissions du mois pour chaque vendeur ──
   var now = new Date();
   var curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   var curMonthLabel = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
 
-  // Calcul commissions du mois par vendeur
-  var vStats = {};
+  // Parcourir tous les clients pour collecter les ventes du mois
+  var vendorStats = {}; // code → {name, sales:[], totalComm, byProduct:{}}
   vendors.forEach(function(v) {
-    vStats[v.code] = {id:v.id, name:v.name, photo:v.photo, sex:v.sex, phone:v.phone, code:v.code, totalComm:0, sales:0};
+    vendorStats[v.code] = {
+      id: v.id, name: v.name, code: v.code, photo: v.photo, sex: v.sex,
+      suspended: v.suspended,
+      sales: [], totalComm: 0,
+      byProduct: {}
+    };
     COMMISSIONS.forEach(function(c) {
-      vStats[v.code][c.productId] = {name:c.name, qty:0, total:0, rate:c.commission||c.prime||0};
+      vendorStats[v.code].byProduct[c.productId] = {
+        name: c.name, rate: c.commission||c.prime||0, isPrime: !!c.prime, qty: 0, total: 0
+      };
     });
   });
+
   clients.forEach(function(c) {
     (c.history||[]).forEach(function(h) {
-      var vc = h.vendorCode||'ADMIN'; if(!vStats[vc]) return;
+      var vcode = h.vendorCode || 'ADMIN';
+      var comm  = h.commission || 0;
+      if(comm <= 0) return;
+      // Filtrer ce mois
       var parts = (h.date||'').split('/');
-      if(parts.length!==3) return;
-      if(parts[2]+'-'+parts[1].padStart(2,'0') !== curMonth) return;
-      vStats[vc].totalComm += (h.commission||0);
-      vStats[vc].sales++;
-      (h.items||[]).forEach(function(it){
-        if(vStats[vc][it.id]) { vStats[vc][it.id].qty+=(it.qty||1); vStats[vc][it.id].total+=vStats[vc][it.id].rate*(it.qty||1); }
+      if(parts.length !== 3) return;
+      var hMonth = parts[2] + '-' + parts[1].padStart(2,'0');
+      if(hMonth !== curMonth) return;
+      if(!vendorStats[vcode]) return;
+      vendorStats[vcode].totalComm += comm;
+      vendorStats[vcode].sales.push(h);
+      // Par produit
+      (h.items||[]).forEach(function(it) {
+        if(vendorStats[vcode].byProduct[it.id]) {
+          vendorStats[vcode].byProduct[it.id].qty   += (it.qty||1);
+          vendorStats[vcode].byProduct[it.id].total += vendorStats[vcode].byProduct[it.id].rate * (it.qty||1);
+        }
       });
     });
   });
 
-  var totalMois = Object.values(vStats).reduce(function(s,v){return s+v.totalComm;},0);
+  var totalMoisAll = Object.values(vendorStats).reduce(function(s,v){ return s+v.totalComm; }, 0);
+  var vendorsWithComm = Object.values(vendorStats).filter(function(v){ return v.totalComm > 0; });
+  vendorsWithComm.sort(function(a,b){ return b.totalComm - a.totalComm; });
+
   var html = '';
 
-  // ── RECAP COMMISSIONS ──
+  // ── RECAP COMMISSIONS DU MOIS ──
   if(vendors.length > 0) {
-    html += '<div class="adm-card adm-card-gold" style="margin-bottom:14px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
-        '<div style="font-size:13px;font-weight:700;color:#c9a84c">💰 Commissions — ' + curMonthLabel + '</div>' +
-        '<div style="font-size:13px;font-weight:700;color:#7ac97a">' + fmtPrice(totalMois) + '</div>' +
-      '</div>';
-
-    var withComm = Object.values(vStats).filter(function(v){return v.totalComm>0;}).sort(function(a,b){return b.totalComm-a.totalComm;});
-    if(withComm.length === 0) {
-      html += '<div style="text-align:center;color:#4a4640;padding:12px;font-size:13px">Aucune commission ce mois</div>';
+    html += '<div class="card" style="margin-bottom:16px;border-color:#c9a84c44;background:linear-gradient(135deg,#1a1208,#0f0e0b)">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+    html += '<div style="font-size:13px;font-weight:700;color:#c9a84c">\u1f4b0 Commissions \u2014 ' + curMonthLabel + '</div>';
+    html += '<div style="font-size:12px;font-weight:700;color:#7ac97a">' + fmtPrice(totalMoisAll) + ' total</div>';
+    html += '</div>';
+    if(vendorsWithComm.length === 0) {
+      html += '<div style="text-align:center;color:#4a4640;padding:16px;font-size:13px">Aucune commission ce mois</div>';
     } else {
-      withComm.forEach(function(vs) {
-        var av = vs.photo ? '<img src="'+vs.photo+'" style="width:100%;height:100%;object-fit:cover">' : (vs.sex==='Femme'?'👩':'👨');
-        var detail = COMMISSIONS.map(function(c){
-          var p = vs[c.productId];
-          return p&&p.qty>0 ? '<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-size:11px;color:#8a8070">'+p.name+' ×'+p.qty+'</span><span style="font-size:11px;color:#c9a84c;font-weight:600">'+fmtPrice(p.total)+'</span></div>' : '';
+      vendorsWithComm.forEach(function(vs) {
+        var avatar = vs.photo ? '<img src="'+vs.photo+'" style="width:100%;height:100%;object-fit:cover">' : (vs.sex==='Femme'?'\u1f469':'\u1f468');
+        var prodDetail = Object.values(vs.byProduct).filter(function(p){return p.qty>0;}).map(function(p){
+          return '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="font-size:11px;color:#8a8070">'+p.name+' x'+p.qty+'</span><span style="font-size:11px;font-weight:600;color:#c9a84c">'+fmtPrice(p.total)+'</span></div>';
         }).join('');
-        var vobj = vendors.find(function(v){return v.code===vs.code;});
-        html += '<div class="adm-card" style="padding:12px;margin-bottom:8px;background:#0f0e0b">' +
-          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
-            '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">'+av+'</div>' +
-            '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+vs.name+'</div><div style="font-size:11px;color:#8a8070">'+vs.sales+' vente'+(vs.sales>1?'s':'')+' ce mois</div></div>' +
-            '<div style="text-align:right"><div style="font-size:16px;font-weight:700;color:#7ac97a">'+fmtPrice(vs.totalComm)+'</div><div style="font-size:10px;color:#4a4640">à payer</div></div>' +
-          '</div>' +
-          (detail ? '<div style="border-top:1px solid #2e2a22;padding-top:6px;margin-bottom:8px">'+detail+'</div>' : '') +
-          '<div style="display:flex;gap:8px">' +
-            (vs.phone&&vobj ? '<button data-action="sendCommRecap" data-arg="'+vs.code+'" style="flex:1;background:#0d1a0d;border:1px solid #25d36655;color:#25d366;padding:8px;border-radius:8px;font-size:12px;font-weight:600">💬 WhatsApp</button>' : '') +
-            (vobj ? '<button data-action="openVendorProfile" data-arg="'+vobj.id+'" style="flex:1;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:8px;border-radius:8px;font-size:12px;font-weight:600">👤 Profil</button>' : '') +
-            (vobj ? '<button data-action="confirmDeleteVendor" data-arg="'+vobj.id+'" data-name="'+vs.name+'" style="background:#2e0a0a;border:1px solid #6a1a1a44;color:#c97a7a;padding:8px 12px;border-radius:8px;font-size:12px">🗑️</button>' : '') +
-          '</div>' +
-        '</div>';
+        var vendorObj2 = vendors.find(function(v){return v.code===vs.code;});
+        html += '<div style="border:1px solid #2e2a22;border-radius:10px;padding:12px;margin-bottom:10px;background:#0f0e0b">';
+        html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+        html += '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid #c9a84c;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">'+avatar+'</div>';
+        html += '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#fff">'+vs.name+'</div>';
+        html += '<div style="font-size:11px;color:#8a8070">'+vs.sales.length+' vente'+(vs.sales.length>1?'s':'')+' ce mois</div></div>';
+        html += '<div style="text-align:right"><div style="font-size:16px;font-weight:700;color:#7ac97a">'+fmtPrice(vs.totalComm)+'</div>';
+        html += '<div style="font-size:10px;color:#4a4640">à payer</div></div></div>';
+        if(prodDetail) html += '<div style="border-top:1px solid #1a1813;padding-top:6px;margin-bottom:8px">'+prodDetail+'</div>';
+        html += '<div style="display:flex;gap:8px;margin-top:6px">';
+        if(vendorObj2 && vendorObj2.phone) {
+          html += '<button data-action="sendCommRecap" data-arg="' + vs.code + '" style="flex:1;background:#0d1a0d;border:1px solid #25d366;color:#25d366;padding:8px;border-radius:8px;font-size:12px;font-weight:600">💬 WhatsApp</button>';
+        }
+        if(vendorObj2) {
+          html += '<button data-action="openVendorProfile" data-arg="' + vendorObj2.id + '" style="flex:1;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:8px;border-radius:8px;font-size:12px;font-weight:600">👤 Profil</button>';
+          html += '<button data-action="confirmDeleteVendor" data-arg="' + vendorObj2.id + '" data-name="' + vs.name + '" style="background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700">🗑️</button>';
+        }
+        html += '</div>';
+        html += '</div>';
       });
     }
     html += '</div>';
   }
 
-  // ── BARRE RECHERCHE ──
-  var searchVal = (document.getElementById('admin-vendor-search')||{value:''}).value || '';
-  html += '<input id="admin-vendor-search" type="text" placeholder="🔍 Rechercher (nom ou code)..." ' +
-    'oninput="adminSearchVendors()" class="adm-inp">';
+  // ── BARRE DE RECHERCHE ──
+  html += '<div style="margin-bottom:12px"><input id="admin-vendor-search" type="text" placeholder="Rechercher (nom ou code)..." oninput="adminSearchVendors()" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:12px;border-radius:10px;font-size:14px;box-sizing:border-box"></div>';
 
   // ── LISTE VENDEURS ──
-  var filteredV = vendors.filter(function(v){
-    return !searchVal || v.name.toLowerCase().includes(searchVal.toLowerCase()) || v.code.toLowerCase().includes(searchVal.toLowerCase());
-  });
-
-  if(filteredV.length === 0) {
-    html += '<div style="text-align:center;color:#4a4640;padding:30px">Aucun vendeur enregistré</div>';
+  if(vendors.length === 0) {
+    html += '<div style="text-align:center;color:#4a4640;padding:40px">Aucun vendeur enregistre</div>';
   } else {
-    filteredV.forEach(function(v) {
-      var susp = !!v.suspended;
-      var commMois = (vStats[v.code]||{totalComm:0}).totalComm;
-      var av = v.photo ? '<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">' : (v.sex==='Femme'?'👩':'👨');
-      html +=
-        '<div class="adm-vendor-card" id="vcard-'+v.id+'" data-id="'+v.id+'" ' +
-          'style="opacity:'+(susp?'0.6':'1');
-      html += '" onclick="vendorCardClick(this)"' +
-          ' ontouchstart="vendorCardTouchStart(this)" ontouchend="vendorCardTouchEnd()"' +
-          ' onmousedown="vendorCardMouseDown(this)" onmouseup="vendorCardMouseUp()">' +
-          '<div id="vcheck-'+v.id+'" style="display:none;width:24px;height:24px;border-radius:50%;border:2px solid #c9a84c;background:#0f0e0b;flex-shrink:0;align-items:center;justify-content:center;font-size:14px">☐</div>' +
-          '<div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid '+(susp?'#6a1a1a':'#c9a84c44')+';flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px">'+av+'</div>' +
-          '<div style="flex:1;min-width:0">' +
-            '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
-              '<span style="font-weight:700;font-size:15px">'+v.name+'</span>' +
-              (susp ? '<span style="background:#2e0a0a;color:#c97a7a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #6a1a1a44">⛔ Suspendu</span>' : '<span style="background:#0d1a0d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #3d6a3d44">✅ Actif</span>') +
-            '</div>' +
-            '<div style="font-size:12px;color:#8a8070;margin-top:2px">'+v.code+' · '+(v.vendorType==='fixe'?'Fixe':'Itinérant')+'</div>' +
-            (commMois>0 ? '<div style="font-size:12px;color:#7ac97a;font-weight:600;margin-top:2px">💰 '+fmtPrice(commMois)+' ce mois</div>' : '') +
-          '</div>' +
-          '<span style="color:#4a4640;font-size:20px">›</span>' +
-        '</div>';
+    vendors.forEach(function(v) {
+      var susp = v.suspended ? true : false;
+      var vStats = vendorStats[v.code];
+      var commMois = vStats ? vStats.totalComm : 0;
+      html += '<div class="card vendor-card" id="vcard-'+v.id+'" data-id="'+v.id+'" '
+        +'style="margin-bottom:10px;opacity:'+(susp?'0.6':'1')+';cursor:pointer;transition:background 0.2s;position:relative" '
+        +'onclick="vendorCardClick(this)" '
+        +'ontouchstart="vendorCardTouchStart(this)" ontouchend="vendorCardTouchEnd()" '
+        +'onmousedown="vendorCardMouseDown(this)" onmouseup="vendorCardMouseUp()">'
+        +'<div style="display:flex;align-items:center;gap:12px">'
+          +'<div id="vcheck-'+v.id+'" style="display:none;width:24px;height:24px;border-radius:50%;border:2px solid #c9a84c;background:#0f0e0b;flex-shrink:0;align-items:center;justify-content:center;font-size:14px">☐</div>'
+          +'<div style="width:52px;height:52px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid '+(susp?'#6a1a1a':'#c9a84c44')+';flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px">'
+            +(v.photo?'<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">':(v.sex==='Femme'?'👩':'👨'))
+          +'</div>'
+          +'<div style="flex:1;min-width:0">'
+            +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+              +'<span style="font-weight:700;font-size:15px">'+v.name+'</span>'
+              +(susp?'<span style="background:#2e0a0a;color:#c97a7a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #6a1a1a">⛔ Suspendu</span>':'<span style="background:#0d1a0d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px;border:1px solid #3d6a3d">✅ Actif</span>')
+            +'</div>'
+            +'<div style="font-size:12px;color:#8a8070;margin-top:2px">'+v.code+' · '+(v.vendorType==='fixe'?'Fixe':'Itinérant')+'</div>'
+            +(commMois>0?'<div style="font-size:12px;color:#7ac97a;font-weight:600;margin-top:2px">💰 '+fmtPrice(commMois)+' ce mois</div>':'')
+          +'</div>'
+          +'<div style="font-size:20px;color:#2e2a22">›</div>'
+        +'</div>'
+      +'</div>';
     });
   }
 
-  html += '<button data-action="openAddVendor" class="adm-btn adm-btn-gold" style="margin-top:12px">+ Nouveau vendeur</button>';
+  html += '<button data-action="openAddVendor" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:12px">+ Nouveau vendeur</button>';
   el.innerHTML = html;
-
-  // Restaurer la valeur de recherche
-  var inp = document.getElementById('admin-vendor-search');
-  if(inp && searchVal) inp.value = searchVal;
 }
 
-function adminSearchVendors() {
-  var el = document.getElementById('admin-tab-content');
-  if(el) renderAdminVendors(el);
+
+function sendCommRecap(vendorCode) {
+  var vs = null;
+  var now = new Date();
+  var curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  var curMonthLabel = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  var vendorObj = vendors.find(function(v){ return v.code===vendorCode; });
+  if(!vendorObj || !vendorObj.phone) return;
+
+  var phone = vendorObj.phone.replace(/[^0-9]/g,'');
+  if(phone.length <= 9) phone = '241' + phone;
+
+  var totalComm = 0; var salesCount = 0;
+  var byProduct = {};
+  COMMISSIONS.forEach(function(c){ byProduct[c.productId]={name:c.name,rate:c.commission||c.prime||0,qty:0,total:0}; });
+
+  clients.forEach(function(c){
+    (c.history||[]).forEach(function(h){
+      if((h.vendorCode||'ADMIN') !== vendorCode) return;
+      var parts=(h.date||'').split('/');
+      if(parts.length!==3) return;
+      var hm=parts[2]+'-'+parts[1].padStart(2,'0');
+      if(hm!==curMonth) return;
+      totalComm+=(h.commission||0); salesCount++;
+      (h.items||[]).forEach(function(it){
+        if(byProduct[it.id]){byProduct[it.id].qty+=(it.qty||1);byProduct[it.id].total+=byProduct[it.id].rate*(it.qty||1);}
+      });
+    });
+  });
+
+  var nl = String.fromCharCode(10);
+  var sep = '------------------';
+  var txt = String.fromCharCode(127806)+' MON FERMIER SARL'+nl
+    +sep+nl
+    +'RECAPITULATIF COMMISSIONS'+nl
+    +curMonthLabel.toUpperCase()+nl
+    +sep+nl
+    +'Vendeur : '+vendorObj.name+nl
+    +'Ventes : '+salesCount+nl
+    +sep+nl;
+  Object.values(byProduct).filter(function(p){return p.qty>0;}).forEach(function(p){
+    txt += p.name+' x'+p.qty+' = '+fmtPrice(p.total)+nl;
+  });
+  txt += sep+nl+'TOTAL A PERCEVOIR : '+fmtPrice(totalComm)+nl+sep+nl+'Merci pour votre travail !';
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(txt),'_blank');
 }
 
-// Menu contextuel vendeur (tap court → ouvre le menu)
-function adminVendorMenu(vendorId) {
-  var v = vendors.find(function(x){ return x.id===vendorId; });
+
+
+function adminVendorViewProfile() {
+  var vendorId = document.getElementById('admin-action-modal').dataset.vendorId;
+  closeAdminActionModal();
+  openVendorProfile(vendorId);
+}
+
+function adminVendorEdit() {
+  var vendorId = document.getElementById('admin-action-modal').dataset.vendorId;
+  closeAdminActionModal();
+  openEditVendor(vendorId);
+}
+
+function adminVendorMenu(btn) {
+  var vendorId = btn.getAttribute("data-id");
+  var v = vendors.find(function(x){ return x.id === vendorId; });
   if(!v) return;
   var modal = document.getElementById('admin-action-modal');
   var title = document.getElementById('admin-action-title');
-  var btns  = document.getElementById('admin-action-btns');
-  if(!modal) return;
+  var btns = document.getElementById('admin-action-btns');
+  if(!modal || !title || !btns) return;
   modal.dataset.vendorId = vendorId;
-  title.textContent = v.name + (v.suspended ? ' ⛔' : '');
-  var susp = !!v.suspended;
+  title.textContent = v.name + (v.suspended ? ' (Suspendu)' : '');
+  var susp = v.suspended ? true : false;
   btns.innerHTML =
-    '<button class="adm-btn adm-btn-green" style="background:#1a2a1a;border:1px solid #3d6a3d;color:#7ac97a;text-align:left;margin-bottom:8px" onclick="adminVendorViewProfile()">👁️ Voir le profil</button>' +
-    '<button class="adm-btn adm-btn-outline" style="text-align:left;margin-bottom:8px" onclick="adminVendorEdit()">✏️ Modifier</button>' +
-    '<button class="adm-btn" style="background:'+(susp?'#0d1a0d':'#1a0a0a')+';border:1px solid '+(susp?'#3d6a3d':'#6a3a1a')+';color:'+(susp?'#7ac97a':'#c9a84c')+';text-align:left;margin-bottom:8px" onclick="adminVendorToggleSuspend()">'+(susp?'✅ Lever la suspension':'⛔ Suspendre')+'</button>' +
-    '<button class="adm-btn adm-btn-red" style="text-align:left" onclick="adminVendorDelete()">🗑️ Supprimer</button>';
+    '<button onclick="adminVendorViewProfile()" style="width:100%;background:#1a2a1a;border:1px solid #3d6a3d;color:#7ac97a;padding:14px;border-radius:10px;font-size:14px;font-weight:600;margin-bottom:8px;text-align:left">👁️ Voir le profil</button>' +
+    '<button onclick="adminVendorEdit()" style="width:100%;background:#1a1813;border:1px solid #c9a84c44;color:#c9a84c;padding:14px;border-radius:10px;font-size:14px;font-weight:600;margin-bottom:8px;text-align:left">✏️ Modifier</button>' +
+    '<button onclick="adminVendorToggleSuspend()" style="width:100%;background:' + (susp?'#0d1a0d':'#1a0a0a') + ';border:1px solid ' + (susp?'#3d6a3d':'#6a3a1a') + ';color:' + (susp?'#7ac97a':'#c9a84c') + ';padding:14px;border-radius:10px;font-size:14px;font-weight:600;margin-bottom:8px;text-align:left">' + (susp?'✅ Lever la suspension':'⛔ Suspendre') + '</button>' +
+    '<button onclick="adminVendorDelete()" style="width:100%;background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;padding:14px;border-radius:10px;font-size:14px;font-weight:600;text-align:left">🗑️ Supprimer</button>';
   modal.style.display = 'flex';
 }
 
-function adminVendorViewProfile() {
-  var id = document.getElementById('admin-action-modal').dataset.vendorId;
-  closeAdminActionModal(); openVendorProfile(id);
-}
-function adminVendorEdit() {
-  var id = document.getElementById('admin-action-modal').dataset.vendorId;
-  closeAdminActionModal(); openEditVendor(id);
-}
+
 async function adminVendorToggleSuspend() {
-  var id = document.getElementById('admin-action-modal').dataset.vendorId;
+  var vendorId = document.getElementById("admin-action-modal").dataset.vendorId;
   closeAdminActionModal();
-  var v = vendors.find(function(x){return x.id===id;});
+  var v = vendors.find(function(x){ return x.id === vendorId; });
   if(!v) return;
   var newState = !v.suspended;
   try {
-    await db.collection('vendors').doc(id).update({suspended:newState});
+    await db.collection("vendors").doc(vendorId).update({suspended: newState});
     v.suspended = newState;
-    showToast(newState ? '⛔ Vendeur suspendu' : '✅ Suspension levée');
-    openAdminTab('vendors');
-  } catch(e){ showToast('Erreur connexion', true); }
+    showToast(newState ? "⛔ Vendeur suspendu" : "✅ Suspension levée");
+    openAdminTab("vendors");
+  } catch(e) { showToast("Erreur: " + (e.message||""), true); }
 }
+
 async function adminVendorDelete() {
-  var id = document.getElementById('admin-action-modal').dataset.vendorId;
+  var vendorId = document.getElementById("admin-action-modal").dataset.vendorId;
   closeAdminActionModal();
-  var v = vendors.find(function(x){return x.id===id;});
+  var v = vendors.find(function(x){ return x.id === vendorId; });
   if(!v) return;
-  var modal = document.getElementById('admin-confirm-modal');
-  var msg = document.getElementById('admin-confirm-msg');
-  var ok = document.getElementById('admin-confirm-ok');
-  if(!modal) return;
+  var modal = document.getElementById("admin-confirm-modal");
+  var msg = document.getElementById("admin-confirm-msg");
+  var ok = document.getElementById("admin-confirm-ok");
+  if(!modal || !msg || !ok) return;
   msg.textContent = 'Supprimer "' + v.name + '" définitivement ?';
   ok.onclick = async function() {
     closeAdminConfirmModal();
-    try { await db.collection('vendors').doc(id).delete(); } catch(e){}
-    vendors = vendors.filter(function(x){return x.id!==id;});
-    showToast('✅ Vendeur supprimé');
-    openAdminTab('vendors');
+    try { await db.collection("vendors").doc(vendorId).delete(); } catch(e) {}
+    vendors = vendors.filter(x => x.id !== vendorId);
+    showToast("✅ Vendeur supprimé");
+    openAdminTab("vendors");
   };
-  modal.style.display = 'flex';
+  modal.style.display = "flex";
 }
 
 function renderAdminCharts(el) {
@@ -2975,7 +3001,7 @@ function renderAdminNewClient(el) {
 }
 
 // ═══════════════════════════════════════
-// ADMIN - COMPTABILITÉ
+// ADMIN - COMPTABILITÉ COMMISSIONS
 // ═══════════════════════════════════════
 async function renderAdminCompta(el) {
   await loadVendors();
@@ -2983,30 +3009,34 @@ async function renderAdminCompta(el) {
   var monthKey = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
   var monthLabel = now.toLocaleDateString("fr-FR", {month:"long", year:"numeric"});
 
-  // CA global
+  // ── CA Global ──
   var totalCA = 0, totalCAMois = 0;
   clients.forEach(function(c) {
     (c.history||[]).forEach(function(h) {
       totalCA += (h.final||0);
-      var p = (h.date||"").split("/");
-      if(p.length===3 && p[2]+"-"+p[1].padStart(2,"0")===monthKey) totalCAMois += (h.final||0);
+      var parts = (h.date||"").split("/");
+      if(parts.length===3 && (parts[2]+"-"+parts[1].padStart(2,"0"))===monthKey)
+        totalCAMois += (h.final||0);
     });
   });
 
-  // Commissions par vendeur
+  // ── Commissions vendeurs ──
   var vendorComm = {};
   vendors.forEach(function(v) {
     vendorComm[v.code] = {name:v.name, id:v.id, photo:v.photo, sex:v.sex, monthly:{}, total:0};
   });
   clients.forEach(function(c) {
     (c.history||[]).forEach(function(h) {
-      var vc = h.vendorCode||"ADMIN"; if(vc==="ADMIN") return;
+      var vc = h.vendorCode || "ADMIN";
+      if(vc === "ADMIN") return;
       if(!vendorComm[vc]) vendorComm[vc] = {name:h.vendorName||vc, id:null, monthly:{}, total:0};
-      var comm = h.commission||0; if(comm<=0) return;
-      var p2 = (h.date||"").split("/");
-      var mk = p2.length===3 ? p2[2]+"-"+p2[1].padStart(2,"0") : monthKey;
-      vendorComm[vc].monthly[mk] = (vendorComm[vc].monthly[mk]||0) + comm;
-      vendorComm[vc].total += comm;
+      var comm = h.commission || 0;
+      if(comm > 0) {
+        var parts = (h.date||"").split("/");
+        var mk = parts.length===3 ? parts[2]+"-"+parts[1].padStart(2,"0") : monthKey;
+        vendorComm[vc].monthly[mk] = (vendorComm[vc].monthly[mk]||0) + comm;
+        vendorComm[vc].total += comm;
+      }
     });
   });
 
@@ -3016,128 +3046,146 @@ async function renderAdminCompta(el) {
   var months6 = [];
   for(var i=0; i<6; i++) {
     var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    months6.push({key:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"), label:d.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"})});
+    var mk2 = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+    months6.push({key:mk2, label:d.toLocaleDateString("fr-FR",{month:"short",year:"2-digit"})});
   }
 
-  var html =
-    '<button data-action="generateMonthlyPDF" class="adm-btn" style="background:linear-gradient(135deg,#1a0a2e,#2e1a4a);border:1px solid #9a7ac944;color:#9a7ac9;margin-bottom:14px">📄 Rapport PDF du mois</button>' +
+  var html = '';
 
-    '<div class="adm-section" style="margin-top:0">' + monthLabel.toUpperCase() + '</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">' +
-      '<div class="adm-card" style="text-align:center">' +
-        '<div style="font-size:10px;color:#4a4640;margin-bottom:4px">CA ce mois</div>' +
-        '<div style="font-size:20px;font-weight:700;color:#c9a84c">'+fmtPrice(totalCAMois)+'</div>' +
-        '<div style="font-size:10px;color:#4a4640;margin-top:4px">Total: '+fmtPrice(totalCA)+'</div>' +
-      '</div>' +
-      '<div class="adm-card adm-card-green" style="text-align:center">' +
-        '<div style="font-size:10px;color:#4a8a4a;margin-bottom:4px">Commissions à payer</div>' +
-        '<div style="font-size:20px;font-weight:700;color:#7ac97a">'+fmtPrice(totalCommMois)+'</div>' +
-        '<div style="font-size:10px;color:#4a4640;margin-top:4px">Total cumulé: '+fmtPrice(totalCommAll)+'</div>' +
-      '</div>' +
-    '</div>' +
+  // ── Bouton Rapport PDF ──
+  html += '<button data-action="generateMonthlyPDF" style="width:100%;background:linear-gradient(135deg,#1a0a2e,#2e1a4a);border:1px solid #9a7ac944;color:#9a7ac9;padding:12px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px">📄 Générer rapport PDF du mois</button>';
 
-    // Filtre mois
-    '<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px">' +
-    months6.map(function(m, i) {
-      return '<button data-mk="'+m.key+'" data-action="filterComptaMonth" style="flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;border:1px solid '+(i===0?'#c9a84c':'#2e2a22')+';background:'+(i===0?'#c9a84c22':'#1a1813')+';color:'+(i===0?'#c9a84c':'#8a8070')+';cursor:pointer;font-family:inherit">'+m.label+'</button>';
-    }).join('') +
-    '</div>' +
+  // ── KPIs globaux ──
+  html += '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">📊 ' + monthLabel + '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">';
+  html += '<div class="card" style="text-align:center">';
+  html += '<div style="font-size:10px;color:#4a4640;margin-bottom:4px">CA ce mois</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:#c9a84c">'+fmtPrice(totalCAMois)+'</div>';
+  html += '<div style="font-size:10px;color:#4a4640;margin-top:4px">Total: '+fmtPrice(totalCA)+'</div>';
+  html += '</div>';
+  html += '<div class="card" style="text-align:center;background:linear-gradient(135deg,#0d1a0d,#1a3a1a);border-color:#3d6a3d">';
+  html += '<div style="font-size:10px;color:#4a8a4a;margin-bottom:4px">Commissions à payer</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:#7ac97a">'+fmtPrice(totalCommMois)+'</div>';
+  html += '<div style="font-size:10px;color:#4a4640;margin-top:4px">Total: '+fmtPrice(totalCommAll)+'</div>';
+  html += '</div>';
+  html += '</div>';
 
-    '<div class="adm-section">COMMISSIONS PAR VENDEUR</div>' +
-    '<div id="compta-vendor-list">'+buildComptaVendorList(vendorComm, monthKey)+'</div>' +
+  // ── Filtre mois ──
+  html += '<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px" id="compta-months-row">';
+  months6.forEach(function(m, i) {
+    html += '<button data-mk="'+m.key+'" data-action="filterComptaMonth" style="flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;border:1px solid '+(i===0?'#c9a84c':'#2e2a22')+';background:'+(i===0?'#c9a84c22':'#1a1813')+';color:'+(i===0?'#c9a84c':'#8a8070')+';cursor:pointer">'+m.label+'</button>';
+  });
+  html += '</div>';
 
-    // Barème
-    '<div class="adm-section" style="margin-top:20px">BARÈME COMMISSIONS</div>' +
-    '<div class="adm-card" style="padding:0 14px">' +
-    COMMISSIONS.map(function(c) {
-      var prod = PRODUCTS.find(function(p){ return p.id===c.productId; });
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1a1813">' +
-        '<div><div style="font-size:13px;color:#e8e0d0">'+c.name+'</div>' +
-        (prod ? '<div style="font-size:11px;color:#4a4640">Prix : '+fmtPrice(prod.price)+'</div>' : '') +
-        '</div>' +
-        '<span style="font-size:14px;font-weight:700;color:#c9a84c">'+fmtPrice(c.commission||c.prime||0)+(c.prime?' (prime)':'')+'</span>' +
-      '</div>';
-    }).join('') +
-    '</div>';
+  // ── Liste vendeurs commissions ──
+  html += '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:10px">💰 Commissions par vendeur</div>';
+  html += '<div id="compta-vendor-list">'+buildComptaVendorList(vendorComm, monthKey)+'</div>';
+
+  // ── Barème ──
+  html += '<div style="margin-top:20px">';
+  html += '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:10px">📋 Barème commissions</div>';
+  html += '<div class="card" style="padding:12px">';
+  COMMISSIONS.forEach(function(c) {
+    var prod = PRODUCTS.find(function(p){ return p.id===c.productId; });
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1813">';
+    html += '<div><div style="font-size:13px;color:#fff">'+c.name+'</div>';
+    if(prod) html += '<div style="font-size:11px;color:#4a4640">Prix: '+fmtPrice(prod.price)+'</div>';
+    html += '</div>';
+    html += '<span style="font-size:14px;font-weight:700;color:#c9a84c">'+fmtPrice(c.commission||c.prime||0)+(c.prime?" (prime)":"")+'</span>';
+    html += '</div>';
+  });
+  html += '</div></div>';
 
   el.innerHTML = html;
 }
 
 function buildComptaVendorList(vendorComm, mk) {
   var entries = Object.entries(vendorComm).filter(function(e){ return e[1].total > 0; });
-  if(entries.length === 0) return '<div style="text-align:center;color:#4a4640;padding:30px">Aucune commission enregistree</div>';
+  if(entries.length === 0) return '<div style="text-align:center;color:#4a4640;padding:30px">Aucune commission enregistrée</div>';
   entries.sort(function(a,b){ return (b[1].monthly[mk]||0)-(a[1].monthly[mk]||0); });
-  return entries.map(function(entry) {
-    var code = entry[0], v = entry[1];
+  var html = "";
+  entries.forEach(function(entry) {
+    var code=entry[0], v=entry[1];
     var mc = v.monthly[mk]||0;
-    var paid = JSON.parse(localStorage.getItem("mf_comm_paid")||"{}" );
-    var isPaid = !!paid[code+"_"+mk];
-    var av = v.photo ? "<img src="" +v.photo+"" style="width:100%;height:100%;object-fit:cover">" : (v.sex==="Femme"?"👩":"👨");
-    return "<div class="adm-card" style="margin-bottom:10px;" +(isPaid?"opacity:0.6":"")+">"+
-      "<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">"+
-        "<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid #c9a84c44;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px">"+av+"</div>"+
-        "<div style="flex:1"><div style="font-weight:700;font-size:14px">"+v.name+"</div><div style="font-size:11px;color:#8a8070">"+code+"</div></div>"+
-        "<div style="text-align:right">"+
-          "<div data-amount=""+code+"" style="font-size:20px;font-weight:700;color:" +(mc>0&&!isPaid?"#c9a84c":"#4a4640")+"">"+fmtPrice(isPaid?0:mc)+"</div>"+
-          "<div data-solde=""+code+"" style="font-size:10px;color:" +(isPaid?"#7ac97a":"#4a4640")+"">"+( isPaid?"✅ Solde":"ce mois")+"</div>"+
-        "</div>"+
-      "</div>"+
-      "<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2e2a22">"+
-        "<div><div style="font-size:11px;color:#4a4640">Total cumule</div><div style="font-size:13px;font-weight:600;color:#7ac97a">"+fmtPrice(v.total)+"</div></div>"+
-        (mc>0 ? (isPaid ?
-          "<span style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px">✅ Paye</span>" :
-          "<button data-code=""+code+"" data-action="marquerPaye" style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-family:inherit">✅ Marquer paye</button>"
-        ) : "") +
-      "</div>"+
-    "</div>";
-  }).join("");
+    var paid = JSON.parse(localStorage.getItem('mf_comm_paid')||'{}');
+    var isPaid = paid[code+'_'+mk] ? true : false;
+    var avatar = v.photo ? '<img src="'+v.photo+'" style="width:100%;height:100%;object-fit:cover">' : (v.sex==='Femme'?'👩':'👨');
+    html += '<div class="card" style="margin-bottom:10px;'+(isPaid?'opacity:0.6':'')+'">';
+    var displayMc = isPaid ? 0 : mc;
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
+    html += '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:#1a1813;border:2px solid #c9a84c44;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px">'+avatar+'</div>';
+    html += '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+v.name+'</div>';
+    html += '<div style="font-size:11px;color:#8a8070">Code: '+code+'</div></div>';
+    html += '<div style="text-align:right">';
+    html += '<div data-amount="'+code+'" style="font-size:20px;font-weight:700;color:'+(displayMc>0?'#c9a84c':'#4a4640')+'">'+fmtPrice(displayMc)+'</div>';
+    html += '<div data-solde="'+code+'" style="font-size:10px;color:'+(isPaid?'#7ac97a':'#4a4640')+'">'+(isPaid?'✅ Soldé':'ce mois')+'</div></div></div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #2e2a22">';
+    html += '<div><div style="font-size:11px;color:#4a4640">Total cumulé</div>';
+    html += '<div style="font-size:13px;font-weight:600;color:#7ac97a">'+fmtPrice(v.total)+'</div></div>';
+    if(mc > 0) {
+      if(isPaid) {
+        html += '<span style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px">✅ Payé</span>';
+      } else {
+        html += '<button data-code="'+code+'" data-action="marquerPaye" style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer">✅ Marquer comme payé</button>';
+      }
+    }
+    html += '</div></div>';
+  });
+  return html;
 }
 
 function filterComptaMonth(btn) {
-  var mk = btn.getAttribute("data-mk");
-  document.querySelectorAll("[data-action=filterComptaMonth]").forEach(function(b) {
-    b.style.background = "#1a1813"; b.style.color = "#8a8070"; b.style.borderColor = "#2e2a22";
+  var mk = btn.getAttribute('data-mk');
+  document.querySelectorAll('.compta-month-btn, [data-action="filterComptaMonth"]').forEach(function(b) {
+    b.style.background = '#1a1813'; b.style.color = '#8a8070'; b.style.borderColor = '#2e2a22';
   });
-  btn.style.background = "#c9a84c22"; btn.style.color = "#c9a84c"; btn.style.borderColor = "#c9a84c";
-  var vc = {};
-  vendors.forEach(function(v) { vc[v.code] = {name:v.name,id:v.id,photo:v.photo,sex:v.sex,monthly:{},total:0}; });
+  btn.style.background = '#c9a84c22'; btn.style.color = '#c9a84c'; btn.style.borderColor = '#c9a84c';
+  var vendorComm = {};
+  vendors.forEach(function(v) { vendorComm[v.code] = {name:v.name, id:v.id, photo:v.photo, sex:v.sex, monthly:{}, total:0}; });
   clients.forEach(function(c) {
     (c.history||[]).forEach(function(h) {
-      var vcode = h.vendorCode||"ADMIN"; if(vcode==="ADMIN") return;
-      if(!vc[vcode]) vc[vcode] = {name:h.vendorName||vcode,id:null,monthly:{},total:0};
-      var comm = h.commission||0; if(comm<=0) return;
-      var p = (h.date||"").split("/");
-      var hmk = p.length===3 ? p[2]+"-"+p[1].padStart(2,"0") : mk;
-      vc[vcode].monthly[hmk] = (vc[vcode].monthly[hmk]||0) + comm;
-      vc[vcode].total += comm;
+      var vc = h.vendorCode||"ADMIN"; if(vc==="ADMIN") return;
+      if(!vendorComm[vc]) vendorComm[vc]={name:h.vendorName||vc,id:null,monthly:{},total:0};
+      var comm=h.commission||0; if(comm<=0) return;
+      var parts=(h.date||"").split("/");
+      var hmk=parts.length===3?parts[2]+"-"+parts[1].padStart(2,"0"):mk;
+      vendorComm[vc].monthly[hmk]=(vendorComm[vc].monthly[hmk]||0)+comm;
+      vendorComm[vc].total+=comm;
     });
   });
-  var list = document.getElementById("compta-vendor-list");
-  if(list) list.innerHTML = buildComptaVendorList(vc, mk);
+  var el = document.getElementById('compta-vendor-list');
+  if(el) el.innerHTML = buildComptaVendorList(vendorComm, mk);
 }
 
 async function marquerPaye(btn) {
-  var code = btn.getAttribute("data-code");
+  var code = btn.getAttribute('data-code');
+  if(!vendors || vendors.length === 0) await loadVendors();
   var v = vendors.find(function(x){ return x.code===code; });
   var name = v ? v.name : code;
-  if(!confirm("Confirmer le paiement des commissions de "+name+" ?")) return;
+  if(!confirm('Confirmer le paiement des commissions de '+name+' ce mois ?')) return;
   var now = new Date();
   var mk = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
-  var paid = JSON.parse(localStorage.getItem("mf_comm_paid")||"{}" );
-  paid[code+"_"+mk] = true;
-  localStorage.setItem("mf_comm_paid", JSON.stringify(paid));
-  showToast("✅ Commission de "+name+" marquee payee !");
+  // Sauvegarder statut payé dans localStorage
+  var paid = JSON.parse(localStorage.getItem('mf_comm_paid')||'{}');
+  paid[code+'_'+mk] = true;
+  localStorage.setItem('mf_comm_paid', JSON.stringify(paid));
+  showToast('✅ Commission de '+name+' marquée comme payée !');
+  // Remplacer le bouton directement sans recharger la page
   var parent = btn.parentNode;
-  parent.innerHTML = "<span style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px">✅ Paye</span>";
-  var card = parent.closest ? parent.closest(".adm-card") : null;
+  parent.innerHTML = '<span style="background:#0d1a0d;border:1px solid #3d6a3d;color:#7ac97a;padding:6px 14px;border-radius:20px;font-size:12px">✅ Payé</span>';
+  // Mettre le montant à 0
+  var card = parent.closest ? parent.closest('.card') : null;
   if(card) {
-    var aEl = card.querySelector("[data-amount=""+code+""]");
-    if(aEl) { aEl.textContent = "0 F"; aEl.style.color = "#4a4640"; }
-    var sEl = card.querySelector("[data-solde=""+code+""]");
-    if(sEl) { sEl.textContent = "✅ Solde"; sEl.style.color = "#7ac97a"; }
+    var amountDiv = card.querySelector('[data-amount="'+code+'"]');
+    if(amountDiv) { amountDiv.textContent = '0 F'; amountDiv.style.color = '#4a4640'; }
+    var soldDiv = card.querySelector('[data-solde="'+code+'"]');
+    if(soldDiv) { soldDiv.textContent = '✅ Soldé'; soldDiv.style.color = '#7ac97a'; }
   }
 }
 
+// ═══════════════════════════════════════
+// ADMIN - CALENDRIER / ALERTES
+// ═══════════════════════════════════════
 var appointments = JSON.parse(localStorage.getItem("mf_appointments")||"[]");
 
 function saveAppointments() {
@@ -3155,6 +3203,8 @@ function renderAdminCalendar(el) {
   var upcoming = appointments.filter(function(a){ return a.date >= today; });
   var past     = appointments.filter(function(a){ return a.date < today; });
 
+  var inpStyle = 'background:#0f0e0b;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:13px;width:100%;box-sizing:border-box';
+
   var typeOpts = CLIENT_TYPES.map(function(t){
     return '<option value="'+t.id+'">'+t.icon+' '+t.label+'</option>';
   }).join('');
@@ -3162,117 +3212,153 @@ function renderAdminCalendar(el) {
   var prodRows = PRODUCTS.map(function(p){
     var comm = COMMISSIONS.find(function(c){ return c.productId===p.id; });
     var commLabel = comm ? ' (+'+fmtPrice(comm.commission||comm.prime||0)+')' : '';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1813">' +
-      '<div><div style="font-size:13px;color:#e8e0d0">'+p.name+'</div>' +
-        '<div style="font-size:11px;color:#8a8070">'+fmtPrice(p.price)+commLabel+'</div></div>' +
-      '<div style="display:flex;align-items:center">' +
-        '<button type="button" onclick="calQtyChange('+p.id+',-1)" style="width:32px;height:32px;background:#2e2a22;border:none;color:#c9a84c;font-size:20px;font-weight:700;border-radius:8px 0 0 8px;cursor:pointer">−</button>' +
-        '<div id="cal-qty-display-'+p.id+'" style="min-width:32px;height:32px;background:#0f0e0b;border-top:1px solid #2e2a22;border-bottom:1px solid #2e2a22;color:#c9a84c;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center"></div>' +
+    return '<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1a1813">' +
+      '<div style="flex:1">' +
+        '<div style="font-size:13px;color:#fff">'+p.name+'</div>' +
+        '<div style="font-size:11px;color:#8a8070">'+fmtPrice(p.price)+commLabel+'</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:0">' +
+        '<button type="button" onclick="calQtyChange('+p.id+',-1)" style="width:32px;height:32px;background:#2e2a22;border:none;color:#c9a84c;font-size:18px;font-weight:700;border-radius:8px 0 0 8px;cursor:pointer;line-height:1">−</button>' +
+        '<div id="cal-qty-display-'+p.id+'" style="min-width:32px;height:32px;background:#0f0e0b;border-top:1px solid #2e2a22;border-bottom:1px solid #2e2a22;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center"></div>' +
         '<input type="hidden" id="cal-qty-'+p.id+'" value="0">' +
-        '<button type="button" onclick="calQtyChange('+p.id+',1)" style="width:32px;height:32px;background:#2e2a22;border:none;color:#c9a84c;font-size:20px;font-weight:700;border-radius:0 8px 8px 0;cursor:pointer">+</button>' +
+        '<button type="button" onclick="calQtyChange('+p.id+',1)" style="width:32px;height:32px;background:#2e2a22;border:none;color:#c9a84c;font-size:18px;font-weight:700;border-radius:0 8px 8px 0;cursor:pointer;line-height:1">+</button>' +
       '</div>' +
     '</div>';
   }).join('');
 
-  var html =
-    '<div class="adm-section" style="margin-top:0">NOUVELLE COMMANDE</div>' +
-    '<div class="adm-card" style="margin-bottom:16px">' +
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:16px">📦 Gestion des commandes</div>';
 
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
-        '<input id="cal-prenom" type="text" placeholder="Prénom *" class="adm-inp" style="margin-bottom:0">' +
-        '<input id="cal-nom"    type="text" placeholder="Nom *"    class="adm-inp" style="margin-bottom:0">' +
+  // ── FORMULAIRE NOUVELLE COMMANDE ──
+  html += '<div class="card" style="margin-bottom:16px">' +
+    '<div style="font-size:13px;font-weight:700;color:#c9a84c;margin-bottom:14px">➕ Nouvelle commande</div>' +
+
+    // Prénom / Nom
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+      '<input id="cal-prenom" type="text" placeholder="Prénom *" style="'+inpStyle+'">' +
+      '<input id="cal-nom"    type="text" placeholder="Nom *"    style="'+inpStyle+'">' +
+    '</div>' +
+
+    // Téléphone / Email
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+      '<input id="cal-phone" type="tel"   placeholder="📞 Téléphone" style="'+inpStyle+'">' +
+      '<input id="cal-email" type="email" placeholder="✉️ Email"     style="'+inpStyle+'">' +
+    '</div>' +
+
+    // Type client
+    '<select id="cal-type" style="'+inpStyle+';margin-bottom:10px">' + typeOpts + '</select>' +
+
+    // Produits commandés
+    '<div style="font-size:12px;color:#c9a84c;font-weight:600;margin-bottom:6px">📦 Produits commandés</div>' +
+    prodRows +
+
+    // Date livraison
+    '<div style="font-size:11px;color:#8a8070;margin:12px 0 4px;letter-spacing:1px">DATE DE LIVRAISON *</div>' +
+    '<input id="cal-date" type="date" min="'+today+'" style="'+inpStyle+';margin-bottom:8px">' +
+
+    // Statut paiement
+    '<div style="font-size:11px;color:#8a8070;margin-bottom:8px;letter-spacing:1px">STATUT PAIEMENT</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">' +
+      '<button type="button" id="cal-pay-paid"     class="payment-btn selected" style="font-size:11px;padding:10px 4px" onclick="setCalPay(\'paid\')">✅ Payé</button>' +
+      '<button type="button" id="cal-pay-unpaid"   class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalPay(\'unpaid\')">❌ Non payé</button>' +
+      '<button type="button" id="cal-pay-delivery" class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalPay(\'delivery\')">🚚 À livraison</button>' +
+    '</div>' +
+
+    // Mode paiement
+    '<div id="cal-pay-mode-wrap">' +
+      '<div style="font-size:11px;color:#8a8070;margin-bottom:8px;letter-spacing:1px">MODE DE PAIEMENT</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">' +
+        '<button type="button" id="cal-mode-especes" class="payment-btn selected" style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'especes\')">💵 Espèces</button>' +
+        '<button type="button" id="cal-mode-airtel"  class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'airtel\')">📱 Airtel Money</button>' +
+        '<button type="button" id="cal-mode-moov"    class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'moov\')">📱 Moov Money</button>' +
+        '<button type="button" id="cal-mode-card"    class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'card\')">💳 Carte crédit</button>' +
+        '<button type="button" id="cal-mode-cheque"  class="payment-btn"          style="font-size:11px;padding:10px 4px" onclick="setCalMode(\'cheque\')">📄 Chèque</button>' +
       '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
-        '<input id="cal-phone" type="tel"   placeholder="📞 Téléphone" class="adm-inp" style="margin-bottom:0">' +
-        '<input id="cal-email" type="email" placeholder="✉️ Email"     class="adm-inp" style="margin-bottom:0">' +
-      '</div>' +
-      '<select id="cal-type" class="adm-inp">' + typeOpts + '</select>' +
+    '</div>' +
 
-      '<div class="adm-section" style="margin-top:6px">PRODUITS COMMANDÉS</div>' +
-      prodRows +
+    // Note
+    '<input id="cal-note" type="text" placeholder="📝 Note optionnelle..." style="'+inpStyle+';margin-bottom:12px">' +
 
-      '<div class="adm-section" style="margin-top:14px">DATE DE LIVRAISON *</div>' +
-      '<input id="cal-date" type="date" min="'+today+'" class="adm-inp">' +
-
-      '<div class="adm-section">STATUT PAIEMENT</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">' +
-        '<button type="button" id="cal-pay-paid"     class="adm-pay-btn active" onclick="setCalPay(\'paid\')">✅ Payé</button>' +
-        '<button type="button" id="cal-pay-unpaid"   class="adm-pay-btn"        onclick="setCalPay(\'unpaid\')">❌ Non payé</button>' +
-        '<button type="button" id="cal-pay-delivery" class="adm-pay-btn"        onclick="setCalPay(\'delivery\')">🚚 Livraison</button>' +
-      '</div>' +
-
-      '<div id="cal-pay-mode-wrap">' +
-        '<div class="adm-section">MODE DE PAIEMENT</div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">' +
-          '<button type="button" id="cal-mode-especes" class="adm-pay-btn active" onclick="setCalMode(\'especes\')">💵 Espèces</button>' +
-          '<button type="button" id="cal-mode-airtel"  class="adm-pay-btn"        onclick="setCalMode(\'airtel\')">📱 Airtel Money</button>' +
-          '<button type="button" id="cal-mode-moov"    class="adm-pay-btn"        onclick="setCalMode(\'moov\')">📲 Moov Money</button>' +
-          '<button type="button" id="cal-mode-card"    class="adm-pay-btn"        onclick="setCalMode(\'card\')">💳 Carte crédit</button>' +
-          '<button type="button" id="cal-mode-cheque"  class="adm-pay-btn"        onclick="setCalMode(\'cheque\')">📄 Chèque</button>' +
-        '</div>' +
-      '</div>' +
-
-      '<input id="cal-note" type="text" placeholder="📝 Note optionnelle..." class="adm-inp">' +
-
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
-        '<button type="button" onclick="previewCalOrder(\'whatsapp\')" class="adm-btn" style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;font-size:13px">📲 Devis WA</button>' +
-        '<button type="button" onclick="previewCalOrder(\'email\')" class="adm-btn" style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;font-size:13px">✉️ Devis Email</button>' +
-      '</div>' +
-      '<button type="button" id="btn-save-order" class="adm-btn adm-btn-gold" style="font-size:14px">📅 Enregistrer la commande</button>' +
-    '</div>';
+    // Boutons action
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      '<button type="button" onclick="previewCalOrder(\'whatsapp\')" style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:12px;border-radius:8px;font-size:13px;font-weight:600">📲 Devis WhatsApp</button>' +
+      '<button type="button" onclick="previewCalOrder(\'email\')" style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:12px;border-radius:8px;font-size:13px;font-weight:600">✉️ Devis Email</button>' +
+    '</div>' +
+    '<button type="button" id="btn-save-order" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:8px;font-size:14px;font-weight:700;border:none;margin-top:8px">📅 Enregistrer la commande</button>' +
+  '</div>';
 
   // ── COMMANDES À VENIR ──
   if(upcoming.length > 0) {
-    html += '<div class="adm-section">À VENIR ('+upcoming.length+')</div>';
-    upcoming.forEach(function(a) {
+    html += '<div style="font-size:12px;color:#c9a84c;font-weight:700;margin-bottom:10px">📌 À venir ('+upcoming.length+')</div>';
+    upcoming.forEach(function(a, i) {
       var d = new Date(a.date+"T00:00:00");
       var daysLeft = Math.ceil((d - new Date(today)) / 86400000);
       var urgent = daysLeft <= 2;
       var globalIdx = appointments.indexOf(a);
-      var typeInfo = CLIENT_TYPES.find(function(t){ return t.id===a.clientType; }) || {icon:"👤",label:"",color:"#8a8070"};
-      var itemsHtml = (a.items&&a.items.length>0) ? a.items.map(function(it){ return it.qty+'× '+it.name; }).join(' · ') : (a.desc||'Commande');
-      var payBadge = a.payStatus==='paid' ? '<span style="background:#1a3a1a;border:1px solid #3d6a3d44;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px">✅ Payé</span>'
-        : a.payStatus==='unpaid' ? '<span style="background:#2e0a0a;border:1px solid #6a1a1a44;color:#c97a7a;border-radius:20px;padding:2px 8px;font-size:10px">❌ Non payé</span>'
-        : '<span style="background:#1a1a2e;border:1px solid #3a3a8a44;color:#7aaad5;border-radius:20px;padding:2px 8px;font-size:10px">🚚 Livraison</span>';
+      var typeInfo = CLIENT_TYPES.find(function(t){ return t.id===a.clientType; }) || {icon:"👤",label:a.clientType||"",color:"#8a8070"};
+      var itemsHtml = (a.items && a.items.length > 0)
+        ? a.items.map(function(it){ return it.qty+'× '+it.name+' ('+fmtPrice(it.price*it.qty)+')'; }).join(' · ')
+        : (a.desc||'Commande');
 
-      html += '<div class="adm-card" style="margin-bottom:10px;border-color:'+(urgent?'#c97a4a44':'#2e2a22')+'">' +
+      // Badge paiement
+      var payBadge = '';
+      if(a.payStatus==='paid')     payBadge = '<span style="background:#1a3a1a;border:1px solid #3d6a3d;color:#7ac97a;border-radius:20px;padding:2px 8px;font-size:10px">✅ Payé</span>';
+      else if(a.payStatus==='unpaid') payBadge = '<span style="background:#2e0a0a;border:1px solid #6a1a1a;color:#c97a7a;border-radius:20px;padding:2px 8px;font-size:10px">❌ Non payé</span>';
+      else if(a.payStatus==='delivery') payBadge = '<span style="background:#1a1a2e;border:1px solid #3a3a8a;color:#7aaad5;border-radius:20px;padding:2px 8px;font-size:10px">🚚 À livraison</span>';
+
+      var modeLabels = {airtel:'Airtel Money',moov:'Moov Money',card:'Carte crédit',cheque:'Chèque'};
+      var modeBadge = a.payMode ? '<span style="font-size:10px;color:#8a8070">'+(modeLabels[a.payMode]||a.payMode)+'</span>' : '';
+
+      var dateValidBadge = a.dateValidated
+        ? '<div style="font-size:10px;color:#4a6a4a;margin-top:2px">✔️ Validée le '+a.dateValidated+'</div>' : '';
+
+      html += '<div class="card" style="margin-bottom:10px;border:1px solid '+(urgent?'#c97a4a':'#2e2a22')+'">' +
         '<div style="display:flex;align-items:flex-start;gap:10px">' +
-          '<div style="width:48px;height:56px;background:'+(urgent?'#2e1a0a':'#1a1813')+';border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:1px solid '+(urgent?'#c97a4a44':'#2e2a22')+'">' +
-            '<div style="font-size:20px;font-weight:700;color:'+(urgent?'#c97a4a':'#c9a84c')+'">'+d.getDate()+'</div>' +
+          '<div style="width:48px;height:56px;background:'+(urgent?'#2e1a0a':'#1a1813')+';border-radius:10px;' +
+            'display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;' +
+            'border:1px solid '+(urgent?'#c97a4a':'#2e2a22')+'">' +
+            '<div style="font-size:18px;font-weight:700;color:'+(urgent?'#c97a4a':'#c9a84c')+'">'+d.getDate()+'</div>' +
             '<div style="font-size:9px;color:#8a8070;text-transform:uppercase">'+d.toLocaleDateString("fr-FR",{month:"short"})+'</div>' +
           '</div>' +
           '<div style="flex:1;min-width:0">' +
             '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">' +
-              '<span style="font-weight:700;font-size:14px">'+a.client+'</span>' +
-              '<span style="background:'+(typeInfo.color||'#2e2a22')+'22;color:'+(typeInfo.color||'#8a8070')+';border-radius:20px;padding:2px 8px;font-size:10px">'+typeInfo.icon+' '+typeInfo.label+'</span>' +
+              '<span style="font-weight:700;font-size:14px;color:#fff">'+a.client+'</span>' +
+              '<span style="background:'+(typeInfo.color||'#2e2a22')+';border-radius:20px;padding:2px 8px;font-size:10px;color:#fff">'+typeInfo.icon+' '+typeInfo.label+'</span>' +
             '</div>' +
             (a.phone ? '<div style="font-size:11px;color:#8a8070;margin-bottom:2px">📞 '+a.phone+'</div>' : '') +
             '<div style="font-size:12px;color:#8a8070;margin-bottom:4px">'+itemsHtml+'</div>' +
-            (a.totalPrice ? '<div style="font-size:13px;font-weight:700;color:#c9a84c;margin-bottom:4px">'+fmtPrice(a.totalPrice)+'</div>' : '') +
-            '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">'+payBadge+'</div>' +
-            '<div style="font-size:11px;color:'+(urgent?'#c97a4a':'#4a4640')+';font-weight:600">' +
+            (a.totalPrice ? '<div style="font-size:13px;font-weight:700;color:#c9a84c;margin-bottom:4px">💰 '+fmtPrice(a.totalPrice)+'</div>' : '') +
+            '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">'+payBadge+' '+modeBadge+'</div>' +
+            dateValidBadge +
+            (a.note ? '<div style="font-size:11px;color:#4a4640;margin-top:2px;font-style:italic">📝 '+a.note+'</div>' : '') +
+            '<div style="font-size:11px;color:'+(urgent?'#c97a4a':'#4a4640')+';margin-top:6px;font-weight:600">' +
               (daysLeft===0?'⚠️ Aujourd\'hui':daysLeft===1?'⚠️ Demain':'📆 Dans '+daysLeft+' jours') +
             '</div>' +
+            // Boutons partage
             '<div style="display:flex;gap:6px;margin-top:8px">' +
-              '<button type="button" data-idx="'+globalIdx+'" onclick="shareOrderWhatsApp(this)" style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit">📲 WA</button>' +
-              '<button type="button" data-idx="'+globalIdx+'" onclick="shareOrderEmail(this)" style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit">✉️ Email</button>' +
+              '<button type="button" data-idx="'+globalIdx+'" onclick="shareOrderWhatsApp(this)" ' +
+                'style="background:#1a3a1a;border:1px solid #25d36644;color:#25d366;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer">📲 WA</button>' +
+              '<button type="button" data-idx="'+globalIdx+'" onclick="shareOrderEmail(this)" ' +
+                'style="background:#1a1a3a;border:1px solid #7aaad544;color:#7aaad5;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer">✉️ Email</button>' +
             '</div>' +
           '</div>' +
-          '<button type="button" data-idx="'+globalIdx+'" onclick="deleteAppointment(this)" style="background:none;border:none;color:#4a4640;font-size:22px;cursor:pointer;padding:0;flex-shrink:0">✕</button>' +
+          '<button type="button" data-idx="'+globalIdx+'" onclick="deleteAppointment(this)" ' +
+            'style="background:none;border:none;color:#4a4640;font-size:20px;cursor:pointer;padding:0;flex-shrink:0">✕</button>' +
         '</div>' +
       '</div>';
     });
   }
 
-  // ── HISTORIQUE ──
+  // ── COMMANDES PASSÉES ──
   if(past.length > 0) {
-    html += '<div class="adm-section">HISTORIQUE ('+past.length+')</div>';
+    html += '<div style="font-size:12px;color:#4a4640;font-weight:700;margin:14px 0 8px">✅ Historique ('+past.length+')</div>';
     past.slice(-5).reverse().forEach(function(a) {
       var d = new Date(a.date+"T00:00:00");
       var globalIdx = appointments.indexOf(a);
+      var payColor = a.payStatus==='paid'?'#7ac97a':a.payStatus==='unpaid'?'#c97a7a':'#7aaad5';
       html += '<div style="display:flex;align-items:center;gap:8px;padding:10px;background:#0f0e0b;border-radius:8px;margin-bottom:6px;opacity:0.6">' +
         '<span style="font-size:11px;color:#4a4640;flex-shrink:0">'+d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+'</span>' +
         '<span style="font-size:13px;color:#4a4640;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.client+(a.totalPrice?' — '+fmtPrice(a.totalPrice):'')+'</span>' +
+        (a.payStatus ? '<span style="font-size:10px;color:'+payColor+'">●</span>' : '') +
         '<button type="button" data-idx="'+globalIdx+'" onclick="deleteAppointment(this)" style="background:none;border:none;color:#4a4640;font-size:16px;cursor:pointer">✕</button>' +
       '</div>';
     });
@@ -3284,9 +3370,9 @@ function renderAdminCalendar(el) {
 
   el.innerHTML = html;
 
-  // Bouton principal via .onclick (fiable sur Android WebView)
+  // Attacher le bouton principal via .onclick (le plus fiable sur Android)
   var btnSave = document.getElementById('btn-save-order');
-  if(btnSave) btnSave.onclick = showConfirmOrder;
+  if(btnSave) btnSave.onclick = function(){ showConfirmOrder(); };
 
   // Init état formulaire
   calPayStatus = 'paid';
@@ -3294,6 +3380,7 @@ function renderAdminCalendar(el) {
   updateCalPayButtons();
   updateCalModeButtons();
 }
+
 // ── États locaux formulaire ──
 var calPayStatus = 'paid';
 var calPayMode   = 'especes';
@@ -3346,18 +3433,8 @@ function collectCalForm() {
   var date   = (document.getElementById('cal-date')||{value:''}).value;
   var note   = (document.getElementById('cal-note')||{value:''}).value.trim();
 
-  if(!clientName) {
-    showToast('⚠️ Entrez le prénom et nom du client', true);
-    var el = document.getElementById('cal-prenom');
-    if(el) { el.style.borderColor='#c97a7a'; el.focus(); setTimeout(function(){ el.style.borderColor=''; },3000); }
-    return null;
-  }
-  if(!date) {
-    showToast('⚠️ Choisissez une date de livraison', true);
-    var el2 = document.getElementById('cal-date');
-    if(el2) { el2.style.borderColor='#c97a7a'; el2.focus(); setTimeout(function(){ el2.style.borderColor=''; },3000); }
-    return null;
-  }
+  if(!clientName) { showToast('Entrez le nom du client', true); return null; }
+  if(!date)       { showToast('Choisissez une date de livraison', true); return null; }
 
   var items = [];
   var totalPrice = 0;
@@ -3369,10 +3446,7 @@ function collectCalForm() {
       totalPrice += p.price * qty;
     }
   });
-  if(items.length === 0) {
-    showToast('⚠️ Ajoutez au moins un produit à commander', true);
-    return null;
-  }
+  if(items.length === 0) { showToast('Ajoutez au moins un produit', true); return null; }
 
   var typeInfo = CLIENT_TYPES.find(function(t){ return t.id===clientType; }) || {label:clientType, icon:'👤', color:'#8a8070'};
   return {
@@ -4501,8 +4575,6 @@ window.openNewClientModal = openNewClientModal;
 window.closeNewClientModal = closeNewClientModal;
 window.openNewClientFromAdmin = openNewClientFromAdmin;
 window.previewNewClient = previewNewClient;
-window.closeConfirmClient = closeConfirmClient;
-window.confirmCreateClient = confirmCreateClient;
 window.addClient = addClient;
 window.openSale = openSale;
 window.addToCart = addToCart;
@@ -4521,7 +4593,6 @@ window.vpTab = vpTab;
 window.setCalPay = setCalPay;
 window.setCalMode = setCalMode;
 window.selectNewClientType = selectNewClientType;
-window.selectAdminVenteType = selectAdminVenteType;
 window.openEditClient = openEditClient;
 window.saveEditClient = saveEditClient;
 window.adminClientMenu = adminClientMenu;
@@ -4550,58 +4621,7 @@ window.saveRemise = saveRemise;
 window.saveRetour = saveRetour;
 window.calcInput = calcInput;
 window.adminSearchClients = adminSearchClients;
-window.filterClientsSearch = filterClientsSearch;
 window.setTypeFilter = setTypeFilter;
-// ── Exports manquants (fix Android PWA) ──
-window.adminVendorMenu = adminVendorMenu;
-window.adminSearchVendors = adminSearchVendors;
-window.adminVendorDelete = adminVendorDelete;
-window.adminVendorEdit = adminVendorEdit;
-window.adminVendorToggleSuspend = adminVendorToggleSuspend;
-window.adminVendorViewProfile = adminVendorViewProfile;
-window.avGenerate = avGenerate;
-window.avOpenCamera = avOpenCamera;
-window.avOpenGallery = avOpenGallery;
-window.avSave = avSave;
-window.avShareWhatsApp = avShareWhatsApp;
-window.closeConfirmPayment = closeConfirmPayment;
-window.closeConfirmSale = closeConfirmSale;
-window.confirmPaymentAndSale = confirmPaymentAndSale;
-window.copyText = copyText;
-window.deleteAppointment = deleteAppointment;
-window.goToStock = goToStock;
-window.openClientCard = openClientCard;
-window.openNewClient = openNewClient;
-window.printCard = printCard;
-window.printTicket = printTicket;
-window.saveEditVendor = saveEditVendor;
-window.searchByCode = searchByCode;
-window.setAvType = setAvType;
-window.setEvType = setEvType;
-window.shareCardWhatsApp = shareCardWhatsApp;
-window.shareEmail = shareEmail;
-window.shareOrderEmail = shareOrderEmail;
-window.shareOrderWhatsApp = shareOrderWhatsApp;
-window.shareWhatsApp = shareWhatsApp;
-window.showPage = showPage;
-window.stockQty = stockQty;
-window.switchTab = switchTab;
-window.vendorCancelSelect = vendorCancelSelect;
-window.vendorCardClick = vendorCardClick;
-window.vendorDeleteSelected = vendorDeleteSelected;
-window.handleVendorPhoto = handleVendorPhoto;
-window.handleEditVendorPhoto = handleEditVendorPhoto;
-window.vpUpdatePhoto = vpUpdatePhoto;
-window.login = login;
-window.openAdmin = openAdmin;
-window.openAdminTab = openAdminTab;
-window.openNewClientModal = openNewClientModal;
-window.openSale = openSale;
-window.openClient = openClient;
-window.openScanner = openScanner;
-window.openVip = openVip;
-window.renderVip = renderVip;
-window.startScanner = startScanner;
 
 // ── Délégation globale d'événements (fix Android onclick inline) ──
 document.addEventListener('click', function(e) {
@@ -4752,13 +4772,20 @@ async function renderAdminStock(el) {
   await loadVendors();
   var stock = getStockData();
   var tab = stock._tab || 'resume';
-  var labels = {resume:'📊 Résumé', emballe:'🏭 Emballage', remises:'🚚 Remises', retours:'🔄 Retours'};
 
-  var html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">';
+  var html = '';
+
+  // ── Onglets stock ──
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">';
   ['resume','emballe','remises','retours'].forEach(function(t) {
-    html += '<button data-action="stockTab" data-tab="'+t+'" class="adm-tab'+(t===tab?' active':'')+'" style="font-size:11px;padding:10px 4px">'+labels[t]+'</button>';
+    var labels = {resume:'📊 Résumé', emballe:'🏭 Emballage', remises:'🚚 Remises', retours:'🔄 Retours'};
+    var active = t === tab;
+    html += '<button data-action="stockTab" data-tab="'+t+'" style="padding:8px 4px;border-radius:8px;font-size:11px;font-weight:700;border:'+(active?'none':'1px solid #2e2a22')+';background:'+(active?'linear-gradient(135deg,#b8860b,#c9a84c)':'#1a1813')+';color:'+(active?'#0a0906':'#8a8070')+';cursor:pointer">'+labels[t]+'</button>';
   });
-  html += '</div><div id="stock-tab-content">'+buildStockTabContent(tab, stock)+'</div>';
+  html += '</div>';
+  html += '<div id="stock-tab-content">';
+  html += buildStockTabContent(tab, stock);
+  html += '</div>';
 
   el.innerHTML = html;
 }
@@ -4768,9 +4795,11 @@ function stockTab(btn) {
   var stock = getStockData();
   stock._tab = tab;
   saveStockData(stock);
-  document.querySelectorAll('[data-action="stockTab"]').forEach(function(b) {
-    if(b.getAttribute('data-tab')===tab) b.classList.add('active');
-    else b.classList.remove('active');
+  ['resume','emballe','remises','retours'].forEach(function(t) {
+    var b = document.querySelector('[data-tab="'+t+'"]');
+    if(!b) return;
+    if(t===tab){ b.style.background='linear-gradient(135deg,#b8860b,#c9a84c)'; b.style.color='#0a0906'; b.style.border='none'; }
+    else       { b.style.background='#1a1813'; b.style.color='#8a8070'; b.style.border='1px solid #2e2a22'; }
   });
   var el = document.getElementById('stock-tab-content');
   if(el) el.innerHTML = buildStockTabContent(tab, stock);
@@ -4943,109 +4972,10 @@ function buildStockResume(stock) {
 
 
 function buildStockEmballe(stock) {
-  var today = new Date().toISOString().split('T')[0];
-  var html =
-    '<div class="adm-section" style="margin-top:0">ENREGISTRER UN EMBALLAGE</div>' +
-    '<div class="adm-card" style="margin-bottom:16px">' +
-      '<div class="adm-lbl">DATE</div>' +
-      '<input type="date" id="stock-emb-date" value="'+today+'" class="adm-inp">' +
-      '<div class="adm-lbl">QUANTITÉS EMBALLÉES</div>';
-  PRODUCTS.forEach(function(p) {
-    html += _stockQtyRow(p, 'emb');
-  });
-  html +=
-      '<button data-action="saveEmballage" class="adm-btn adm-btn-gold" style="margin-top:16px">✅ Enregistrer emballage</button>' +
-    '</div>';
-
-  var hist = (stock.historique_emballe||[]).slice().reverse();
-  if(hist.length > 0) {
-    html += '<div class="adm-section">HISTORIQUE</div><div class="adm-card" style="padding:0 14px">';
-    hist.slice(0,10).forEach(function(h) {
-      var detail = PRODUCTS.map(function(p){ return h.items[p.id]>0?h.items[p.id]+'× '+p.name:''; }).filter(Boolean).join(' · ');
-      html += '<div style="padding:10px 0;border-bottom:1px solid #1a1813"><div style="font-size:11px;color:#4a4640">'+h.date+'</div><div style="font-size:13px;color:#e8e0d0;margin-top:2px">'+detail+'</div></div>';
-    });
-    html += '</div>';
-  }
-  return html;
-}
-
-function buildStockRemises(stock) {
-  var today = new Date().toISOString().split('T')[0];
-  var vendorOpts = '<option value="">-- Choisir vendeur --</option>' +
-    vendors.map(function(v){ return '<option value="'+v.id+'">'+v.name+' ('+v.code+')</option>'; }).join('');
-
-  var html =
-    '<div class="adm-section" style="margin-top:0">REMISE AUX VENDEURS</div>' +
-    '<div class="adm-card" style="margin-bottom:16px">' +
-      '<div class="adm-lbl">VENDEUR</div>' +
-      '<select id="stock-rem-vendor" class="adm-inp">'+vendorOpts+'</select>' +
-      '<div class="adm-lbl">DATE</div>' +
-      '<input type="date" id="stock-rem-date" value="'+today+'" class="adm-inp">' +
-      '<div class="adm-lbl">QUANTITÉS REMISES</div>';
-  PRODUCTS.forEach(function(p) {
-    html += _stockQtyRow(p, 'rem');
-  });
-  html +=
-      '<button data-action="saveRemise" class="adm-btn adm-btn-gold" style="margin-top:16px">✅ Enregistrer remise</button>' +
-    '</div>';
-
-  var remises = (stock.remises||[]).slice().reverse();
-  if(remises.length > 0) {
-    html += '<div class="adm-section">HISTORIQUE REMISES</div><div class="adm-card" style="padding:0 14px">';
-    remises.slice(0,15).forEach(function(r) {
-      var v = vendors.find(function(x){ return x.id===r.vendorId; });
-      var detail = PRODUCTS.map(function(p){ return r.items[p.id]>0?r.items[p.id]+'× '+p.name:''; }).filter(Boolean).join(' · ');
-      html += '<div style="padding:10px 0;border-bottom:1px solid #1a1813"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#e8e0d0">'+(v?v.name:r.vendorId)+'</span><span style="font-size:11px;color:#4a4640">'+r.date+'</span></div><div style="font-size:11px;color:#8a8070;margin-top:2px">'+detail+'</div></div>';
-    });
-    html += '</div>';
-  }
-  return html;
-}
-
-function buildStockRetours(stock) {
-  var today = new Date().toISOString().split('T')[0];
-  var vendorOpts = '<option value="">-- Choisir vendeur --</option>' +
-    vendors.map(function(v){ return '<option value="'+v.id+'">'+v.name+' ('+v.code+')</option>'; }).join('');
-
-  var html =
-    '<div class="adm-section" style="margin-top:0">RETOUR DE PRODUITS</div>' +
-    '<div class="adm-card" style="margin-bottom:16px">' +
-      '<div class="adm-lbl">VENDEUR</div>' +
-      '<select id="stock-ret-vendor" class="adm-inp">'+vendorOpts+'</select>' +
-      '<div class="adm-lbl">DATE</div>' +
-      '<input type="date" id="stock-ret-date" value="'+today+'" class="adm-inp">' +
-      '<div class="adm-lbl">QUANTITÉS RETOURNÉES</div>';
-  PRODUCTS.forEach(function(p) {
-    html += _stockQtyRow(p, 'ret');
-  });
-  html +=
-      '<button data-action="saveRetour" class="adm-btn adm-btn-gold" style="margin-top:16px">✅ Enregistrer retour</button>' +
-    '</div>';
-
-  var retours = (stock.retours||[]).slice().reverse();
-  if(retours.length > 0) {
-    html += '<div class="adm-section">HISTORIQUE RETOURS</div><div class="adm-card" style="padding:0 14px">';
-    retours.slice(0,15).forEach(function(r) {
-      var v = vendors.find(function(x){ return x.id===r.vendorId; });
-      var detail = PRODUCTS.map(function(p){ return r.items[p.id]>0?r.items[p.id]+'× '+p.name:''; }).filter(Boolean).join(' · ');
-      html += '<div style="padding:10px 0;border-bottom:1px solid #1a1813"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#e8e0d0">'+(v?v.name:r.vendorId)+'</span><span style="font-size:11px;color:#4a4640">'+r.date+'</span></div><div style="font-size:11px;color:#8a8070;margin-top:2px">'+detail+'</div></div>';
-    });
-    html += '</div>';
-  }
-  return html;
-}
-
-// Helper commun : ligne quantité pour les formulaires stock
-function _stockQtyRow(p, prefix) {
-  return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1813">' +
-    '<span style="font-size:13px;color:#e8e0d0">'+p.name+'</span>' +
-    '<div style="display:flex;align-items:center;gap:0">' +
-      '<button onclick="stockQty(this,-1)" data-id="'+p.id+'" data-prefix="'+prefix+'" style="background:#2e2a22;border:none;color:#fff;width:32px;height:32px;border-radius:8px 0 0 8px;font-size:18px;cursor:pointer;font-family:inherit">−</button>' +
-      '<span id="'+prefix+'-qty-'+p.id+'" style="min-width:36px;height:32px;background:#0f0e0b;border-top:1px solid #2e2a22;border-bottom:1px solid #2e2a22;color:#c9a84c;font-size:14px;font-weight:800;display:inline-flex;align-items:center;justify-content:center">0</span>' +
-      '<button onclick="stockQty(this,1)" data-id="'+p.id+'" data-prefix="'+prefix+'" style="background:#3d6a3d;border:none;color:#fff;width:32px;height:32px;border-radius:0 8px 8px 0;font-size:18px;cursor:pointer;font-family:inherit">+</button>' +
-    '</div>' +
-  '</div>';
-}
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">🏭 Enregistrer un emballage</div>';
+  html += '<div class="card" style="margin-bottom:16px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:12px">DATE</div>';
+  html += '<input type="date" id="stock-emb-date" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:14px">';
   html += '<div style="font-size:11px;color:#8a8070;margin-bottom:12px">QUANTITÉS EMBALLÉES</div>';
   PRODUCTS.forEach(function(p) {
     html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1813">';
@@ -5073,6 +5003,91 @@ function _stockQtyRow(p, prefix) {
   return html;
 }
 
+function buildStockRemises(stock) {
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">🚚 Remise aux vendeurs</div>';
+  html += '<div class="card" style="margin-bottom:16px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">VENDEUR</div>';
+  html += '<select id="stock-rem-vendor" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;margin-bottom:14px">';
+  html += '<option value="">-- Choisir vendeur --</option>';
+  vendors.forEach(function(v) {
+    html += '<option value="'+v.id+'">'+v.name+' ('+v.code+')</option>';
+  });
+  html += '</select>';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">DATE</div>';
+  html += '<input type="date" id="stock-rem-date" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:14px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:12px">QUANTITÉS REMISES</div>';
+  PRODUCTS.forEach(function(p) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1813">';
+    html += '<span style="font-size:13px;color:#fff">'+p.name+'</span>';
+    html += '<div style="display:flex;align-items:center;gap:8px">';
+    html += '<button onclick="stockQty(this,-1)" data-id="'+p.id+'" data-prefix="rem" style="background:#2e2a22;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">−</button>';
+    html += '<span id="rem-qty-'+p.id+'" style="font-size:16px;font-weight:700;color:#c9a84c;min-width:30px;text-align:center">0</span>';
+    html += '<button onclick="stockQty(this,1)" data-id="'+p.id+'" data-prefix="rem" style="background:#3d6a3d;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">+</button>';
+    html += '</div></div>';
+  });
+  html += '<button data-action="saveRemise" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:16px">✅ Enregistrer remise</button>';
+  html += '</div>';
+
+  // Historique remises
+  var remises = (stock.remises||[]).slice().reverse();
+  if(remises.length > 0) {
+    html += '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">HISTORIQUE REMISES</div>';
+    html += '<div class="card" style="padding:0 12px">';
+    remises.slice(0,15).forEach(function(r) {
+      var v = vendors.find(function(x){ return x.id===r.vendorId; });
+      var detail = PRODUCTS.map(function(p){ return r.items[p.id]>0?r.items[p.id]+'× '+p.name:''; }).filter(Boolean).join(' · ');
+      html += '<div style="padding:10px 0;border-bottom:1px solid #1a1813">';
+      html += '<div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#fff">'+(v?v.name:r.vendorId)+'</span><span style="font-size:11px;color:#4a4640">'+r.date+'</span></div>';
+      html += '<div style="font-size:11px;color:#8a8070;margin-top:2px">'+detail+'</div></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function buildStockRetours(stock) {
+  var html = '<div style="font-size:13px;color:#c9a84c;font-weight:700;margin-bottom:14px">🔄 Retour de produits</div>';
+  html += '<div class="card" style="margin-bottom:16px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">VENDEUR</div>';
+  html += '<select id="stock-ret-vendor" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;margin-bottom:14px">';
+  html += '<option value="">-- Choisir vendeur --</option>';
+  vendors.forEach(function(v) {
+    html += '<option value="'+v.id+'">'+v.name+' ('+v.code+')</option>';
+  });
+  html += '</select>';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:8px">DATE</div>';
+  html += '<input type="date" id="stock-ret-date" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;background:#1a1813;border:1px solid #2e2a22;color:#fff;padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:14px">';
+  html += '<div style="font-size:11px;color:#8a8070;margin-bottom:12px">QUANTITÉS RETOURNÉES</div>';
+  PRODUCTS.forEach(function(p) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1813">';
+    html += '<span style="font-size:13px;color:#fff">'+p.name+'</span>';
+    html += '<div style="display:flex;align-items:center;gap:8px">';
+    html += '<button onclick="stockQty(this,-1)" data-id="'+p.id+'" data-prefix="ret" style="background:#2e2a22;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">−</button>';
+    html += '<span id="ret-qty-'+p.id+'" style="font-size:16px;font-weight:700;color:#c9a84c;min-width:30px;text-align:center">0</span>';
+    html += '<button onclick="stockQty(this,1)" data-id="'+p.id+'" data-prefix="ret" style="background:#3d6a3d;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer">+</button>';
+    html += '</div></div>';
+  });
+  html += '<button data-action="saveRetour" style="width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:15px;font-weight:700;border:none;margin-top:16px">✅ Enregistrer retour</button>';
+  html += '</div>';
+
+  // Historique retours
+  var retours = (stock.retours||[]).slice().reverse();
+  if(retours.length > 0) {
+    html += '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:10px">HISTORIQUE RETOURS</div>';
+    html += '<div class="card" style="padding:0 12px">';
+    retours.slice(0,15).forEach(function(r) {
+      var v = vendors.find(function(x){ return x.id===r.vendorId; });
+      var detail = PRODUCTS.map(function(p){ return r.items[p.id]>0?r.items[p.id]+'× '+p.name:''; }).filter(Boolean).join(' · ');
+      html += '<div style="padding:10px 0;border-bottom:1px solid #1a1813">';
+      html += '<div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#fff">'+(v?v.name:r.vendorId)+'</span><span style="font-size:11px;color:#4a4640">'+r.date+'</span></div>';
+      html += '<div style="font-size:11px;color:#8a8070;margin-top:2px">'+detail+'</div></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function stockQty(btn, delta) {
   var id = btn.getAttribute('data-id');
   var prefix = btn.getAttribute('data-prefix') || 'emb';
   var span = document.getElementById(prefix+'-qty-'+id);
