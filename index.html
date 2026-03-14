@@ -975,6 +975,9 @@ function showPage(id, addHistory=true) {
   if(page) { page.classList.add("active"); page.classList.add("fade-in"); }
   // Reset background selon page
   document.body.style.background = id === "page-admin" ? "" : "#0f0e0b";
+  // Enlever classe admin si on quitte le bureau
+  if(id !== "page-admin") document.body.classList.remove("on-admin");
+  else document.body.classList.add("on-admin");
   const backBtn = document.getElementById("back-btn");
   backBtn.style.display = id === "page-home" ? "none" : "block";
   var homeBtn = document.getElementById("home-btn");
@@ -1566,7 +1569,7 @@ async function saveEditClient() {
 // ═══════════════════════════════════════
 function openSale(id) {
   currentClient = clients.find(c=>c.id===id);
-  cart = []; rewardChoice = null;
+  cart = []; rewardChoice = null; selectedPayment = "especes"; paymentStatus = "paye";
   renderSale();
   showPage("page-sale");
 }
