@@ -718,11 +718,9 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
     </button>
   </div>
 
-  <!-- RECHERCHE + FILTRE + LISTE CLIENTS -->
-  <div id="hm-client-section" style="padding:0 16px 16px">
-    <div style="position:relative;margin-bottom:10px;margin-top:16px">
-      <input id="search-input" class="input" placeholder="🔍 Rechercher un client..." oninput="filterClientsSearch(this.value)" style="width:100%;padding:12px 16px;background:#1a1813;border:1px solid #2e2a22;border-radius:12px;color:#e8e0d0;font-size:14px">
-    </div>
+  <!-- IDs cachés pour compatibilité JS -->
+  <div style="display:none">
+    <input id="search-input">
     <div id="type-filter-bar"></div>
     <div id="clients-list"></div>
   </div>
@@ -1143,7 +1141,7 @@ function renderVendorHome() {
   html += '</div>';
 
   // ── Bouton vente ──
-  html += '<button class="vh-btn-sale" onclick="showPage(\'page-new-client\')">➕ Enregistrer une vente</button>';
+  html += '<button class="vh-btn-sale" onclick="openNewClient()">➕ Enregistrer une vente</button>';
 
   el.innerHTML = html;
 }
@@ -1153,8 +1151,6 @@ function renderHome() {
   showWelcome();
   startClock();
   renderKPIs();
-  renderTypeFilter();
-  renderClients();
 }
 
 function renderKPIs() {
@@ -1274,7 +1270,7 @@ function renderClients() {
     el.innerHTML=`<div class="empty-state"><div style="font-size:56px;margin-bottom:16px">🌾</div>
       <div style="font-size:18px;color:#8a8070;margin-bottom:8px">Aucun client enregistré</div>
       <div style="font-size:13px;color:#4a4640;margin-bottom:24px">Commencez par ajouter votre premier client fidèle</div>
-      <button class="btn-gold" onclick="showPage('page-new-client')">+ Créer le premier client</button></div>`;
+      <button class="btn-gold" onclick="openNewClient()">+ Créer le premier client</button></div>`;
     return;
   }
   if(list.length===0) { el.innerHTML=`<div class="card" style="text-align:center;color:#4a4640;font-size:14px">Aucun résultat</div>`; return; }
