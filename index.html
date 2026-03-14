@@ -2418,7 +2418,7 @@ function onLoginSuccess() {
   }
 }
 
-function logout() {
+async function logout() {
   currentUser = null;
   document.getElementById("login-code").value = "";
   document.getElementById("login-password").value = "";
@@ -2540,7 +2540,7 @@ function adminClientMenu_edit() {
   openEditClient();
 }
 
-function adminClientMenu_delete() {
+async function adminClientMenu_delete() {
   var id = document.getElementById('admin-action-modal').dataset.clientId;
   closeAdminActionModal();
   var c = clients.find(function(x){ return x.id === id; });
