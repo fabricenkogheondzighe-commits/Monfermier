@@ -898,10 +898,6 @@ let pageHistory = ["page-home"];
 // STORAGE - FIREBASE
 // ═══════════════════════════════════════
 function loadData() {
-  // Show loading
-  document.getElementById("clients-list").innerHTML = `<div style="text-align:center;padding:40px;color:#4a4640">
-    <div class="spinner" style="margin:0 auto 16px"></div>Chargement des clients...</div>`;
-  
   db.collection("clients").orderBy("name").onSnapshot(snapshot => {
     clients = [];
     snapshot.forEach(doc => {
@@ -1631,6 +1627,7 @@ function selectReward(choice) {
 
 function renderSale() {
   const c = currentClient;
+  if(!c) return;
   const total = cartTotal();
   const earned = cartPoints();
   const elig = isEligible();
