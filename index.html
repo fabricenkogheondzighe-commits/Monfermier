@@ -697,7 +697,7 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
   <div class="hm-header">
     <div class="hm-logo-ring">🌾</div>
     <div class="hm-brand">Mon Fermier <span style="font-size:10px;color:#c9a84c">v4.0</span></div>
-    <div class="hm-tagline">SARL — Programme Fidélité</div>
+    <div class="hm-tagline">SARL — Programme Fidélité ✦ v5.0</div>
     <div class="hm-clock" id="hm-clock"></div>
     <div class="hm-welcome" id="hm-welcome"></div>
   </div>
@@ -1323,21 +1323,26 @@ function selectEditType(id) { editType=id; renderTypeGrid("ec-type-grid",editTyp
 
 function openNewClient() {
   selectedType = "particulier";
-  renderTypeGrid("nc-type-grid", selectedType, "selectNewClientType");
-  document.getElementById("nc-name").value = "";
-  document.getElementById("nc-phone").value = "";
-  document.getElementById("nc-email").value = "";
   showPage("page-new-client");
+  setTimeout(function() {
+    renderTypeGrid("nc-type-grid", selectedType, "selectNewClientType");
+    var el = document.getElementById("nc-name"); if(el) el.value = "";
+    var el2 = document.getElementById("nc-phone"); if(el2) el2.value = "";
+    var el3 = document.getElementById("nc-email"); if(el3) el3.value = "";
+  }, 50);
 }
 
 function openNewClientFromAdmin() {
   selectedType = "particulier";
-  renderTypeGrid("nc-type-grid", selectedType, "selectNewClientType");
-  document.getElementById("nc-name").value = "";
-  document.getElementById("nc-phone").value = "";
-  document.getElementById("nc-email").value = "";
-  localStorage.setItem('mf_from_admin', '1');
   showPage("page-new-client");
+  // Initialiser APRÈS showPage pour que l'élément soit visible
+  setTimeout(function() {
+    renderTypeGrid("nc-type-grid", selectedType, "selectNewClientType");
+    var el = document.getElementById("nc-name"); if(el) el.value = "";
+    var el2 = document.getElementById("nc-phone"); if(el2) el2.value = "";
+    var el3 = document.getElementById("nc-email"); if(el3) el3.value = "";
+  }, 50);
+  localStorage.setItem('mf_from_admin', '1');
 }
 
 function previewNewClient() {
@@ -1401,7 +1406,7 @@ async function addClient() {
   // Aller directement à la page de vente
   cart=[]; rewardChoice=null; paymentStatus="paye";
   showPage("page-sale");
-  renderSale();
+  setTimeout(function() { renderSale(); }, 50);
   localStorage.removeItem('mf_from_admin');
 }
 
@@ -1565,9 +1570,10 @@ async function saveEditClient() {
 // ═══════════════════════════════════════
 function openSale(id) {
   currentClient = clients.find(c=>c.id===id);
+  if(!currentClient) { showToast("Client introuvable", true); return; }
   cart = []; rewardChoice = null; selectedPayment = "especes"; paymentStatus = "paye";
   showPage("page-sale");
-  renderSale();
+  setTimeout(function() { renderSale(); }, 50);
 }
 
 function cartTotal() { return cart.reduce((s,i)=>s+i.price*i.qty,0); }
@@ -1880,7 +1886,7 @@ async function processSale() {
 
   cart=[]; rewardChoice=null; selectedPayment="especes"; paymentStatus="paye";
   showPage("page-sale-result");
-  renderSaleResult();
+  setTimeout(function() { renderSaleResult(); }, 50);
 }
 
 // ═══════════════════════════════════════
