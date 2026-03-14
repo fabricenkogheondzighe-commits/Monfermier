@@ -662,31 +662,28 @@ hr{border:none;border-top:1px solid #2e2a22;margin:14px 0}
     <h2 style="font-size:20px;color:#c9a84c">⚙️ Bureau Admin</h2>
     <button class="btn-ghost" onclick="goHome()">← Retour</button>
   </div>
-  <!-- TABS ROW 1 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-    <button id="admin-tab-clients" onclick="openAdminTab('clients')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      👥<br><span style="font-size:10px">Clients</span>
+  <!-- TOUS LES ONGLETS EN UNE GRILLE -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+    <button id="admin-tab-clients" onclick="openAdminTab('clients')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer;text-align:center">
+      👥<br><span style="font-size:9px">Clients</span>
     </button>
-    <button id="admin-tab-vendors" onclick="openAdminTab('vendors')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      👨‍💼<br><span style="font-size:10px">Vendeurs</span>
+    <button id="admin-tab-vendors" onclick="openAdminTab('vendors')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer;text-align:center">
+      👨‍💼<br><span style="font-size:9px">Vendeurs</span>
     </button>
-    <button id="admin-tab-charts" onclick="openAdminTab('charts')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      📊<br><span style="font-size:10px">Graphiques</span>
+    <button id="admin-tab-charts" onclick="openAdminTab('charts')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer;text-align:center">
+      📊<br><span style="font-size:9px">Graphiques</span>
     </button>
-  </div>
-  <!-- TABS ROW 2 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
-    <button id="admin-tab-compta" onclick="openAdminTab('compta')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      💰<br><span style="font-size:10px">Compta</span>
+    <button id="admin-tab-compta" onclick="openAdminTab('compta')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer;text-align:center">
+      💰<br><span style="font-size:9px">Compta</span>
     </button>
-    <button id="admin-tab-calendar" onclick="openAdminTab('calendar')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      📦<br><span style="font-size:10px">Commandes</span>
+    <button id="admin-tab-calendar" onclick="openAdminTab('calendar')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer;text-align:center">
+      📦<br><span style="font-size:9px">Commandes</span>
     </button>
-    <button id="admin-tab-calc" onclick="openAdminTab('calc')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      🧮<br><span style="font-size:10px">Calculatrice</span>
+    <button id="admin-tab-calc" onclick="openAdminTab('calc')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer;text-align:center">
+      🧮<br><span style="font-size:9px">Calculatrice</span>
     </button>
-    <button id="admin-tab-stock" onclick="openAdminTab('stock')" style="padding:10px 4px;border-radius:10px;font-size:12px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer">
-      📦<br><span style="font-size:10px">Stock</span>
+    <button id="admin-tab-stock" onclick="openAdminTab('stock')" style="padding:10px 4px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid #2e2a22;background:#1a1813;color:#8a8070;cursor:pointer;text-align:center">
+      📦<br><span style="font-size:9px">Stock</span>
     </button>
   </div>
   <div id="admin-tab-content"></div>
@@ -2429,7 +2426,7 @@ function logout() {
   showPage("page-login", false);
 }
 
-async function openAdmin() {
+async async function openAdmin() {
   if(!currentUser || currentUser.role !== "admin") { showToast("Accès refusé", true); return; }
   document.body.style.background = '';
   showPage("page-admin");
