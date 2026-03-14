@@ -2426,7 +2426,7 @@ async function logout() {
   showPage("page-login", false);
 }
 
-async async function openAdmin() {
+async function openAdmin() {
   if(!currentUser || currentUser.role !== "admin") { showToast("Accès refusé", true); return; }
   document.body.style.background = '';
   showPage("page-admin");
