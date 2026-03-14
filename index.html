@@ -1404,8 +1404,8 @@ async function addClient() {
   showToast("Client " + client.name + " créé !");
   // Aller directement à la page de vente
   cart=[]; rewardChoice=null; paymentStatus="paye";
-  renderSale();
   showPage("page-sale");
+  renderSale();
   localStorage.removeItem('mf_from_admin');
 }
 
@@ -1570,8 +1570,8 @@ async function saveEditClient() {
 function openSale(id) {
   currentClient = clients.find(c=>c.id===id);
   cart = []; rewardChoice = null; selectedPayment = "especes"; paymentStatus = "paye";
-  renderSale();
   showPage("page-sale");
+  renderSale();
 }
 
 function cartTotal() { return cart.reduce((s,i)=>s+i.price*i.qty,0); }
@@ -1882,8 +1882,8 @@ async function processSale() {
   }
 
   cart=[]; rewardChoice=null; selectedPayment="especes"; paymentStatus="paye";
-  renderSaleResult();
   showPage("page-sale-result");
+  renderSaleResult();
 }
 
 // ═══════════════════════════════════════
