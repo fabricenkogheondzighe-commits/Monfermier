@@ -21,7 +21,8 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
 ═══════════════════════════════════════ */
 .page{display:none;position:fixed;top:56px;left:0;right:0;bottom:0;overflow-y:auto;background:#0a0f1a}
 .page.active{display:block}
-#page-login{top:0}
+#page-login{top:0 !important}
+#page-vendor-home{top:56px}
 
 /* ═══════════════════════════════════════
    HEADER
@@ -728,6 +729,9 @@ function closeModal(id) { document.getElementById(id).classList.remove("open"); 
 // ═══════════════════════════════════════
 function showPage(id) {
   document.querySelectorAll(".page").forEach(function(p){ p.classList.remove("active"); });
+  // Cacher/montrer le header selon la page
+  var header = document.getElementById("app-header");
+  if(header) header.style.display = (id === "page-login") ? "none" : "flex";
   var page = document.getElementById(id);
   if(page) page.classList.add("active");
   // Empêcher le scroll sur la page de login
