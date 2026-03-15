@@ -10,7 +10,7 @@
    BASE
 ═══════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:#0a0f1a;color:#e8e0d0;font-family:Georgia,serif;overflow:hidden}
+html,body{height:100%;background:#0a0f1a;color:#e8e0d0;font-family:Georgia,serif;overflow-x:hidden}
 button{cursor:pointer;font-family:inherit;transition:all 0.2s;border:none}
 input,select,textarea{font-family:inherit;outline:none;border:none}
 ::-webkit-scrollbar{width:3px}
@@ -19,16 +19,15 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
 /* ═══════════════════════════════════════
    PAGES
 ═══════════════════════════════════════ */
-.page{display:none;position:fixed;top:56px;left:0;right:0;bottom:0;overflow-y:auto;background:#0a0f1a}
+.page{display:none}
 .page.active{display:block}
-#page-login{top:0 !important}
-#page-vendor-home{top:56px}
+
 
 /* ═══════════════════════════════════════
    HEADER
 ═══════════════════════════════════════ */
 #app-header{
-  position:fixed;top:0;left:0;right:0;z-index:200;
+  position:sticky;top:0;z-index:200;
   background:#0a0f1aee;
   backdrop-filter:blur(10px);
   border-bottom:1px solid #c9a84c22;
@@ -46,11 +45,8 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
 /* ═══════════════════════════════════════
    LOGIN PAGE
 ═══════════════════════════════════════ */
-#page-login{
-  background:radial-gradient(ellipse at 50% 0%, #1a2a4a 0%, #0a0f1a 60%);
-  align-items:center;justify-content:center;padding:20px;
-}
-#page-login.active{display:flex}
+#page-login{background:radial-gradient(ellipse at 50% 0%, #1a2a4a 0%, #0a0f1a 60%);min-height:100vh;}
+#page-login.active{display:flex;align-items:center;justify-content:center;padding:20px}
 .login-box{width:100%;max-width:360px}
 .login-logo{text-align:center;margin-bottom:32px}
 .login-logo .logo-ring{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#c9a84c22,#c9a84c44);border:2px solid #c9a84c55;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px}
@@ -104,7 +100,7 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
 .admin-title{font-size:18px;font-weight:700;color:#c9a84c}
 .admin-tabs{
   display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
-  padding:14px 16px;
+  padding:10px 16px;
   position:sticky;top:56px;z-index:10;
   background:#000d1aee;backdrop-filter:blur(10px);
   border-bottom:1px solid #c9a84c22;
@@ -120,7 +116,7 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
 /* Rangée 2 des onglets - 3 colonnes centrées */
 .admin-tabs-row2{
   display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
-  padding:0 16px 14px;
+  padding:0 16px 10px;
   background:#000d1aee;
   border-bottom:1px solid #c9a84c22;
 }
@@ -416,18 +412,15 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
      BUREAU ADMIN
 ═══════════════════════════════════════ -->
 <div id="page-admin" class="page">
-  <div class="admin-header" style="padding:16px 16px 0">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <img id="admin-logo" src="" alt="" style="height:44px;width:auto;filter:drop-shadow(0 2px 8px rgba(201,168,76,0.4))">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#c9a84c" id="admin-welcome-msg"></div>
-          <div style="font-size:10px;color:#4a5a7a" id="admin-date"></div>
-        </div>
+  <div style="padding:10px 16px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div>
+        <div id="admin-welcome-msg" style="font-size:13px;font-weight:700;color:#c9a84c"></div>
+        <div id="admin-date" style="font-size:10px;color:#4a5a7a"></div>
       </div>
       <div style="text-align:right">
-        <div id="admin-clock" style="font-size:22px;font-weight:700;color:#c9a84c;font-family:monospace;letter-spacing:2px">--:--</div>
-        <div id="admin-ca" style="font-size:11px;color:#8a8070;margin-top:2px"></div>
+        <div id="admin-clock" style="font-size:20px;font-weight:700;color:#c9a84c;font-family:monospace">--:--</div>
+        <div id="admin-ca" style="font-size:10px;color:#8a8070"></div>
       </div>
     </div>
   </div>
@@ -729,13 +722,9 @@ function closeModal(id) { document.getElementById(id).classList.remove("open"); 
 // ═══════════════════════════════════════
 function showPage(id) {
   document.querySelectorAll(".page").forEach(function(p){ p.classList.remove("active"); });
-  // Cacher/montrer le header selon la page
-  var header = document.getElementById("app-header");
-  if(header) header.style.display = (id === "page-login") ? "none" : "flex";
   var page = document.getElementById(id);
   if(page) page.classList.add("active");
   // Empêcher le scroll sur la page de login
-  document.body.style.overflow = (id === "page-login") ? "hidden" : "auto";
   window.scrollTo(0, 0);
   // Header buttons
   var back = document.getElementById("back-btn");
@@ -909,7 +898,31 @@ async function openAdmin() {
   if(!currentUser || currentUser.role !== "admin") { showToast("Accès refusé", true); return; }
   showPage("page-admin");
   renderAdminHeader();
-  await renderAdmin();
+  renderAdmin();
+}
+
+function renderAdmin() {
+  loadVendors(function() {
+    openTab(currentTab || "clients");
+  });
+}
+
+function loadVendors(callback) {
+  try {
+    db.collection("vendors").onSnapshot(function(snap) {
+      vendors = [];
+      snap.forEach(function(doc) { vendors.push({id:doc.id, ...doc.data()}); });
+      if(callback) callback();
+    }, function() {
+      try { vendors = JSON.parse(localStorage.getItem("mf_vendors")||"[]"); } catch(e){ vendors=[]; }
+      if(callback) callback();
+    });
+  } catch(e) {
+    try { vendors = JSON.parse(localStorage.getItem("mf_vendors")||"[]"); } catch(e2){ vendors=[]; }
+    if(callback) callback();
+  }
+  // Timeout sécurité
+  setTimeout(function(){ if(callback){ callback(); callback=null; } }, 800);
 }
 
 function renderAdminHeader() {
@@ -952,6 +965,11 @@ function openTab(tab) {
   if(btn) btn.classList.add("active");
   // Rendre le contenu
   var content = document.getElementById("admin-content");
+  if(!content) {
+    // Réessayer après un court délai
+    setTimeout(function(){ openTab(tab); }, 100);
+    return;
+  }
   switch(tab) {
     case "clients":   renderTabClients(content); break;
     case "vendors":   renderTabVendors(content); break;
@@ -967,6 +985,7 @@ function openTab(tab) {
 var clientTypeFilter = "tous";
 
 function renderTabClients(el) {
+  if(!el) return;
   var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
   html += '<button class="btn-gold" onclick="openNewClientPage()">➕ Nouveau client</button>';
   html += '<button class="btn-outline" onclick="openScanner()">📷 Scanner</button>';
@@ -1030,6 +1049,7 @@ function renderAdminClientsList(list) {
 
 // ─── TAB VENDORS ───
 function renderTabVendors(el) {
+  if(!el) return;
   var html = '<button class="btn-gold btn-full" style="margin-bottom:12px" onclick="openAddVendorPage()">➕ Nouveau vendeur</button>';
 
   // Classement par CA
@@ -1070,6 +1090,7 @@ function renderTabVendors(el) {
 
 // ─── TAB CHARTS ───
 function renderTabCharts(el) {
+  if(!el) return;
   var now = new Date();
   var months = [];
   for(var i=5;i>=0;i--) {
@@ -1167,6 +1188,7 @@ function renderTabCharts(el) {
 
 // ─── TAB COMPTA ───
 function renderTabCompta(el) {
+  if(!el) return;
   var now = new Date();
   var mk = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
   var monthLabel = now.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
@@ -1276,6 +1298,7 @@ function shareBilanWhatsApp() {
 var ordersFilter = "all";
 
 function renderTabOrders(el) {
+  if(!el) return;
   var pending = [];
   clients.forEach(function(c){
     (c.history||[]).forEach(function(h, idx){
@@ -1514,6 +1537,7 @@ function getStockSummary() {
 }
 
 function renderTabStock(el) {
+  if(!el) return;
   var summary = getStockSummary();
   var mvts = getStockMvts();
   var totalValeur = 0;
@@ -3394,6 +3418,42 @@ updateOffline();
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
+
+function initDemoDataIfEmpty() {
+  if(localStorage.getItem("mf_clients")) return;
+  var demo = [
+    {id:"d1",code:"CLI-DEMO1",name:"Jean Dupont",phone:"+225 07 00 00 01",email:"",
+     type:"particulier",points:15,totalSpent:25000,vipTickets:0,totalVipPoints:15,
+     createdBy:"ADMIN",createdAt:"01/03/2025",
+     history:[{date:"10/03/2025",time:"10:30",
+       items:[{id:2,name:"Pack 7 sticks",qty:2,price:3500}],
+       total:7000,earned:7,discount:0,final:7000,payment:"especes",
+       paymentLabel:"Espèces",paymentIcon:"💵",paymentStatus:"paid",
+       vendorCode:"ADMIN",vendorName:"Administrateur",commission:400,
+       discountApplied:false,giftApplied:false,vipChosen:false}]},
+    {id:"d2",code:"CLI-DEMO2",name:"Marie Kouassi",phone:"+225 05 00 00 02",email:"",
+     type:"restaurant",points:0,totalSpent:44000,vipTickets:0,totalVipPoints:44,
+     createdBy:"ADMIN",createdAt:"15/02/2025",
+     history:[{date:"12/03/2025",time:"14:00",
+       items:[{id:4,name:"Seau 5kg",qty:2,price:22000}],
+       total:44000,earned:44,discount:0,final:44000,payment:"airtel",
+       paymentLabel:"Airtel Money",paymentIcon:"📱",paymentStatus:"paid",
+       vendorCode:"ADMIN",vendorName:"Administrateur",commission:2200,
+       discountApplied:false,giftApplied:false,vipChosen:false}]},
+    {id:"d3",code:"CLI-DEMO3",name:"Paul Bamba",phone:"+225 01 00 00 03",email:"",
+     type:"grossiste",points:0,totalSpent:65000,vipTickets:0,totalVipPoints:65,
+     createdBy:"ADMIN",createdAt:"01/03/2025",
+     history:[{date:"14/03/2025",time:"09:15",
+       items:[{id:5,name:"Seau 15kg",qty:1,price:65000}],
+       total:65000,earned:65,discount:0,final:65000,payment:"carte",
+       paymentLabel:"Carte crédit",paymentIcon:"💳",paymentStatus:"delivery",
+       vendorCode:"ADMIN",vendorName:"Administrateur",commission:3000,
+       discountApplied:false,giftApplied:false,vipChosen:false}]}
+  ];
+  localStorage.setItem("mf_clients", JSON.stringify(demo));
+}
+
+initDemoDataIfEmpty();
 loadAll();
 showPage("page-login");
 startLoginClock();
