@@ -336,14 +336,23 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
       <div class="logo-ring">🌾</div>
       <h2>MON FERMIER</h2>
       <p>PROGRAMME FIDÉLITÉ</p>
+      <div id="login-clock" style="font-size:28px;font-weight:700;color:#c9a84c;margin-top:12px;font-family:monospace;letter-spacing:3px">--:--:--</div>
+      <div id="login-date" style="font-size:11px;color:#4a5a7a;margin-top:4px;letter-spacing:1px"></div>
     </div>
     <div class="login-field">
       <label>CODE D'ACCÈS</label>
-      <input id="login-code" type="text" placeholder="Ex: ADMIN" autocomplete="off" style="text-transform:uppercase">
+      <div style="position:relative">
+        <input id="login-code" type="text" placeholder="Ex: ADMIN" autocomplete="off" style="text-transform:uppercase;width:100%">
+      </div>
+      <div style="font-size:11px;color:#4a5a7a;margin-top:4px">Admin : <span style="color:#c9a84c;font-family:monospace">ADMIN</span></div>
     </div>
     <div class="login-field">
       <label>MOT DE PASSE</label>
-      <input id="login-password" type="password" placeholder="••••••••">
+      <div style="position:relative">
+        <input id="login-password" type="text" placeholder="Votre mot de passe" autocomplete="off" style="width:100%;padding-right:40px">
+        <button onclick="togglePassword()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;color:#8a8070;font-size:16px;padding:4px" id="toggle-pass-btn">👁</button>
+      </div>
+      <div style="font-size:11px;color:#4a5a7a;margin-top:4px">Mot de passe admin : <span style="color:#c9a84c;font-family:monospace" id="show-admin-pass">••••••••••••••</span> <button onclick="revealAdminPass()" style="background:none;color:#c9a84c;font-size:10px;text-decoration:underline">Afficher</button></div>
     </div>
     <button class="btn-login" onclick="doLogin()">Se connecter</button>
     <div id="login-error"></div>
@@ -588,14 +597,11 @@ const POINTS_PER_FRANC = 0.001;
 const GIFT = {name: "Produit offert"};
 
 const PRODUCTS = [
-  {id:1, name:"Poulet fermier 1kg",    price:3500},
-  {id:2, name:"Poulet fermier 2kg",    price:6500},
-  {id:3, name:"Œufs (plateau 30)",     price:4200},
-  {id:4, name:"Dinde entière",         price:18000},
-  {id:5, name:"Pintade entière",       price:8500},
-  {id:6, name:"Lapin entier",          price:7500},
-  {id:7, name:"Porc (kg)",             price:4000},
-  {id:8, name:"Bœuf (kg)",             price:5500},
+  {id:1, name:"Stick 1,5g",            price:100},
+  {id:2, name:"Pack 7 sticks",         price:3500},
+  {id:3, name:"Pack 25 sticks",        price:12500},
+  {id:4, name:"Seau 5kg",              price:22000},
+  {id:5, name:"Seau 15kg",             price:65000},
 ];
 
 const PAYMENT_MODES = [
@@ -617,14 +623,11 @@ const CLIENT_TYPES = [
 ];
 
 const COMMISSIONS = [
-  {productId:1, commission:200},
+  {productId:1, commission:10},
   {productId:2, commission:350},
-  {productId:3, commission:300},
-  {productId:4, commission:1000},
-  {productId:5, commission:500},
-  {productId:6, commission:450},
-  {productId:7, commission:250},
-  {productId:8, commission:350},
+  {productId:3, commission:1250},
+  {productId:4, commission:2200},
+  {productId:5, commission:6500},
 ];
 
 // ═══════════════════════════════════════
@@ -865,22 +868,43 @@ function openTab(tab) {
 }
 
 // ─── TAB CLIENTS ───
+var clientTypeFilter = "tous";
+
 function renderTabClients(el) {
-  var myClients = clients;
-  var html = '<div style="margin-bottom:12px;display:flex;gap:8px">';
-  html += '<button class="btn-gold" style="flex:1" onclick="openNewClientPage()">➕ Nouveau client</button>';
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
+  html += '<button class="btn-gold" onclick="openNewClientPage()">➕ Nouveau client</button>';
   html += '<button class="btn-outline" onclick="openScanner()">📷 Scanner</button>';
   html += '</div>';
   html += '<div class="search-bar"><input id="admin-search" placeholder="Rechercher un client..." oninput="filterAdminClients()" style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:11px 14px 11px 38px;border-radius:10px;font-size:14px"></div>';
+  var types = {}; clients.forEach(function(c){ var t=c.type||"particulier"; types[t]=(types[t]||0)+1; });
+  html += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">';
+  html += '<button class="pmode'+(clientTypeFilter==="tous"?" active":"")+'" data-tf="tous" onclick="setClientTypeFilter(this)" style="font-size:11px;padding:6px 10px">Tous ('+clients.length+')</button>';
+  Object.keys(types).forEach(function(t){
+    var tp = CLIENT_TYPES.find(function(x){return x.id===t;})||{icon:"⭐",label:t,id:t};
+    html += '<button class="pmode'+(clientTypeFilter===t?" active":"")+'" data-tf="'+t+'" onclick="setClientTypeFilter(this)" style="font-size:11px;padding:6px 10px">'+tp.icon+' '+tp.label+' ('+types[t]+')</button>';
+  });
+  html += '</div>';
   html += '<div id="admin-clients-list"></div>';
   el.innerHTML = html;
-  renderAdminClientsList(clients);
+  renderAdminClientsList(getFilteredClients());
+}
+
+function setClientTypeFilter(btn) {
+  clientTypeFilter = btn.getAttribute("data-tf");
+  document.querySelectorAll("[data-tf]").forEach(function(b){ b.classList.remove("active"); });
+  btn.classList.add("active");
+  renderAdminClientsList(getFilteredClients());
+}
+
+function getFilteredClients() {
+  var q = (document.getElementById("admin-search")||{value:""}).value.toLowerCase();
+  var list = clientTypeFilter==="tous" ? clients : clients.filter(function(c){return (c.type||"particulier")===clientTypeFilter;});
+  if(q) list = list.filter(function(c){ return c.name.toLowerCase().includes(q)||(c.code||"").toLowerCase().includes(q); });
+  return list;
 }
 
 function filterAdminClients() {
-  var q = (document.getElementById("admin-search")||{value:""}).value.toLowerCase();
-  var filtered = q ? clients.filter(function(c){ return c.name.toLowerCase().includes(q) || (c.code||"").toLowerCase().includes(q); }) : clients;
-  renderAdminClientsList(filtered);
+  renderAdminClientsList(getFilteredClients());
 }
 
 function renderAdminClientsList(list) {
@@ -909,29 +933,40 @@ function renderAdminClientsList(list) {
 
 // ─── TAB VENDORS ───
 function renderTabVendors(el) {
-  var html = '<div style="margin-bottom:12px">';
-  html += '<button class="btn-gold btn-full" onclick="openAddVendorPage()">➕ Nouveau vendeur</button>';
-  html += '</div>';
-  if(vendors.length === 0) {
+  var html = '<button class="btn-gold btn-full" style="margin-bottom:12px" onclick="openAddVendorPage()">➕ Nouveau vendeur</button>';
+
+  // Classement par CA
+  var vendorStats = vendors.map(function(v){
+    var sales=0, revenue=0, comm=0;
+    clients.forEach(function(c){
+      (c.history||[]).forEach(function(h){
+        if((h.vendorCode||"")===v.code){ sales++; revenue+=(h.final||0); comm+=(h.commission||0); }
+      });
+    });
+    return {v:v, sales:sales, revenue:revenue, comm:comm};
+  }).sort(function(a,b){return b.revenue-a.revenue;});
+
+  if(vendorStats.length===0) {
     html += '<div class="empty-state"><div class="es-icon">👨‍💼</div><p>Aucun vendeur enregistré</p></div>';
   } else {
-    html += vendors.map(function(v) {
-      var stats = {sales:0, revenue:0};
-      clients.forEach(function(c){
-        (c.history||[]).forEach(function(h){
-          if((h.vendorCode||"")=== v.code){ stats.sales++; stats.revenue+=(h.final||0); }
-        });
-      });
-      return '<div class="client-card" onclick="openVendorProfile(\''+v.id+'\')">'+
-        '<div class="avatar" style="background:#1a2030;border-color:#3a5a9a44;color:#7aaad5">'+(v.sex==="Femme"?"👩":"👨")+'</div>'+
-        '<div class="client-info">'+
-          '<div class="client-name">'+v.name+'</div>'+
-          '<div class="client-code">'+v.code+'</div>'+
-          '<div class="client-stats">'+stats.sales+' vente(s) · '+fmtPrice(stats.revenue)+'</div>'+
+    html += '<div class="acard"><div class="acard-title">CLASSEMENT PAR CA</div>';
+    html += vendorStats.map(function(s, i){
+      var v=s.v;
+      var medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #1a2030" data-vid="'+v.id+'" onclick="openVendorProfileById(this)">'+
+        '<div style="font-size:18px;min-width:28px;text-align:center">'+medal+'</div>'+
+        '<div style="width:40px;height:40px;border-radius:50%;background:#1a2030;border:2px solid #3a5a9a44;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+(v.sex==="Femme"?"👩":"👨")+'</div>'+
+        '<div style="flex:1">'+
+          '<div style="font-size:14px;font-weight:700">'+v.name+'</div>'+
+          '<div style="font-size:11px;color:#c9a84c;font-family:monospace">'+v.code+'</div>'+
+          '<div style="font-size:11px;color:#4a5a7a">'+s.sales+' vente(s) · Comm: '+fmtPrice(s.comm)+'</div>'+
         '</div>'+
-        '<span style="font-size:12px;color:'+(v.suspended?"#ff6666":"#7ac97a")+'">'+(v.suspended?"⛔":"✅")+'</span>'+
+        '<div style="text-align:right">'+
+          '<div style="font-size:14px;font-weight:700;color:#c9a84c">'+fmtPrice(s.revenue)+'</div>'+
+          '<div style="font-size:11px;color:'+(v.suspended?"#ff6666":"#7ac97a")+'">'+(v.suspended?"⛔ Suspendu":"✅ Actif")+'</div>'+
+        '</div>'+
         '</div>';
-    }).join("");
+    }).join("") + '</div>';
   }
   el.innerHTML = html;
 }
@@ -955,36 +990,80 @@ function renderTabCharts(el) {
   }
   var maxRev = Math.max.apply(null, months.map(function(m){return m.rev;})) || 1;
 
-  var html = '<div class="acard"><div class="acard-title">CA DES 6 DERNIERS MOIS</div>';
-  html += '<div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding-bottom:20px;position:relative">';
+  var html = '<div class="acard"><div class="acard-title">📈 CA DES 6 DERNIERS MOIS</div>';
+  html += '<div style="display:flex;align-items:flex-end;gap:6px;height:120px;padding-bottom:20px">';
   months.forEach(function(m) {
     var h = Math.max(4, Math.round((m.rev/maxRev)*100));
-    html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">' +
-      '<div style="font-size:9px;color:#c9a84c;text-align:center">'+fmtPrice(m.rev).replace(' FCFA','')+'</div>' +
+    html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">' +
+      '<div style="font-size:8px;color:#c9a84c;text-align:center">'+Math.round(m.rev/1000)+'k</div>' +
       '<div style="width:100%;height:'+h+'px;background:linear-gradient(180deg,#c9a84c,#8a6a00);border-radius:4px 4px 0 0"></div>' +
-      '<div style="font-size:10px;color:#4a5a7a">'+m.label+'</div>' +
+      '<div style="font-size:9px;color:#4a5a7a">'+m.label+'</div>' +
       '</div>';
   });
   html += '</div></div>';
 
-  // Ventes par type de client
-  var byType = {};
+  // Top produits
+  var prodStats = {};
   clients.forEach(function(c){
-    var t = c.type||"particulier";
-    if(!byType[t]) byType[t] = 0;
-    byType[t]++;
+    (c.history||[]).forEach(function(h){
+      (h.items||[]).forEach(function(it){
+        if(!prodStats[it.name]) prodStats[it.name]={qty:0,rev:0};
+        prodStats[it.name].qty+=it.qty; prodStats[it.name].rev+=it.price*it.qty;
+      });
+    });
   });
-  html += '<div class="acard"><div class="acard-title">CLIENTS PAR TYPE</div>';
-  html += Object.entries(byType).map(function(e){
-    var t = getType(e[0]);
-    var pct = Math.round((e[1]/clients.length)*100);
-    return '<div style="margin-bottom:10px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'+
-      '<span style="color:'+t.color+'">'+t.icon+' '+t.label+'</span>'+
-      '<span style="color:#8a8070">'+e[1]+' ('+pct+'%)</span></div>'+
-      '<div class="pts-bar-bg"><div class="pts-bar" style="width:'+pct+'%;background:'+t.color+'"></div></div>'+
-      '</div>';
-  }).join("") + '</div>';
+  var topProds = Object.entries(prodStats).sort(function(a,b){return b[1].qty-a[1].qty;}).slice(0,5);
+  if(topProds.length>0) {
+    html += '<div class="acard"><div class="acard-title">🏆 PRODUITS LES PLUS VENDUS</div>';
+    var maxQty = topProds[0][1].qty || 1;
+    html += topProds.map(function(e,i){
+      var pct = Math.round((e[1].qty/maxQty)*100);
+      var medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"  ";
+      return '<div style="margin-bottom:10px">'+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'+
+        '<span>'+medal+' '+e[0]+'</span><span style="color:#c9a84c">'+e[1].qty+' unités · '+fmtPrice(e[1].rev)+'</span></div>'+
+        '<div class="pts-bar-bg"><div class="pts-bar" style="width:'+pct+'%;background:#c9a84c"></div></div>'+
+        '</div>';
+    }).join("") + '</div>';
+  }
+
+  // Top 5 clients
+  var topClients = clients.slice().sort(function(a,b){return (b.totalSpent||0)-(a.totalSpent||0);}).slice(0,5);
+  if(topClients.length>0) {
+    html += '<div class="acard"><div class="acard-title">⭐ TOP 5 CLIENTS</div>';
+    html += topClients.map(function(c,i){
+      var medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2030">'+
+        '<div style="font-size:16px;min-width:24px">'+medal+'</div>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+c.name+'</div>'+
+        '<div style="font-size:11px;color:#4a5a7a">'+(c.history||[]).length+' achat(s)</div></div>'+
+        '<div style="font-size:13px;font-weight:700;color:#c9a84c">'+fmtPrice(c.totalSpent||0)+'</div>'+
+        '</div>';
+    }).join("") + '</div>';
+  }
+
+  // Comparatif vendeurs
+  var vStats = vendors.map(function(v){
+    var rev=0, cnt=0;
+    clients.forEach(function(c){
+      (c.history||[]).forEach(function(h){
+        if((h.vendorCode||"")===v.code){ rev+=(h.final||0); cnt++; }
+      });
+    });
+    return {name:v.name, rev:rev, cnt:cnt};
+  }).sort(function(a,b){return b.rev-a.rev;});
+  if(vStats.length>0) {
+    html += '<div class="acard"><div class="acard-title">👨‍💼 COMPARATIF VENDEURS</div>';
+    var maxV = vStats[0].rev||1;
+    html += vStats.map(function(v){
+      var pct = Math.round((v.rev/maxV)*100);
+      return '<div style="margin-bottom:10px">'+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'+
+        '<span>'+v.name+'</span><span style="color:#7aaad5">'+v.cnt+' ventes · '+fmtPrice(v.rev)+'</span></div>'+
+        '<div class="pts-bar-bg"><div class="pts-bar" style="width:'+pct+'%;background:#7aaad5"></div></div>'+
+        '</div>';
+    }).join("") + '</div>';
+  }
 
   el.innerHTML = html;
 }
@@ -994,92 +1073,219 @@ function renderTabCompta(el) {
   var now = new Date();
   var mk = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
   var monthLabel = now.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
-  var totalRev=0, totalComm=0, sales=[];
+  var totalPaid=0, totalUnpaid=0, totalDelivery=0, totalComm=0;
+  var salesPaid=[], salesUnpaid=[], salesDelivery=[];
 
   clients.forEach(function(c){
     (c.history||[]).forEach(function(h){
       var pp=(h.date||"").split("/");
       if(pp.length===3 && pp[2]+"-"+pp[1].padStart(2,"0")===mk){
-        totalRev+=(h.final||0); totalComm+=(h.commission||0);
-        sales.push({client:c.name, date:h.date, amount:h.final||0, payment:h.paymentLabel||"Espèces", status:h.paymentStatus||"paid"});
+        var entry = {client:c.name, date:h.date, amount:h.final||0, payment:h.paymentLabel||"Espèces", vendeur:h.vendorName||"Admin"};
+        totalComm+=(h.commission||0);
+        if(h.paymentStatus==="unpaid"){ totalUnpaid+=(h.final||0); salesUnpaid.push(entry); }
+        else if(h.paymentStatus==="delivery"){ totalDelivery+=(h.final||0); salesDelivery.push(entry); }
+        else { totalPaid+=(h.final||0); salesPaid.push(entry); }
+      }
+    });
+  });
+  var totalRev = totalPaid+totalUnpaid+totalDelivery;
+
+  // Commissions par vendeur ce mois
+  var commByVendor = {};
+  clients.forEach(function(c){
+    (c.history||[]).forEach(function(h){
+      var pp=(h.date||"").split("/");
+      if(pp.length===3 && pp[2]+"-"+pp[1].padStart(2,"0")===mk && (h.commission||0)>0){
+        var vn = h.vendorName||"Admin";
+        commByVendor[vn]=(commByVendor[vn]||0)+(h.commission||0);
       }
     });
   });
 
-  var html = '<div class="acard">' +
-    '<div class="acard-title">BILAN — '+monthLabel.toUpperCase()+'</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-    '<div class="stat-card"><div class="stat-val">'+fmtPrice(totalRev)+'</div><div class="stat-lbl">CA TOTAL</div></div>' +
-    '<div class="stat-card"><div class="stat-val">'+fmtPrice(totalComm)+'</div><div class="stat-lbl">COMMISSIONS</div></div>' +
-    '<div class="stat-card"><div class="stat-val">'+fmtPrice(totalRev-totalComm)+'</div><div class="stat-lbl">NET</div></div>' +
-    '<div class="stat-card"><div class="stat-val">'+sales.length+'</div><div class="stat-lbl">TRANSACTIONS</div></div>' +
+  var html = '<div class="acard"><div class="acard-title">💰 BILAN — '+monthLabel.toUpperCase()+'</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+    '<div class="stat-card"><div class="stat-val" style="font-size:14px">'+fmtPrice(totalRev)+'</div><div class="stat-lbl">CA TOTAL</div></div>'+
+    '<div class="stat-card" style="border-color:#7ac97a22"><div class="stat-val" style="font-size:14px;color:#7ac97a">'+fmtPrice(totalPaid)+'</div><div class="stat-lbl">✅ PAYÉ</div></div>'+
+    '<div class="stat-card" style="border-color:#ff666622"><div class="stat-val" style="font-size:14px;color:#ff6666">'+fmtPrice(totalUnpaid)+'</div><div class="stat-lbl">❌ NON PAYÉ</div></div>'+
+    '<div class="stat-card" style="border-color:#c9a84c22"><div class="stat-val" style="font-size:14px;color:#c9a84c">'+fmtPrice(totalDelivery)+'</div><div class="stat-lbl">🚚 LIVRAISON</div></div>'+
+    '<div class="stat-card" style="border-color:#a07ad522"><div class="stat-val" style="font-size:14px;color:#a07ad5">'+fmtPrice(totalComm)+'</div><div class="stat-lbl">COMMISSIONS</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="font-size:14px">'+fmtPrice(totalPaid-totalComm)+'</div><div class="stat-lbl">NET</div></div>'+
     '</div></div>';
 
-  if(sales.length > 0) {
-    html += '<div class="acard"><div class="acard-title">TRANSACTIONS DU MOIS</div>';
-    html += sales.slice(0,20).map(function(s){
-      var statusColor = s.status==="unpaid"?"#ff6666":s.status==="delivery"?"#c9a84c":"#7ac97a";
-      var statusLabel = s.status==="unpaid"?"❌ Non payé":s.status==="delivery"?"🚚 Livraison":"✅ Payé";
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1a2030">'+
-        '<div><div style="font-size:13px;font-weight:600">'+s.client+'</div>'+
-        '<div style="font-size:11px;color:#4a5a7a">'+s.date+' · '+s.payment+'</div></div>'+
-        '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:#c9a84c">'+fmtPrice(s.amount)+'</div>'+
-        '<div style="font-size:10px;color:'+statusColor+'">'+statusLabel+'</div></div>'+
-        '</div>';
+  // Commissions par vendeur
+  if(Object.keys(commByVendor).length>0){
+    html += '<div class="acard"><div class="acard-title">💼 COMMISSIONS PAR VENDEUR</div>';
+    html += Object.entries(commByVendor).map(function(e){
+      return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a2030">'+
+        '<span style="font-size:13px">'+e[0]+'</span>'+
+        '<span style="font-size:13px;font-weight:700;color:#a07ad5">'+fmtPrice(e[1])+'</span></div>';
     }).join("") + '</div>';
   }
+
+  // Partager bilan WhatsApp
+  html += '<button class="btn-green btn-full" style="margin-bottom:12px" onclick="shareBilanWhatsApp()">💬 Partager le bilan par WhatsApp</button>';
+
+  // Transactions
+  function saleRows(list, color, label) {
+    if(list.length===0) return "";
+    var h2 = '<div class="acard"><div class="acard-title" style="color:'+color+'">'+label+' ('+list.length+')</div>';
+    h2 += list.map(function(s){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a2030">'+
+        '<div><div style="font-size:13px;font-weight:600">'+s.client+'</div>'+
+        '<div style="font-size:11px;color:#4a5a7a">'+s.date+' · '+s.payment+' · '+s.vendeur+'</div></div>'+
+        '<div style="font-size:13px;font-weight:700;color:'+color+'">'+fmtPrice(s.amount)+'</div></div>';
+    }).join("") + '</div>';
+    return h2;
+  }
+  html += saleRows(salesPaid, "#7ac97a", "✅ PAYÉ");
+  html += saleRows(salesUnpaid, "#ff6666", "❌ NON PAYÉ");
+  html += saleRows(salesDelivery, "#c9a84c", "🚚 À LIVRER");
+
   el.innerHTML = html;
 }
 
+function shareBilanWhatsApp() {
+  var now = new Date();
+  var mk = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+  var monthLabel = now.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+  var totalRev=0, totalPaid=0, totalUnpaid=0, cnt=0;
+  clients.forEach(function(c){
+    (c.history||[]).forEach(function(h){
+      var pp=(h.date||"").split("/");
+      if(pp.length===3 && pp[2]+"-"+pp[1].padStart(2,"0")===mk){
+        totalRev+=(h.final||0); cnt++;
+        if(h.paymentStatus==="unpaid") totalUnpaid+=(h.final||0);
+        else totalPaid+=(h.final||0);
+      }
+    });
+  });
+  var lines = [
+    "Mon Fermier SARL - Bilan " + monthLabel,
+    "",
+    "CA Total : " + fmtPrice(totalRev),
+    "Paye : " + fmtPrice(totalPaid),
+    "Non paye : " + fmtPrice(totalUnpaid),
+    "Nb transactions : " + cnt,
+    "",
+    "Genere le " + now.toLocaleDateString("fr-FR")
+  ];
+  window.open("https://wa.me/?text="+encodeURIComponent(lines.join("|")));
+}
+
 // ─── TAB ORDERS (COMMANDES) ───
+var ordersFilter = "all";
+
 function renderTabOrders(el) {
   var pending = [];
   clients.forEach(function(c){
-    (c.history||[]).forEach(function(h){
+    (c.history||[]).forEach(function(h, idx){
       if(h.paymentStatus === "unpaid" || h.paymentStatus === "delivery") {
-        pending.push({client:c.name, clientId:c.id, date:h.date, amount:h.final||0, status:h.paymentStatus, items:h.items||[]});
+        pending.push({client:c.name, clientId:c.id, histIdx:idx, date:h.date, amount:h.final||0, status:h.paymentStatus, items:h.items||[], vendeur:h.vendorName||"Admin"});
       }
     });
   });
 
-  var html = '<div class="acard"><div class="acard-title">COMMANDES EN ATTENTE ('+pending.length+')</div>';
-  if(pending.length === 0) {
+  var filtered = ordersFilter==="all" ? pending :
+    pending.filter(function(p){return p.status===ordersFilter;});
+
+  var html = '<button style="width:100%;margin-bottom:12px;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px;border-radius:10px;font-size:14px;font-weight:700;border:none" onclick="openNewOrderPage()">📋 Nouvelle commande</button>';
+
+  // Filtres
+  var unpaidCount = pending.filter(function(p){return p.status==="unpaid";}).length;
+  var deliveryCount = pending.filter(function(p){return p.status==="delivery";}).length;
+  html += '<div style="display:flex;gap:6px;margin-bottom:12px">'+
+    '<button class="pmode'+(ordersFilter==="all"?" active":"")+'" data-of="all" onclick="setOrdersFilter(this)" style="font-size:11px;padding:7px 10px">Tous ('+pending.length+')</button>'+
+    '<button class="pmode'+(ordersFilter==="unpaid"?" active":"")+'" data-of="unpaid" onclick="setOrdersFilter(this)" style="font-size:11px;padding:7px 10px;color:'+(ordersFilter==="unpaid"?"":"#ff6666")+';border-color:'+(ordersFilter==="unpaid"?"":"#c9202066")+'">❌ Non payé ('+unpaidCount+')</button>'+
+    '<button class="pmode'+(ordersFilter==="delivery"?" active":"")+'" data-of="delivery" onclick="setOrdersFilter(this)" style="font-size:11px;padding:7px 10px;color:'+(ordersFilter==="delivery"?"":"#c9a84c")+';border-color:'+(ordersFilter==="delivery"?"":"#c9a84c66")+'">🚚 Livraison ('+deliveryCount+')</button>'+
+    '</div>';
+
+  html += '<div class="acard"><div class="acard-title">COMMANDES EN ATTENTE ('+filtered.length+')</div>';
+  if(filtered.length===0) {
     html += '<div class="empty-state"><div class="es-icon">✅</div><p>Aucune commande en attente</p></div>';
   } else {
-    html += pending.map(function(p){
+    html += filtered.map(function(p){
       var sc = p.status==="unpaid"?"#ff6666":"#c9a84c";
       var sl = p.status==="unpaid"?"❌ Non payé":"🚚 À livrer";
       return '<div style="background:#0a0f1a;border:1px solid #1a2030;border-radius:10px;padding:12px;margin-bottom:8px">'+
-        '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
         '<div style="font-size:14px;font-weight:600">'+p.client+'</div>'+
         '<div style="font-size:12px;font-weight:700;color:'+sc+'">'+sl+'</div></div>'+
-        '<div style="font-size:12px;color:#4a5a7a">'+p.date+' · '+fmtPrice(p.amount)+'</div>'+
-        '<div style="font-size:11px;color:#4a4640;margin-top:4px">'+
-        (p.items||[]).map(function(i){return i.qty+'× '+i.name;}).join(", ")+
-        '</div></div>';
-    }).join("");
+        '<div style="font-size:12px;color:#4a5a7a;margin-bottom:4px">'+p.date+' · '+fmtPrice(p.amount)+' · '+p.vendeur+'</div>'+
+        '<div style="font-size:11px;color:#4a4640;margin-bottom:8px">'+(p.items||[]).map(function(i){return i.qty+"× "+i.name;}).join(", ")+'</div>'+
+        '<button class="btn-green" style="width:100%;padding:8px;font-size:12px" data-cid="'+p.clientId+'" data-hidx="'+p.histIdx+'" onclick="markOrderPaidBtn(this)">Marquer comme paye</button>'+
+        '</div>';
+    }).join("") ;
   }
   html += '</div>';
   el.innerHTML = html;
 }
 
+function setOrdersFilter(btn) {
+  ordersFilter = btn.getAttribute("data-of");
+  openTab("orders");
+}
+
+function markOrderPaidBtn(btn) { markOrderPaid(btn.getAttribute("data-cid"), parseInt(btn.getAttribute("data-hidx"))); }
+async function markOrderPaid(clientId, histIdx) {
+  var c = clients.find(function(x){return x.id===clientId;});
+  if(!c) return;
+  var history = (c.history||[]).slice();
+  if(history[histIdx]) {
+    history[histIdx] = Object.assign({}, history[histIdx], {paymentStatus:"paid"});
+    var updated = Object.assign({}, c, {history:history});
+    clients = clients.map(function(x){return x.id===clientId?updated:x;});
+    try { var data=Object.assign({},updated); delete data.id; await db.collection("clients").doc(clientId).set(data); } catch(e){}
+    showToast("✅ Commande marquée comme payée !");
+    openTab("orders");
+  }
+}
+
 // ─── TAB CALCULATRICE ───
 function renderTabCalc(el) {
   el.innerHTML = '<div class="acard">' +
-    '<div class="acard-title">CALCULATRICE</div>' +
-    '<div id="calc-display" style="background:#0a0f1a;border:1px solid #1a2030;border-radius:10px;padding:16px;text-align:right;font-size:28px;font-weight:700;color:#c9a84c;min-height:60px;margin-bottom:12px;word-break:break-all">0</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' +
+    '<div class="acard-title">🧮 CALCULATRICE</div>' +
+    '<div id="calc-display" style="background:#0a0f1a;border:1px solid #1a2030;border-radius:10px;padding:14px;text-align:right;font-size:26px;font-weight:700;color:#c9a84c;min-height:56px;margin-bottom:10px;word-break:break-all">0</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">' +
     ['C','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.','⌫','='].map(function(k){
       var isOp = ['÷','×','−','+','='].includes(k);
       var isClear = k==='C';
       var bg = isOp ? 'linear-gradient(135deg,#b8860b,#c9a84c)' : isClear ? '#2e0505' : '#0f0e0b';
       var col = isOp ? '#0a0906' : isClear ? '#ff6666' : '#e8e0d0';
-      var span = k==='0'?'grid-column:span 1':'';
-      return '<button onclick="calcKey(\''+k+'\')" style="'+span+';background:'+bg+';color:'+col+';border:1px solid #1a2030;border-radius:10px;padding:16px;font-size:18px;font-weight:700">'+k+'</button>';
+      return '<button data-ck="'+k+'" onclick="calcKeyBtn(this)" style="background:'+bg+';color:'+col+';border:1px solid #1a2030;border-radius:8px;padding:14px;font-size:17px;font-weight:700">'+k+'</button>';
+    }).join("") +
+    '</div></div>' +
+    '<div class="acard"><div class="acard-title">📊 CALCULATRICE DE MARGE</div>' +
+    '<div class="field"><label>PRIX DE REVIENT (FCFA)</label><input id="calc-cost" type="number" placeholder="Ex: 15000" oninput="calcMarge()" style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:11px;border-radius:8px;font-size:14px"></div>' +
+    '<div class="field"><label>PRIX DE VENTE (FCFA)</label><input id="calc-sell" type="number" placeholder="Ex: 22000" oninput="calcMarge()" style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:11px;border-radius:8px;font-size:14px"></div>' +
+    '<div id="calc-marge-result" style="background:#0a0f1a;border:1px solid #1a2030;border-radius:10px;padding:14px;text-align:center;margin-top:4px"></div>' +
+    '</div>' +
+    '<div class="acard"><div class="acard-title">💼 CALCUL DE COMMISSION</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+    PRODUCTS.map(function(p){
+      var comm = COMMISSIONS.find(function(c){return c.productId===p.id;});
+      return '<div style="background:#0a0f1a;border:1px solid #1a2030;border-radius:8px;padding:10px">'+
+        '<div style="font-size:11px;color:#e8e0d0;margin-bottom:4px">'+p.name+'</div>'+
+        '<div style="font-size:13px;font-weight:700;color:#a07ad5">'+fmtPrice(comm?comm.commission:0)+'/unité</div>'+
+        '</div>';
     }).join("") +
     '</div></div>';
 }
 
+function calcMarge() {
+  var cost = parseFloat(document.getElementById("calc-cost").value)||0;
+  var sell = parseFloat(document.getElementById("calc-sell").value)||0;
+  var el = document.getElementById("calc-marge-result");
+  if(!el) return;
+  if(!cost||!sell) { el.innerHTML='<span style="color:#4a5a7a;font-size:13px">Entrez les deux valeurs</span>'; return; }
+  var profit = sell-cost;
+  var pct = Math.round((profit/cost)*100);
+  var color = profit>0?"#7ac97a":"#ff6666";
+  el.innerHTML = '<div style="font-size:13px;color:#4a5a7a;margin-bottom:6px">Bénéfice</div>'+
+    '<div style="font-size:24px;font-weight:700;color:'+color+'">'+fmtPrice(profit)+'</div>'+
+    '<div style="font-size:14px;color:'+color+';margin-top:4px">'+pct+'% de marge</div>';
+}
+
+function calcKeyBtn(btn) { calcKey(btn.getAttribute("data-ck")); }
 var calcVal = "0", calcPrev = "", calcOp = "";
 function calcKey(k) {
   var d = document.getElementById("calc-display");
@@ -1104,30 +1310,97 @@ function calcKey(k) {
 }
 
 // ─── TAB STOCK ───
+var stockAlertThreshold = 10;
+
 function renderTabStock(el) {
   var stockData = {};
+  var stockHistory = [];
   try { stockData = JSON.parse(localStorage.getItem("mf_stock")||"{}"); } catch(e){}
+  try { stockHistory = JSON.parse(localStorage.getItem("mf_stock_history")||"[]"); } catch(e){}
 
-  var html = '<div class="acard"><div class="acard-title">GESTION DU STOCK</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
-    '<button class="btn-green btn-full" onclick="stockAction(\'entree\')">📥 Entrée stock</button>' +
-    '<button class="btn-red btn-full" onclick="stockAction(\'sortie\')">📤 Sortie stock</button>' +
+  var totalValue = 0;
+  PRODUCTS.forEach(function(p){ totalValue += (stockData[p.id]||0)*p.price; });
+
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+
+    '<button class="btn-green" onclick="stockEntree()">📥 Entrée stock</button>'+
+    '<button class="btn-red" onclick="stockSortie()">📤 Sortie stock</button>'+
     '</div>';
+
+  html += '<div class="acard" style="margin-bottom:12px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
+    '<div class="acard-title" style="margin-bottom:0">SEUIL D&#39;ALERTE</div>'+
+    '<div style="display:flex;align-items:center;gap:8px">'+
+    '<button onclick="changeThreshold(-5)" style="background:#1a2030;border:1px solid #2e3a50;color:#e8e0d0;width:28px;height:28px;border-radius:6px;font-size:16px">−</button>'+
+    '<span id="threshold-val" style="color:#c9a84c;font-weight:700;min-width:30px;text-align:center">'+stockAlertThreshold+'</span>'+
+    '<button onclick="changeThreshold(5)" style="background:#1a2030;border:1px solid #2e3a50;color:#e8e0d0;width:28px;height:28px;border-radius:6px;font-size:16px">+</button>'+
+    '</div></div>'+
+    '<div style="font-size:11px;color:#4a5a7a">Alerte si stock < '+stockAlertThreshold+' unités · Valeur totale stock : <span style="color:#c9a84c">'+fmtPrice(totalValue)+'</span></div>'+
+    '</div>';
+
+  html += '<div class="acard"><div class="acard-title">📦 NIVEAUX DE STOCK</div>';
   html += PRODUCTS.map(function(p){
-    var qty = stockData[p.id] || 0;
-    var low = qty < 10;
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a2030">'+
-      '<div>'+
-        '<div style="font-size:13px;font-weight:600">'+p.name+'</div>'+
-        '<div style="font-size:11px;color:#4a5a7a">'+fmtPrice(p.price)+'/unité</div>'+
-      '</div>'+
+    var qty = stockData[p.id]||0;
+    var low = qty < stockAlertThreshold;
+    var pct = Math.min(100, Math.round((qty/Math.max(stockAlertThreshold*3,qty))*100));
+    return '<div style="margin-bottom:14px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
+      '<div><div style="font-size:13px;font-weight:600">'+p.name+'</div>'+
+      '<div style="font-size:11px;color:#4a5a7a">'+fmtPrice(p.price)+'/unité · Valeur: '+fmtPrice(qty*p.price)+'</div></div>'+
       '<div style="text-align:right">'+
-        '<div style="font-size:18px;font-weight:700;color:'+(low?"#ff6666":"#7ac97a")+'">'+qty+'</div>'+
-        '<div style="font-size:10px;color:'+(low?"#ff6666":"#4a5a7a")+'">'+(low?"⚠️ Stock faible":"en stock")+'</div>'+
-      '</div>'+
+      '<div style="font-size:20px;font-weight:700;color:'+(low?"#ff6666":"#7ac97a")+'">'+qty+'</div>'+
+      '<div style="font-size:10px;color:'+(low?"#ff6666":"#4a5a7a")+'">'+(low?"⚠️ Stock faible":"en stock")+'</div>'+
+      '</div></div>'+
+      '<div class="pts-bar-bg"><div class="pts-bar" style="width:'+pct+'%;background:'+(low?"#c92020":"#7ac97a")+'"></div></div>'+
       '</div>';
   }).join("") + '</div>';
+
+  // Historique
+  if(stockHistory.length>0) {
+    html += '<div class="acard"><div class="acard-title">📋 HISTORIQUE STOCK</div>';
+    html += stockHistory.slice(0,10).map(function(h){
+      return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a2030">'+
+        '<div><div style="font-size:12px;font-weight:600">'+h.product+'</div>'+
+        '<div style="font-size:11px;color:#4a5a7a">'+h.date+'</div></div>'+
+        '<div style="font-size:13px;font-weight:700;color:'+(h.type==="entree"?"#7ac97a":"#ff6666")+'">'+
+        (h.type==="entree"?"+":"-")+h.qty+'</div></div>';
+    }).join("") + '</div>';
+  }
+
   el.innerHTML = html;
+}
+
+function changeThreshold(delta) {
+  stockAlertThreshold = Math.max(1, stockAlertThreshold+delta);
+  var el = document.getElementById("threshold-val");
+  if(el) el.textContent = stockAlertThreshold;
+}
+
+function stockEntree() {
+  doStockAction("entree");
+}
+function stockSortie() {
+  doStockAction("sortie");
+}
+
+function doStockAction(type) {
+  var names = PRODUCTS.map(function(p,i){return (i+1)+". "+p.name;}).join(" | ");
+  var choix = prompt("Quel produit ? " + names + " - Entrez le numero :");
+  if(!choix) return;
+  var idx = parseInt(choix)-1;
+  if(isNaN(idx)||idx<0||idx>=PRODUCTS.length){ showToast("Numéro invalide",true); return; }
+  var prod = PRODUCTS[idx];
+  var qty = parseInt(prompt("Quantité à "+(type==="entree"?"entrer":"sortir")+" pour "+prod.name+" ?"));
+  if(isNaN(qty)||qty<=0){ showToast("Quantité invalide",true); return; }
+  var stockData = {};
+  try { stockData = JSON.parse(localStorage.getItem("mf_stock")||"{}"); } catch(e){}
+  stockData[prod.id] = Math.max(0,(stockData[prod.id]||0)+(type==="entree"?qty:-qty));
+  localStorage.setItem("mf_stock",JSON.stringify(stockData));
+  var history = [];
+  try { history = JSON.parse(localStorage.getItem("mf_stock_history")||"[]"); } catch(e){}
+  history.unshift({product:prod.name, qty:qty, type:type, date:new Date().toLocaleDateString("fr-FR")+" "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})});
+  localStorage.setItem("mf_stock_history",JSON.stringify(history.slice(0,50)));
+  showToast((type==="entree"?"📥 Entrée":"📤 Sortie")+" : "+qty+"× "+prod.name);
+  openTab("stock");
 }
 
 function stockAction(type) {
@@ -1581,7 +1854,7 @@ function renderSaleResult() {
 function shareWhatsApp() {
   if(!lastSale) return;
   var s=lastSale.sale, c=lastSale.client;
-  var msg = "🌾 MON FERMIER SARL\n\nClient: "+c.name+"\nDate: "+s.date+"\nTotal: "+fmtPrice(s.final)+"\nPaiement: "+s.paymentLabel+"\nPoints: +"+s.earned+" pts (Solde: "+c.points+" pts)\n\nMerci de votre fidélité !";
+  
   window.open("https://wa.me/?text="+encodeURIComponent(msg));
 }
 
@@ -1682,6 +1955,258 @@ function showVendorClients() {
 // ═══════════════════════════════════════
 function openScanner() { showToast("Scanner QR — fonctionnalité à venir"); }
 
+
+// ═══════════════════════════════════════
+// NOUVELLE COMMANDE
+// ═══════════════════════════════════════
+var orderCart = [];
+var orderClient = null;
+var orderPayment = "especes";
+var orderPayStatus = "paid";
+
+function openNewOrderPage() {
+  orderCart = []; orderClient = null; orderPayment = "especes"; orderPayStatus = "paid";
+  showPage("page-new-order");
+  setTimeout(function() {
+    renderOrderProducts();
+    renderOrderPaymentModes();
+    setOrderPayStatus("paid");
+    document.getElementById("order-client-search").value = "";
+    document.getElementById("order-client-results").innerHTML = "";
+    document.getElementById("order-client-selected").style.display = "none";
+    renderOrderSummary();
+  }, 30);
+}
+
+function searchOrderClient() {
+  var q = document.getElementById("order-client-search").value.toLowerCase().trim();
+  var res = document.getElementById("order-client-results");
+  if(!q) { res.innerHTML=""; return; }
+  var found = clients.filter(function(c){ return c.name.toLowerCase().includes(q)||(c.code||"").toLowerCase().includes(q); }).slice(0,5);
+  if(found.length===0) { res.innerHTML='<div style="font-size:12px;color:#4a5a7a;padding:8px">Aucun client trouvé</div>'; return; }
+  res.innerHTML = found.map(function(c){
+    return '<div data-cid="'+c.id+'" onclick="selectOrderClientById(this)" style="padding:10px 12px;background:#0a0f1a;border:1px solid #1a2030;border-radius:8px;margin-bottom:6px;cursor:pointer">'+
+      '<div style="font-size:13px;font-weight:600;color:#e8e0d0">'+c.name+'</div>'+
+      '<div style="font-size:11px;color:#c9a84c;font-family:monospace">'+c.code+'</div>'+
+      '</div>';
+  }).join("");
+}
+
+function selectOrderClientById(el) { selectOrderClient(el.getAttribute('data-cid')); }
+function selectOrderClient(id) {
+  orderClient = clients.find(function(c){ return c.id===id; });
+  if(!orderClient) return;
+  document.getElementById("order-client-search").value = "";
+  document.getElementById("order-client-results").innerHTML = "";
+  document.getElementById("order-client-name").textContent = orderClient.name;
+  document.getElementById("order-client-code").textContent = orderClient.code;
+  document.getElementById("order-client-selected").style.display = "block";
+  renderOrderSummary();
+}
+
+function clearOrderClient() {
+  orderClient = null;
+  document.getElementById("order-client-selected").style.display = "none";
+  document.getElementById("order-client-search").value = "";
+  renderOrderSummary();
+}
+
+function renderOrderProducts() {
+  var el = document.getElementById("order-products-list");
+  if(!el) return;
+  el.innerHTML = PRODUCTS.map(function(p){
+    var inCart = orderCart.find(function(i){return i.id===p.id;});
+    var qty = inCart ? inCart.qty : 0;
+    return '<div class="product-row">'+
+      '<div style="flex:1;min-width:0;margin-right:8px">'+
+      '<div class="product-name">'+p.name+'</div>'+
+      '<div class="product-price">'+fmtPrice(p.price)+'</div>'+
+      '</div>'+
+      '<div class="stepper">'+
+      '<button onclick="updateOrderQty('+p.id+',-1)">−</button>'+
+      '<div class="stepper-qty'+(qty>0?" has-qty":" empty")+'">'+( qty>0?qty:"·")+'</div>'+
+      '<button class="'+(qty>0?"has-qty":"")+'" onclick="updateOrderQty('+p.id+',1)">+</button>'+
+      '</div></div>';
+  }).join("");
+}
+
+function updateOrderQty(id, delta) {
+  var inCart = orderCart.find(function(i){return i.id===id;});
+  if(!inCart && delta>0) {
+    var p = PRODUCTS.find(function(x){return x.id===id;});
+    if(p) orderCart.push({id:p.id, name:p.name, price:p.price, qty:1});
+  } else if(inCart) {
+    inCart.qty = Math.max(0, inCart.qty+delta);
+    if(inCart.qty===0) orderCart = orderCart.filter(function(i){return i.id!==id;});
+  }
+  renderOrderProducts();
+  renderOrderSummary();
+}
+
+function renderOrderPaymentModes() {
+  var el = document.getElementById('order-payment-modes');
+  if(!el) return;
+  el.innerHTML = PAYMENT_MODES.map(function(p){
+    var act = orderPayment===p.id ? ' active' : '';
+    return '<button class="pmode'+act+'" data-pid="'+p.id+'" onclick="setOrderPayModeById(this)"><span class="pm-icon">'+p.icon+'</span>'+p.label+'</button>';
+  }).join('');
+}
+
+function setOrderPayModeById(el) { setOrderPayMode(el.getAttribute('data-pmid')); }
+function setOrderPayMode(id) {
+  orderPayment = id;
+  renderOrderPaymentModes();
+}
+
+function setOrderPayStatus(s) {
+  orderPayStatus = s;
+  ["paid","unpaid","delivery"].forEach(function(x){
+    var btn = document.getElementById("opst-"+x);
+    if(btn) btn.className = "pst"+(orderPayStatus===x?" "+x:"");
+  });
+  var alert = document.getElementById("order-pay-alert");
+  if(alert) {
+    if(s==="unpaid") alert.innerHTML='<div class="alert-unpaid">⚠️ COMMANDE NON PAYÉE — à régulariser</div>';
+    else if(s==="delivery") alert.innerHTML='<div class="alert-delivery">🚚 Paiement attendu à la livraison</div>';
+    else alert.innerHTML="";
+  }
+}
+
+function orderTotal() { return orderCart.reduce(function(s,i){return s+i.price*i.qty;},0); }
+
+function renderOrderSummary() {
+  var el = document.getElementById("order-summary");
+  if(!el) return;
+  if(orderCart.length===0) { el.innerHTML=""; return; }
+  var total = orderTotal();
+  var pm = PAYMENT_MODES.find(function(p){return p.id===orderPayment;});
+
+  el.innerHTML = '<div class="cart-summary">'+
+    '<div style="font-size:10px;color:#7aaad5;letter-spacing:2px;margin-bottom:10px">RÉCAPITULATIF</div>'+
+    orderCart.map(function(i){return '<div class="cart-row"><span>'+i.qty+'× '+i.name+'</span><span>'+fmtPrice(i.price*i.qty)+'</span></div>';}).join("")+
+    '<div style="border-top:1px solid #1a2030;margin:8px 0"></div>'+
+    '<div class="cart-total"><span>TOTAL</span><span>'+fmtPrice(total)+'</span></div>'+
+    '<div style="font-size:12px;color:#4a5a7a;margin-top:6px">'+
+    (pm?pm.icon+' '+pm.label:'')+'&nbsp;·&nbsp;'+
+    (orderPayStatus==="unpaid"?"❌ Non payé":orderPayStatus==="delivery"?"🚚 À livrer":"✅ Payé")+'</div>'+
+    '<button class="btn-gold btn-full" style="margin-top:12px" onclick="confirmOrder()">✓ Confirmer la commande · '+fmtPrice(total)+'</button>'+
+    '</div>';
+}
+
+function confirmOrder() {
+  if(!orderClient) { showToast("Sélectionnez un client",true); return; }
+  if(orderCart.length===0) { showToast("Ajoutez au moins un produit",true); return; }
+  var total = orderTotal();
+  var pm = PAYMENT_MODES.find(function(p){return p.id===orderPayment;});
+
+  // Paiement électronique → vérification
+  if(orderPayment !== "especes") {
+    document.getElementById("modal-order-payment-content").innerHTML =
+      "<div style='font-size:18px;font-weight:700;color:#c9a84c;margin-bottom:8px'>"+(pm?pm.icon+" "+pm.label:"")+"</div>"+
+      "<div style='font-size:22px;font-weight:700;color:#e8e0d0;margin-bottom:8px'>"+fmtPrice(total)+"</div>"+
+      "<div style='font-size:13px;color:#c97a7a;background:#2e0a0a;border-radius:8px;padding:10px;border:1px solid #6a1a1a'>⚠️ Vérifiez que le paiement a bien été reçu avant de confirmer.</div>";
+    openModal("modal-order-payment-check");
+    return;
+  }
+
+  // Espèces → confirmation directe
+  document.getElementById("modal-confirm-order-content").innerHTML =
+    "<div style='font-size:15px;font-weight:700;color:#e8e0d0;margin-bottom:6px'>"+orderClient.name+"</div>"+
+    "<div style='font-size:12px;color:#4a5a7a;margin-bottom:10px'>"+
+    orderCart.map(function(i){return i.qty+"× "+i.name;}).join(", ")+"</div>"+
+    "<div style='font-size:26px;font-weight:700;color:#c9a84c;margin-bottom:6px'>"+fmtPrice(total)+"</div>"+
+    "<div style='font-size:13px;color:#8a8070'>💵 Espèces · "+(orderPayStatus==="paid"?"✅ Payé":orderPayStatus==="unpaid"?"❌ Non payé":"🚚 Livraison")+"</div>";
+  openModal("modal-confirm-order");
+}
+
+function confirmOrderPaymentThen() {
+  closeModal("modal-order-payment-check");
+  var total = orderTotal();
+  var pm = PAYMENT_MODES.find(function(p){return p.id===orderPayment;});
+  document.getElementById("modal-confirm-order-content").innerHTML =
+    "<div style='font-size:15px;font-weight:700;color:#e8e0d0;margin-bottom:6px'>"+orderClient.name+"</div>"+
+    "<div style='font-size:12px;color:#4a5a7a;margin-bottom:10px'>"+
+    orderCart.map(function(i){return i.qty+"× "+i.name;}).join(", ")+"</div>"+
+    "<div style='font-size:26px;font-weight:700;color:#c9a84c;margin-bottom:6px'>"+fmtPrice(total)+"</div>"+
+    "<div style='font-size:13px;color:#7ac97a'>✅ Paiement "+(pm?pm.icon+" "+pm.label:"")+" confirmé</div>";
+  openModal("modal-confirm-order");
+}
+
+async function processOrder() {
+  closeModal("modal-confirm-order");
+  if(!orderClient || orderCart.length===0) return;
+  var total = orderTotal();
+  var pm = PAYMENT_MODES.find(function(p){return p.id===orderPayment;});
+  var commission = 0;
+  orderCart.forEach(function(item){
+    var comm = COMMISSIONS.find(function(x){return x.productId===item.id;});
+    if(comm) commission += (comm.commission||0)*item.qty;
+  });
+
+  var sale = {
+    date: new Date().toLocaleDateString("fr-FR"),
+    time: new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),
+    items: orderCart.map(function(i){return {id:i.id,name:i.name,qty:i.qty,price:i.price};}),
+    total:total, earned:0, discount:0, final:total,
+    discountApplied:false, giftApplied:false, vipChosen:false,
+    payment:orderPayment,
+    paymentLabel:pm?pm.label:"Espèces",
+    paymentIcon:pm?pm.icon:"💵",
+    paymentStatus:orderPayStatus,
+    vendorCode:currentUser?currentUser.code:"ADMIN",
+    vendorName:currentUser?currentUser.name:"Administrateur",
+    commission:commission,
+    isOrder:true
+  };
+
+  var updated = Object.assign({}, orderClient, {
+    totalSpent: (orderClient.totalSpent||0)+total,
+    history: [sale].concat(orderClient.history||[])
+  });
+  clients = clients.map(function(x){return x.id===orderClient.id?updated:x;});
+
+  try { var data=Object.assign({},updated); delete data.id; await db.collection("clients").doc(updated.id).set(data); } catch(e){}
+
+  showToast("✅ Commande enregistrée pour "+orderClient.name+" !");
+  orderCart=[]; orderClient=null;
+
+  // Retourner au bureau admin onglet commandes
+  showPage("page-admin");
+  openTab("orders");
+}
+
+
+// ═══════════════════════════════════════
+// LOGIN HELPERS
+// ═══════════════════════════════════════
+function togglePassword() {
+  var inp = document.getElementById("login-password");
+  var btn = document.getElementById("toggle-pass-btn");
+  if(inp.type === "text") { inp.type = "password"; btn.textContent = "👁"; }
+  else { inp.type = "text"; btn.textContent = "🙈"; }
+}
+
+function revealAdminPass() {
+  var el = document.getElementById("show-admin-pass");
+  if(el) el.textContent = ADMIN_PASSWORD;
+}
+
+// Horloge login
+function startLoginClock() {
+  function tick() {
+    var now = new Date();
+    var h = String(now.getHours()).padStart(2,"0");
+    var m = String(now.getMinutes()).padStart(2,"0");
+    var s = String(now.getSeconds()).padStart(2,"0");
+    var cl = document.getElementById("login-clock");
+    var dl = document.getElementById("login-date");
+    if(cl) cl.textContent = h+":"+m+":"+s;
+    if(dl) dl.textContent = now.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).toUpperCase();
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
 // ═══════════════════════════════════════
 // OFFLINE
 // ═══════════════════════════════════════
@@ -1698,6 +2223,7 @@ updateOffline();
 // ═══════════════════════════════════════
 loadAll();
 showPage("page-login");
+startLoginClock();
 
 // Enter key sur login
 document.getElementById("login-password").addEventListener("keydown", function(e){
@@ -1707,6 +2233,82 @@ document.getElementById("login-code").addEventListener("keydown", function(e){
   if(e.key==="Enter") document.getElementById("login-password").focus();
 });
 </script>
+
+
+<!-- ═══════════════════════════════════════
+     NOUVELLE COMMANDE
+═══════════════════════════════════════ -->
+<div id="page-new-order" class="page">
+  <div class="page-header">
+    <h2>📋 Nouvelle Commande</h2>
+    <p>Enregistrez une commande client</p>
+  </div>
+
+  <!-- Recherche client -->
+  <div class="acard" style="margin-bottom:12px">
+    <div class="acard-title">CLIENT</div>
+    <div class="search-bar" style="margin-bottom:8px">
+      <input id="order-client-search" placeholder="Rechercher un client..." oninput="searchOrderClient()" 
+        style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:11px 14px 11px 38px;border-radius:10px;font-size:14px">
+    </div>
+    <div id="order-client-results"></div>
+    <div id="order-client-selected" style="display:none;background:#0a0f1a;border:1px solid #c9a84c44;border-radius:10px;padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="order-client-name" style="font-size:15px;font-weight:700;color:#e8e0d0"></div>
+          <div id="order-client-code" style="font-size:11px;color:#c9a84c;font-family:monospace;margin-top:2px"></div>
+        </div>
+        <button onclick="clearOrderClient()" style="background:none;color:#8a8070;font-size:18px;padding:4px 8px">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Produits -->
+  <div class="acard" style="margin-bottom:12px">
+    <div class="acard-title">PRODUITS</div>
+    <div id="order-products-list"></div>
+  </div>
+
+  <!-- Paiement -->
+  <div class="acard" style="margin-bottom:12px">
+    <div class="acard-title">MODE DE PAIEMENT</div>
+    <div id="order-payment-modes" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+    <div class="acard-title">STATUT DU PAIEMENT</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <button class="pst" id="opst-paid" onclick="setOrderPayStatus('paid')">✅ Payé</button>
+      <button class="pst" id="opst-unpaid" onclick="setOrderPayStatus('unpaid')">❌ Non payé</button>
+      <button class="pst" id="opst-delivery" onclick="setOrderPayStatus('delivery')">🚚 Livraison</button>
+    </div>
+    <div id="order-pay-alert" style="margin-top:8px"></div>
+  </div>
+
+  <!-- Récap & Confirmer -->
+  <div id="order-summary"></div>
+</div>
+
+<!-- Modal confirmation commande -->
+<div id="modal-confirm-order" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">📋 Confirmer la commande</div>
+    <div class="modal-content" id="modal-confirm-order-content"></div>
+    <div class="modal-btns">
+      <button class="btn-outline" onclick="closeModal('modal-confirm-order')">Annuler</button>
+      <button class="btn-gold" onclick="processOrder()">✅ Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal paiement électronique commande -->
+<div id="modal-order-payment-check" class="modal">
+  <div class="modal-box" style="border-color:#c97a4a">
+    <div class="modal-title" style="color:#c97a4a">⚠️ Vérification paiement</div>
+    <div class="modal-content" id="modal-order-payment-content"></div>
+    <div class="modal-btns">
+      <button class="btn-red" onclick="closeModal('modal-order-payment-check')">❌ Pas encore</button>
+      <button class="btn-green" onclick="confirmOrderPaymentThen()">✅ Oui, reçu !</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
