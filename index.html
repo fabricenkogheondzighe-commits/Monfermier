@@ -349,7 +349,7 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
     <div class="login-field">
       <label>MOT DE PASSE</label>
       <div style="position:relative">
-        <input id="login-password" type="text" placeholder="Votre mot de passe" autocomplete="off" style="width:100%;padding-right:40px">
+        <input id="login-password" type="password" placeholder="Votre mot de passe" style="width:100%;padding-right:40px">
         <button onclick="togglePassword()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;color:#8a8070;font-size:16px;padding:4px" id="toggle-pass-btn">👁</button>
       </div>
       <div style="font-size:11px;color:#4a5a7a;margin-top:4px">Mot de passe admin : <span style="color:#c9a84c;font-family:monospace" id="show-admin-pass">••••••••••••••</span> <button onclick="revealAdminPass()" style="background:none;color:#c9a84c;font-size:10px;text-decoration:underline">Afficher</button></div>
@@ -2182,8 +2182,8 @@ async function processOrder() {
 function togglePassword() {
   var inp = document.getElementById("login-password");
   var btn = document.getElementById("toggle-pass-btn");
-  if(inp.type === "text") { inp.type = "password"; btn.textContent = "👁"; }
-  else { inp.type = "text"; btn.textContent = "🙈"; }
+  if(inp.type === "password") { inp.type = "text"; btn.textContent = "🙈"; }
+  else { inp.type = "password"; btn.textContent = "👁"; }
 }
 
 function revealAdminPass() {
