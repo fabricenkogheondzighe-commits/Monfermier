@@ -19,8 +19,9 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
 /* ═══════════════════════════════════════
    PAGES
 ═══════════════════════════════════════ */
-.page{display:none;min-height:100vh}
-.page.active{display:block}
+.page{display:none !important}
+.page.active{display:block !important}
+#page-login.active{display:flex !important}
 
 /* ═══════════════════════════════════════
    HEADER
@@ -950,7 +951,7 @@ function renderAdminClientsList(list) {
     var t = getType(c.type);
     var mStats2 = getClientMonthStats(c);
     var elig = (c.type||"particulier")==="particulier" && mStats2.achats >= THRESHOLD_ORDERS && mStats2.montant >= THRESHOLD_AMOUNT;
-    var pct = Math.min(100, ((c.points||0)/THRESHOLD)*100);
+    var pct = Math.min(100, ((c.points||0)/THRESHOLD_AMOUNT)*100);
     return '<div class="client-card" onclick="openClientProfile(\''+c.id+'\')">' +
       '<div class="avatar'+(elig?" elig":"")+'">'+initials(c.name)+'</div>' +
       '<div class="client-info">' +
@@ -1736,8 +1737,8 @@ function renderClientProfile() {
   if(!c) return;
   var t = getType(c.type);
   var isParticulier = (c.type||"particulier") === "particulier";
-  var elig = isParticulier && (c.points||0) >= THRESHOLD;
-  var pct = Math.min(100, ((c.points||0)/THRESHOLD)*100);
+  var elig = isParticulier && (c.points||0) >= THRESHOLD_AMOUNT;
+  var pct = Math.min(100, ((c.points||0)/THRESHOLD_AMOUNT)*100);
 
   var html = '<div class="profile-card">' +
     '<div class="profile-top">' +
@@ -3377,20 +3378,24 @@ document.getElementById("login-code").addEventListener("keydown", function(e){
 
   <!-- Recherche client -->
   <div class="acard" style="margin-bottom:12px">
-    <div class="acard-title">CLIENT</div>
-    <div class="search-bar" style="margin-bottom:8px">
-      <input id="order-client-search" placeholder="Rechercher un client..." oninput="searchOrderClient()" 
-        style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:11px 14px 11px 38px;border-radius:10px;font-size:14px">
-    </div>
+    <div class="acard-title">👤 CLIENT</div>
+    <p style="font-size:12px;color:#4a5a7a;margin-bottom:8px">Tapez le nom ou le code du client pour le retrouver</p>
+    <input id="order-client-search" placeholder="🔍 Rechercher un client..." oninput="searchOrderClient()" 
+      style="width:100%;background:#0a0f1a;border:2px solid #c9a84c55;color:#e8e0d0;padding:13px 16px;border-radius:10px;font-size:15px;margin-bottom:8px">
     <div id="order-client-results"></div>
-    <div id="order-client-selected" style="display:none;background:#0a0f1a;border:1px solid #c9a84c44;border-radius:10px;padding:12px">
+    <div id="order-client-selected" style="display:none;background:linear-gradient(135deg,#0d2520,#0a1a14);border:2px solid #3d6a3d;border-radius:10px;padding:12px;margin-top:4px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div id="order-client-name" style="font-size:15px;font-weight:700;color:#e8e0d0"></div>
+          <div style="font-size:11px;color:#7ac97a;margin-bottom:3px">✅ Client sélectionné</div>
+          <div id="order-client-name" style="font-size:16px;font-weight:700;color:#e8e0d0"></div>
           <div id="order-client-code" style="font-size:11px;color:#c9a84c;font-family:monospace;margin-top:2px"></div>
         </div>
-        <button onclick="clearOrderClient()" style="background:none;color:#8a8070;font-size:18px;padding:4px 8px">✕</button>
+        <button onclick="clearOrderClient()" style="background:#2e0505;border:1px solid #6a2020;color:#ff8080;font-size:12px;padding:6px 10px;border-radius:6px">✕ Changer</button>
       </div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <span style="font-size:11px;color:#4a5a7a">Client introuvable ?</span>
+      <button onclick="openNewClientPage()" style="background:none;color:#c9a84c;font-size:11px;text-decoration:underline;padding:2px 6px">Créer un nouveau client</button>
     </div>
   </div>
 
