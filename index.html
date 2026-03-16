@@ -443,6 +443,12 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
       <span class="tab-icon">⚙️</span>Paramètres
     </button>
   </div>
+  <!-- ONGLETS RANGÉE 4 -->
+  <div class="admin-tabs-row2" style="grid-template-columns:repeat(1,1fr);padding-top:0">
+    <button class="admin-tab" id="tab-reglement" onclick="openTab('reglement')">
+      <span class="tab-icon">📜</span>Règlement Intérieur
+    </button>
+  </div>
   <div id="admin-content"></div>
 </div>
 
@@ -933,6 +939,7 @@ function openTab(tab) {
     case "analyses":  renderTabAnalyses(content); break;
     case "rapports":  renderTabRapports(content); break;
     case "settings":  renderTabSettings(content); break;
+    case "reglement": renderTabReglement(content); break;
   }
 }
 
@@ -2111,6 +2118,115 @@ function renderTabSettings(el){
   el.innerHTML=html;
 }
 
+// ═══════════════════════════════════════
+// ONGLET RÈGLEMENT INTÉRIEUR
+// ═══════════════════════════════════════
+
+function getReglement() {
+  try { return JSON.parse(localStorage.getItem("mf_reglement")||"{}"); } catch(e) { return {}; }
+}
+function saveReglementData(data) {
+  localStorage.setItem("mf_reglement", JSON.stringify(data));
+}
+
+function renderTabReglement(el) {
+  var reg = getReglement();
+  var contenu = reg.contenu || "";
+  var dateModif = reg.dateModif || "";
+  var publie = reg.publie || false;
+
+  var html = '';
+
+  // Statut publication
+  html += '<div class="acard" style="border-color:'+(publie?"#3d6a3d44":"#c9202044")+';background:linear-gradient(135deg,'+(publie?"#0d2b14,#1a4a24":"#2e0505,#1a0000")+')">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  html += '<div class="acard-title" style="margin-bottom:0;color:'+(publie?"#7ac97a":"#ff6666")+'">'+(publie?"✅ RÈGLEMENT PUBLIÉ":"⛔ RÈGLEMENT NON PUBLIÉ")+'</div>';
+  html += '<div style="font-size:11px;color:#4a5a7a">'+(dateModif?"Modifié : "+dateModif:"Jamais enregistré")+'</div>';
+  html += '</div>';
+  html += '<p style="font-size:12px;color:'+(publie?"#4a9a4a":"#c97a7a")+';margin-bottom:12px">'+(publie?"Le règlement est visible sur l'espace de chaque vendeur connecté.":"Le règlement n'est pas encore visible par les vendeurs.")+'</p>';
+  html += '<div style="display:flex;gap:8px">';
+  html += '<button onclick="publierReglement()" style="flex:1;background:linear-gradient(135deg,#0d2b14,#1a6a24);border:2px solid #3d6a3d;color:#7ac97a;padding:13px;border-radius:10px;font-size:14px;font-weight:700">'+( publie?"🔄 Enregistrer & Republier":"📢 Enregistrer & Publier")+'</button>';
+  if(publie) html += '<button onclick="depublierReglement()" style="background:#2e0505;border:1px solid #c9202066;color:#ff6666;padding:13px 16px;border-radius:10px;font-size:13px;font-weight:600">Retirer</button>';
+  html += '</div></div>';
+
+  // Éditeur de contenu
+  html += '<div class="acard">';
+  html += '<div class="acard-title">✏️ CONTENU DU RÈGLEMENT</div>';
+  html += '<p style="font-size:11px;color:#4a5a7a;margin-bottom:10px">Rédigez ou collez le règlement. Le texte sera affiché tel quel aux vendeurs.</p>';
+  html += '<textarea id="reg-textarea" style="width:100%;min-height:420px;background:#060d18;border:1px solid #1a2030;color:#e8e0d0;padding:14px;border-radius:10px;font-size:13px;line-height:1.8;resize:vertical;font-family:Georgia,serif" placeholder="Rédigez ici le règlement intérieur...">'+escapeHtml(contenu)+'</textarea>';
+  html += '</div>';
+
+  // Aperçu formaté
+  if(contenu) {
+    html += '<div class="acard">';
+    html += '<div class="acard-title">👁️ APERÇU (vue vendeur)</div>';
+    html += renderReglementView(contenu, false);
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  return (str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function renderReglementView(contenu, compact) {
+  if(!contenu) return '<div class="empty-state"><div class="es-icon">📜</div><p>Aucun règlement publié</p></div>';
+  var lines = contenu.split('\n');
+  var html = '<div style="font-size:'+(compact?'12px':'13px')+';line-height:1.9;color:#c8c0b0">';
+  lines.forEach(function(line) {
+    var l = line.trim();
+    if(!l) { html += '<div style="height:8px"></div>'; return; }
+    // Chapitre (CHAPITRE I, II, etc.)
+    if(/^CHAPITRE\s+(I|II|III|IV|V|VI|VII|VIII|IX|X)/i.test(l) || /^---/.test(l)) {
+      html += '<div style="background:linear-gradient(135deg,#001428,#002040);border-left:3px solid #c9a84c;border-radius:0 8px 8px 0;padding:10px 14px;margin:14px 0 8px;font-size:'+(compact?'11px':'12px')+';font-weight:700;color:#c9a84c;letter-spacing:2px">'+escapeHtml(l)+'</div>';
+    }
+    // Article
+    else if(/^Article\s+\d+/i.test(l)) {
+      html += '<div style="font-size:'+(compact?'12px':'13px')+';font-weight:700;color:#7aaad5;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #1a2a3a">'+escapeHtml(l)+'</div>';
+    }
+    // TOLÉRANCE ZÉRO / AVERTISSEMENT
+    else if(/TOLÉRANCE ZÉRO|TOLERANCE ZÉRO|AVERTISSEMENT/i.test(l)) {
+      html += '<div style="background:#2e0505;border:1px solid #c9202066;border-radius:8px;padding:10px 14px;margin:8px 0;font-size:'+(compact?'11px':'12px')+';color:#ff8080;font-weight:700">⚠️ '+escapeHtml(l)+'</div>';
+    }
+    // Titre principal (MON FERMIER, RÈGLEMENT, PRÉAMBULE, etc.)
+    else if(l === l.toUpperCase() && l.length > 3 && !/^[-•*]/.test(l)) {
+      html += '<div style="font-size:'+(compact?'13px':'15px')+';font-weight:700;color:#c9a84c;margin:10px 0 4px;text-align:center">'+escapeHtml(l)+'</div>';
+    }
+    // Bullet / liste
+    else if(/^[-•*]\s/.test(l)) {
+      html += '<div style="display:flex;gap:8px;margin:3px 0;padding-left:8px"><span style="color:#c9a84c;flex-shrink:0">▸</span><span>'+escapeHtml(l.replace(/^[-•*]\s/,''))+'</span></div>';
+    }
+    // Texte normal
+    else {
+      html += '<div style="margin:3px 0">'+escapeHtml(l)+'</div>';
+    }
+  });
+  html += '</div>';
+  return html;
+}
+
+function publierReglement() {
+  var textarea = document.getElementById("reg-textarea");
+  if(!textarea) return;
+  var contenu = textarea.value.trim();
+  if(!contenu) { showToast("Le règlement est vide !", true); return; }
+  var now = new Date();
+  var dateModif = now.toLocaleDateString("fr-FR")+" à "+now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+  saveReglementData({ contenu: contenu, dateModif: dateModif, publie: true });
+  showToast("✅ Règlement publié ! Visible par tous les vendeurs.");
+  openTab("reglement");
+}
+
+function depublierReglement() {
+  var reg = getReglement();
+  reg.publie = false;
+  saveReglementData(reg);
+  showToast("⛔ Règlement retiré de l'espace vendeur.");
+  openTab("reglement");
+}
+
 function saveObjectif(){
   var val=parseInt(document.getElementById("set-objectif").value);
   if(!val||val<=0){showToast("Montant invalide",true);return;}
@@ -2736,6 +2852,23 @@ function renderVendorHome() {
     '<button onclick="showMyCommissions()" style="padding:12px;background:#0a0f1a;border:1px solid #a07ad544;color:#a07ad5;border-radius:10px;font-size:13px;font-weight:600">💰 Mes commissions</button>'+
     '</div>';
 
+  // Règlement intérieur (si publié)
+  var reg = getReglement();
+  if(reg && reg.publie && reg.contenu) {
+    html += '<div style="margin:0 16px 16px">';
+    html += '<div style="background:linear-gradient(135deg,#0d1020,#1a1530);border:2px solid #c9a84c55;border-radius:12px;overflow:hidden">';
+    html += '<div onclick="toggleReglementVendeur()" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer">';
+    html += '<div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px">📜</div><div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#c9a84c">Règlement Intérieur</div>';
+    html += '<div style="font-size:10px;color:#4a5a7a;margin-top:2px">Modifié le : '+(reg.dateModif||"—")+'</div>';
+    html += '</div></div>';
+    html += '<div id="reg-chevron" style="font-size:18px;color:#c9a84c;transition:transform 0.3s">▼</div>';
+    html += '</div>';
+    html += '<div id="reg-content-vendeur" style="display:none;padding:0 16px 16px;border-top:1px solid #c9a84c22">';
+    html += '<div style="margin-top:12px">'+renderReglementView(reg.contenu, true)+'</div>';
+    html += '</div></div></div>';
+  }
+
   // Derniers clients
   if(mesClients.length > 0) {
     html += '<div class="vh-clients"><div class="vh-section-title">MES CLIENTS ('+mesClients.length+')</div>';
@@ -2754,6 +2887,19 @@ function renderVendorHome() {
 
 
 
+
+function toggleReglementVendeur() {
+  var content = document.getElementById("reg-content-vendeur");
+  var chevron = document.getElementById("reg-chevron");
+  if(!content) return;
+  if(content.style.display === "none") {
+    content.style.display = "block";
+    if(chevron) chevron.style.transform = "rotate(180deg)";
+  } else {
+    content.style.display = "none";
+    if(chevron) chevron.style.transform = "rotate(0deg)";
+  }
+}
 
 // ═══════════════════════════════════════
 // PAIEMENT COMMISSIONS VENDEUR
@@ -3859,6 +4005,15 @@ updateOffline();
 loadAll();
 showPage("page-login");
 startLoginClock();
+
+// Pré-remplir le règlement avec le contenu par défaut si jamais enregistré
+(function initReglement() {
+  var existing = localStorage.getItem("mf_reglement");
+  if(!existing) {
+    var defaultReglement = "MON FERMIER SARL\nProduction & Distribution de Piment — Qualité & Hygiène Alimentaire\n\nRÈGLEMENT INTÉRIEUR\nET CODE DE CONDUITE\n\nVersion 1.0 — 2025\nApplicable à tous les employés et vendeurs\nDirecteur Général : M. Fabrice NKOGHE\n\nPRÉAMBULE\n\nLe présent règlement intérieur est établi conformément aux dispositions légales en vigueur et aux valeurs fondatrices de Mon Fermier SARL. Il s'applique à l'ensemble du personnel, sans exception, dès la signature du contrat de travail ou d'accord commercial.\n\nMon Fermier SARL est une entreprise spécialisée dans la production et la distribution de piment en pâte et en poudre. Notre activité touche directement à la santé alimentaire des consommateurs. C'est pourquoi les règles d'hygiène et de qualité constituent le socle absolu de notre fonctionnement.\n\nAVERTISSEMENT : Le non-respect de ce règlement expose son auteur à des sanctions pouvant aller jusqu'au licenciement immédiat sans préavis ni indemnité.\n\n---\nCHAPITRE I — HYGIÈNE & SÉCURITÉ ALIMENTAIRE\n---\n\nLa protection de la santé du consommateur est une priorité absolue. Tout manquement aux règles d'hygiène constitue une faute grave.\n\nArticle 1 — Tenue de travail et propreté personnelle\n\n- Le port d'une tenue de travail propre et adaptée est obligatoire lors de toute manipulation des produits.\n- Les mains doivent être lavées et désinfectées avant chaque prise de poste, après chaque pause, et après tout contact avec des surfaces souillées.\n- Les ongles doivent être coupés courts et propres. Le vernis à ongles est interdit lors des manipulations alimentaires.\n- Le port de bijoux (bagues, bracelets, montres) est strictement interdit lors des manipulations de produits alimentaires.\n- Les cheveux doivent être couverts (bonnet, filet) lors de toute manipulation de piment en pâte ou en poudre.\n- Il est interdit de tousser, éternuer ou cracher à proximité des produits sans se couvrir la bouche et se désinfecter immédiatement après.\n\nArticle 2 — Manipulation et conservation des produits\n\n- Tout produit tombé à terre ou entré en contact avec une surface non désinfectée est considéré comme impropre à la vente et doit être mis à l'écart immédiatement.\n- Les contenants (seaux, sachets, bocaux) doivent être hermétiquement fermés après chaque utilisation.\n- Il est formellement interdit de goûter les produits avec les doigts ou un ustensile non propre.\n- La chaîne du froid ou les conditions de conservation prescrites doivent être respectées en tout temps.\n- Tout signe de détérioration, de moisissure ou d'odeur anormale doit être signalé immédiatement à la direction.\n- Les produits périmés ou dégradés ne peuvent en aucun cas être vendus ou remis à un client.\n\nArticle 3 — Propreté des espaces de travail\n\n- Chaque employé est responsable de la propreté de son poste de travail. Un poste sale en fin de journée constitue une faute.\n- Le nettoyage et la désinfection des surfaces de travail doivent être effectués au minimum en début et en fin de chaque journée de travail.\n- Les déchets de production doivent être éliminés dans les poubelles prévues à cet effet et ne doivent jamais s'accumuler.\n- Les zones de stockage doivent être maintenues ordonnées, sèches et protégées de toute contamination extérieure.\n- Il est interdit de manger, boire ou fumer dans les zones de production, de stockage ou de conditionnement des produits.\n\nTOLÉRANCE ZÉRO : Toute vente délibérée de produit périmé, contaminé ou altéré constitue une faute grave passible de licenciement immédiat et de poursuites judiciaires.\n\n---\nCHAPITRE II — DISCIPLINE & COMPORTEMENT PROFESSIONNEL\n---\n\nArticle 4 — Ponctualité et assiduité\n\n- Tout employé est tenu d'être présent à son poste à l'heure fixée dans son contrat ou accord commercial.\n- Tout retard doit être signalé avant la prise de poste par appel téléphonique. Trois retards non justifiés dans le mois constituent une faute sérieuse.\n- Toute absence doit être justifiée dans les 24 heures. Une absence injustifiée de plus de 2 jours consécutifs peut entraîner la rupture du contrat.\n- L'abandon de poste sans avertissement préalable est considéré comme une faute grave.\n\nArticle 5 — Respect et relations professionnelles\n\n- Le respect mutuel entre collègues, supérieurs et clients est une obligation non négociable.\n- Tout acte d'insubordination, d'insulte, de harcèlement ou de violence verbale ou physique entraîne une sanction immédiate.\n- Les conflits entre employés doivent être portés à la connaissance de la direction.\n- Il est interdit de tenir des propos désobligeants ou diffamatoires sur l'entreprise, ses produits ou sa direction, que ce soit en public ou sur les réseaux sociaux.\n- La politesse et la cordialité sont exigées en permanence avec les clients, partenaires et fournisseurs.\n\nArticle 6 — Usage des outils et équipements de l'entreprise\n\n- Les équipements mis à disposition sont strictement réservés à l'usage professionnel.\n- Tout dommage causé par négligence ou mauvais usage sera imputé à l'employé concerné.\n- Il est interdit d'emporter des outils, équipements ou produits de l'entreprise sans autorisation écrite de la direction.\n- Le téléphone personnel doit rester en mode silencieux pendant les heures de travail.\n\n---\nCHAPITRE III — INTÉGRITÉ, HONNÊTETÉ & CONFIDENTIALITÉ\n---\n\nArticle 7 — Interdiction stricte de vol, fraude et détournement\n\nTOLÉRANCE ZÉRO : Tout vol, détournement de fonds ou de marchandise, falsification de données de vente ou dissimulation d'invendus entraîne un licenciement immédiat et des poursuites judiciaires.\n\n- Il est formellement interdit de prélever des fonds, produits ou marchandises appartenant à l'entreprise, quelle qu'en soit la valeur.\n- Toute recette collectée lors d'une vente doit être intégralement remise à la direction dans les délais convenus, sans exception.\n- Il est interdit de falsifier les quantités vendues, les prix de vente ou les rapports de stock.\n- Tout écart entre les produits remis et les fonds reçus doit être signalé immédiatement. Tout écart non signalé est présumé frauduleux.\n\nArticle 8 — Confidentialité et secret professionnel\n\n- Toutes les informations relatives à l'entreprise (recettes, prix d'achat, clientèle, fournisseurs, stratégies commerciales) sont strictement confidentielles.\n- Il est interdit de divulguer ces informations à des tiers, concurrents, ou toute personne étrangère à l'entreprise.\n- Cette obligation de confidentialité s'applique pendant la durée du contrat et pendant une période de deux (2) ans après sa fin.\n\nArticle 9 — Loyauté et non-concurrence\n\n- Il est interdit d'exercer, directement ou indirectement, une activité concurrente à celle de Mon Fermier SARL sans autorisation préalable écrite.\n- Il est interdit de démarcher les clients de l'entreprise à des fins personnelles ou au profit d'un concurrent.\n\n---\nCHAPITRE IV — RÈGLES SPÉCIFIQUES AUX VENDEURS\n---\n\nArticle 10 — Gestion des produits et du stock\n\n- Chaque vendeur reçoit ses produits en début de journée et doit en signer la réception. Cette signature vaut engagement de responsabilité.\n- En fin de journée, le vendeur doit remettre les invendus ET la totalité des fonds correspondant aux ventes effectuées.\n- Il est interdit de stocker des produits de l'entreprise à son domicile sans autorisation écrite.\n- Toute perte, casse ou vol de produit doit être signalé immédiatement avec un rapport circonstancié. Les pertes non justifiées seront imputées au vendeur.\n- Les vendeurs n'ont pas le droit de modifier les prix de vente fixés par la direction, ni d'accorder des remises sans autorisation préalable.\n\nArticle 11 — Présentation et comportement lors des ventes\n\n- Le vendeur doit être propre, correctement habillé et porter les équipements d'hygiène lors de la manipulation des produits devant les clients.\n- Il est interdit de vendre dans un état d'ivresse ou sous l'influence de substances quelconques.\n- Le vendeur représente l'image de Mon Fermier SARL. Tout comportement déplacé, agressif ou malhonnête envers un client sera sanctionné.\n- Les plaintes des clients doivent être remontées à la direction dans les 24 heures.\n\nArticle 12 — Compte-rendu et communication\n\n- Chaque vendeur est tenu de rendre compte de ses activités quotidiennement via l'application Mon Fermier ou par tout moyen convenu avec la direction.\n- Tout problème rencontré (client difficile, produit dégradé, accident) doit être signalé le jour même.\n- L'absence de communication de plus de 48 heures sans justification valable est considérée comme un abandon de poste.\n\n---\nCHAPITRE V — SANCTIONS DISCIPLINAIRES\n---\n\nArticle 13 — Échelle des sanctions\n\n- Niveau 1 — Mineur : Avertissement oral (retard non signalé, poste non nettoyé, usage du téléphone en service).\n- Niveau 2 — Sérieux : Avertissement écrit + retenue sur salaire/commission (récidive, absence injustifiée, insubordination légère, non-respect des règles d'hygiène).\n- Niveau 3 — Grave : Licenciement avec préavis (manipulation de produits périmés, insubordination grave, violence verbale, abandon de poste).\n- Niveau 4 — FAUTE GRAVE : Licenciement immédiat + poursuites judiciaires (vol, fraude, détournement, vente de produits contaminés, violence physique).\n\n---\nCHAPITRE VI — DISPOSITIONS GÉNÉRALES\n---\n\nArticle 14 — Entrée en vigueur et diffusion\n\n- Le présent règlement entre en vigueur à la date de sa signature par la direction et s'applique immédiatement à l'ensemble du personnel.\n- Chaque employé ou vendeur recevra un exemplaire et devra signer la page d'engagement jointe.\n- L'ignorance du présent règlement ne peut être invoquée comme motif d'excuse.\n\nArticle 15 — Révision du règlement\n\n- La direction se réserve le droit de modifier le présent règlement à tout moment. Toute modification sera communiquée au personnel avec un préavis de 15 jours.\n\nArticle 16 — Droit de recours\n\n- Tout employé qui s'estime injustement sanctionné peut adresser un recours écrit à la direction dans un délai de 7 jours suivant la sanction.\n- La direction s'engage à examiner tout recours dans un délai de 15 jours ouvrables.\n\nArticle 17 — Engagement collectif\n\n- Chaque membre de l'équipe Mon Fermier SARL est ambassadeur de la marque et de ses valeurs : qualité, honnêteté, hygiène et excellence.\n- L'entreprise s'engage en contrepartie à fournir les équipements nécessaires, à former son personnel et à traiter chacun avec respect et équité.\n\nMon Fermier SARL — Qualité, Hygiène & Excellence — 2025";
+    localStorage.setItem("mf_reglement", JSON.stringify({ contenu: defaultReglement, dateModif: "", publie: false }));
+  }
+})();
 
 // Enter key sur login
 document.getElementById("login-password").addEventListener("keydown", function(e){
