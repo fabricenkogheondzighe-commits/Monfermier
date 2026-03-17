@@ -444,9 +444,13 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
     </button>
   </div>
   <!-- ONGLETS RANGÉE 4 -->
-  <div class="admin-tabs-row2" style="grid-template-columns:repeat(1,1fr);padding-top:0">
+  <div class="admin-tabs-row2" style="grid-template-columns:repeat(2,1fr);padding-top:0">
     <button class="admin-tab" id="tab-reglement" onclick="openTab('reglement')">
-      <span class="tab-icon">📜</span>Règlement Intérieur
+      <span class="tab-icon">📜</span>Règlement
+    </button>
+    <button class="admin-tab" id="tab-messages" onclick="openTab('messages')" style="position:relative">
+      <span class="tab-icon">💬</span>Messages
+      <span id="msg-badge-admin" style="display:none;position:absolute;top:6px;right:6px;background:#ff4444;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:10px;min-width:16px;text-align:center">0</span>
     </button>
   </div>
   <div id="admin-content"></div>
@@ -781,7 +785,7 @@ function doLogin() {
   // Vendeur
   var vendor = vendors.find(function(v){ return v.code===code && v.password===pass; });
   if(vendor) {
-    if(vendor.suspended) { err.textContent="Compte suspendu."; err.style.display="block"; return; }
+    if(vendor.suspended) { err.innerHTML="⛔ Compte suspendu. Contactez la direction."; err.style.display="block"; err.style.padding="10px"; err.style.borderRadius="8px"; err.style.background="#2e050533"; err.style.border="1px solid #c9202066"; return; }
     currentUser = {code:vendor.code, name:vendor.name, role:"vendor", vendorId:vendor.id};
     onLogin();
     return;
@@ -799,12 +803,83 @@ function onLogin() {
   logout.style.display = "block";
 
   if(currentUser.role === "vendor") {
+    var vendor = vendors.find(function(v){ return v.code===currentUser.code; });
+    // Enregistrer l alerte de connexion pour l admin
+    enregistrerAlerteConnexion(vendor);
     showPage("page-vendor-home");
-    renderVendorHome();
+    // Première connexion => afficher le règlement en plein écran
+    if(vendor && vendor.firstLogin) {
+      showReglementFirstLogin(vendor);
+    } else {
+      renderVendorHome();
+    }
   } else {
     showPage("page-home");
     renderHome();
   }
+}
+
+function enregistrerAlerteConnexion(vendor) {
+  if(!vendor) return;
+  var now = new Date();
+  var alertes = [];
+  try { alertes = JSON.parse(localStorage.getItem("mf_alertes_connexion")||"[]"); } catch(e){}
+  alertes.unshift({
+    vendorName: vendor.name,
+    vendorCode: vendor.code,
+    date: now.toLocaleDateString("fr-FR"),
+    time: now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),
+    timestamp: now.getTime()
+  });
+  // Garder seulement les 50 dernières alertes
+  if(alertes.length > 50) alertes = alertes.slice(0, 50);
+  localStorage.setItem("mf_alertes_connexion", JSON.stringify(alertes));
+  // Badge de notification sur l accueil admin
+  localStorage.setItem("mf_new_connexion", "1");
+}
+
+function showReglementFirstLogin(vendor) {
+  var reg = getReglement();
+  var contenu = reg && reg.contenu ? reg.contenu : null;
+  var vendorHomeContent = document.getElementById("vendor-home-content");
+  var html = '<div style="min-height:100vh;background:linear-gradient(160deg,#000d1a 0%,#000a14 100%);padding:0;display:flex;flex-direction:column">';
+  // Header règlement
+  html += '<div style="background:linear-gradient(135deg,#0d1525,#1a2540);padding:24px 20px 16px;text-align:center;border-bottom:2px solid #c9a84c44">';
+  html += '<div style="font-size:32px;margin-bottom:8px">📜</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:#c9a84c;letter-spacing:1px">Règlement Intérieur</div>';
+  html += '<div style="font-size:13px;color:#7aaad5;margin-top:6px">MON FERMIER SARL</div>';
+  html += '<div style="margin-top:12px;background:#2a1f0a;border:1px solid #c9a84c44;border-radius:10px;padding:12px">';
+  html += '<div style="font-size:13px;color:#e8e0d0">Bonjour <strong style="color:#c9a84c">'+vendor.name+'</strong> 👋</div>';
+  html += '<div style="font-size:12px;color:#8a8070;margin-top:4px">Bienvenue ! Veuillez lire attentivement le règlement intérieur avant d&#39;accéder à votre espace.</div>';
+  html += '</div></div>';
+  // Contenu règlement
+  html += '<div style="flex:1;overflow-y:auto;padding:16px 16px 0">';
+  if(contenu) {
+    html += renderReglementView(contenu, false);
+  } else {
+    html += '<div style="text-align:center;padding:40px 20px;color:#4a5a7a"><div style="font-size:48px;margin-bottom:12px">📜</div><p>Aucun règlement enregistré par la direction.</p></div>';
+  }
+  html += '</div>';
+  // Bouton d acceptation
+  html += '<div style="padding:20px 16px;background:linear-gradient(0deg,#000d1a,transparent);position:sticky;bottom:0">';
+  html += '<div style="background:#0a0f1a;border:1px solid #c9a84c33;border-radius:10px;padding:12px;margin-bottom:12px;font-size:11px;color:#8a8070;text-align:center">En cliquant ci-dessous, vous confirmez avoir pris connaissance du règlement et vous engagez à le respecter.</div>';
+  html += "<button onclick=\"accepterReglementFirstLogin()\" style=\"width:100%;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:16px;border-radius:12px;font-size:16px;font-weight:700;border:none;letter-spacing:0.5px\">&#x2705; J&#39;ai lu et j&#39;accepte le r&#232;glement</button>";
+  html += '</div></div>';
+  vendorHomeContent.innerHTML = html;
+}
+
+async function accepterReglementFirstLogin() {
+  var vendor = vendors.find(function(v){ return v.code===currentUser.code; });
+  if(!vendor) { renderVendorHome(); return; }
+  // Marquer firstLogin = false
+  vendor.firstLogin = false;
+  vendor.reglementAccepteAt = new Date().toLocaleDateString("fr-FR")+" à "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+  try {
+    var data = Object.assign({}, vendor); delete data.id;
+    await db.collection("vendors").doc(vendor.id).set(data);
+  } catch(e){}
+  showToast("✅ Règlement accepté. Bienvenue !");
+  renderVendorHome();
 }
 
 function doLogout() {
@@ -853,6 +928,8 @@ function renderHome() {
 
   // Horloge
   startHomeClock();
+  // Rafraîchir badge messages
+  updateMsgBadge();
 
   // Message de bienvenue selon l'heure
   var h = new Date().getHours();
@@ -896,12 +973,63 @@ function renderHome() {
       alertsBas.map(function(s){return '<div style="font-size:11px;color:#ff9966">'+s.name+' : '+s.disponible+' u.</div>';}).join('')+
       '</div>';
   }
+  // Alertes de connexion vendeurs
+  var alertesConn = [];
+  try { alertesConn = JSON.parse(localStorage.getItem("mf_alertes_connexion")||"[]"); } catch(e){}
+  var hasNew = localStorage.getItem("mf_new_connexion") === "1";
+  var alertConnHtml = "";
+  if(alertesConn.length > 0) {
+    var recent = alertesConn.slice(0,5);
+    alertConnHtml = '<div style="margin-top:12px;background:#060d18;border:1px solid '+(hasNew?"#c9a84c55":"#1a2030")+';border-radius:10px;overflow:hidden">';
+    alertConnHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:'+(hasNew?"linear-gradient(135deg,#2a1f0a,#1a1308)":"#0a0f1a")+';cursor:pointer" onclick="toggleConnAlerts()">';
+    alertConnHtml += '<div style="display:flex;align-items:center;gap:8px">';
+    alertConnHtml += '<span style="font-size:16px">🔔</span>';
+    alertConnHtml += '<span style="font-size:12px;font-weight:700;color:'+(hasNew?"#c9a84c":"#8a8070")+'">Connexions vendeurs</span>';
+    if(hasNew) alertConnHtml += '<span style="background:#c9a84c;color:#0a0906;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px">NOUVEAU</span>';
+    alertConnHtml += '</div>';
+    alertConnHtml += '<span id="conn-chevron" style="color:#c9a84c;font-size:14px">▼</span>';
+    alertConnHtml += '</div>';
+    alertConnHtml += '<div id="conn-alerts-list" style="display:none">';
+    alertConnHtml += recent.map(function(a){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid #1a2030">'+
+        '<div style="width:32px;height:32px;border-radius:50%;background:#1a2030;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👤</div>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#e8e0d0">'+a.vendorName+'</div>'+
+        '<div style="font-size:10px;color:#4a5a7a">'+a.vendorCode+' · '+a.date+' à '+a.time+'</div></div>'+
+        '<div style="font-size:10px;color:#7ac97a">✅ Connecté</div></div>';
+    }).join("");
+    if(alertesConn.length > 5) alertConnHtml += '<div style="padding:6px 14px;font-size:10px;color:#4a5a7a;text-align:center">+' +(alertesConn.length-5)+ ' autres connexions</div>';
+    alertConnHtml += '<div style="padding:8px 14px"><button onclick="clearConnAlerts()" style="width:100%;background:none;border:1px solid #1a2030;color:#4a5a7a;padding:7px;border-radius:6px;font-size:11px">&#x1F5D1;&#xFE0F; Effacer l&#39;historique</button></div>';
+    alertConnHtml += '</div></div>';
+    // Marquer comme lu
+    if(hasNew) localStorage.setItem("mf_new_connexion","0");
+  }
+
   document.getElementById("home-kpis").innerHTML =
     '<div style="background:linear-gradient(135deg,#2a1f0a,#1a1308);border:1px solid #c9a84c44;border-radius:16px;padding:24px;text-align:center">' +
     '<div style="font-size:11px;color:#8a8070;letter-spacing:2px;margin-bottom:8px">CHIFFRE D&#39;AFFAIRES &mdash; '+monthLabel.toUpperCase()+'</div>' +
     '<div style="font-size:40px;font-weight:700;color:#c9a84c;margin-bottom:4px">'+fmtPrice(revMois)+'</div>' +
     objBar + stockAlert +
-    '</div>';
+    '</div>' + alertConnHtml;
+}
+
+function toggleConnAlerts() {
+  var list = document.getElementById("conn-alerts-list");
+  var chevron = document.getElementById("conn-chevron");
+  if(!list) return;
+  if(list.style.display === "none") {
+    list.style.display = "block";
+    if(chevron) chevron.style.transform = "rotate(180deg)";
+  } else {
+    list.style.display = "none";
+    if(chevron) chevron.style.transform = "";
+  }
+}
+
+function clearConnAlerts() {
+  localStorage.removeItem("mf_alertes_connexion");
+  localStorage.removeItem("mf_new_connexion");
+  renderHome();
+  showToast("Historique des connexions effacé.");
 }
 
 function kpiCard(icon, label, val, sub, color) {
@@ -940,6 +1068,7 @@ function openTab(tab) {
     case "rapports":  renderTabRapports(content); break;
     case "settings":  renderTabSettings(content); break;
     case "reglement": renderTabReglement(content); break;
+    case "messages":  renderTabMessages(content); break;
   }
 }
 
@@ -2143,7 +2272,7 @@ function renderTabReglement(el) {
   html += '<div class="acard-title" style="margin-bottom:0;color:'+(publie?"#7ac97a":"#ff6666")+'">'+(publie?"✅ RÈGLEMENT PUBLIÉ":"⛔ RÈGLEMENT NON PUBLIÉ")+'</div>';
   html += '<div style="font-size:11px;color:#4a5a7a">'+(dateModif?"Modifié : "+dateModif:"Jamais enregistré")+'</div>';
   html += '</div>';
-  html += '<p style="font-size:12px;color:'+(publie?"#4a9a4a":"#c97a7a")+';margin-bottom:12px">'+(publie?"Le règlement est visible sur l'espace de chaque vendeur connecté.":"Le règlement n'est pas encore visible par les vendeurs.")+'</p>';
+  html += '<p style="font-size:12px;color:'+(publie?"#4a9a4a":"#c97a7a")+';margin-bottom:12px">'+(publie?"Le r&#232;glement est visible sur l&#39;espace de chaque vendeur connect&#233;.":"Le r&#232;glement n&#39;est pas encore visible par les vendeurs.")+'</p>';
   html += '<div style="display:flex;gap:8px">';
   html += '<button onclick="publierReglement()" style="flex:1;background:linear-gradient(135deg,#0d2b14,#1a6a24);border:2px solid #3d6a3d;color:#7ac97a;padding:13px;border-radius:10px;font-size:14px;font-weight:700">'+( publie?"🔄 Enregistrer & Republier":"📢 Enregistrer & Publier")+'</button>';
   if(publie) html += '<button onclick="depublierReglement()" style="background:#2e0505;border:1px solid #c9202066;color:#ff6666;padding:13px 16px;border-radius:10px;font-size:13px;font-weight:600">Retirer</button>';
@@ -2225,6 +2354,250 @@ function depublierReglement() {
   saveReglementData(reg);
   showToast("⛔ Règlement retiré de l'espace vendeur.");
   openTab("reglement");
+}
+
+
+// ═══════════════════════════════════════
+// MESSAGERIE INTERNE
+// ═══════════════════════════════════════
+
+function getMessages() {
+  try { return JSON.parse(localStorage.getItem("mf_messages")||"[]"); } catch(e) { return []; }
+}
+function saveMessages(msgs) {
+  localStorage.setItem("mf_messages", JSON.stringify(msgs));
+}
+function getUnreadCount(forRole, vendorCode) {
+  var msgs = getMessages();
+  if(forRole === "admin") {
+    return msgs.filter(function(m){ return m.from !== "admin" && !m.readByAdmin; }).length;
+  } else {
+    return msgs.filter(function(m){ return m.to === vendorCode && m.from === "admin" && !m.readByVendor; }).length;
+  }
+}
+function updateMsgBadge() {
+  var badge = document.getElementById("msg-badge-admin");
+  if(!badge) return;
+  var count = getUnreadCount("admin");
+  if(count > 0) { badge.textContent = count; badge.style.display = "inline-block"; }
+  else { badge.style.display = "none"; }
+}
+function updateVendorMsgBadge() {
+  var badge = document.getElementById("msg-badge-vendor");
+  if(!badge || !currentUser) return;
+  var count = getUnreadCount("vendor", currentUser.code);
+  if(count > 0) { badge.textContent = count; badge.style.display = "inline-block"; }
+  else { badge.style.display = "none"; }
+}
+
+// ─── ONGLET MESSAGES ADMIN ───
+function renderTabMessages(el) {
+  var msgs = getMessages();
+  // Regrouper par vendeur
+  var conversations = {};
+  msgs.forEach(function(m) {
+    var key = m.from === "admin" ? m.to : m.from;
+    if(!conversations[key]) conversations[key] = { vendorCode: key, vendorName: m.from === "admin" ? m.toName : m.fromName, messages: [], unread: 0 };
+    conversations[key].messages.push(m);
+    if(m.from !== "admin" && !m.readByAdmin) conversations[key].unread++;
+  });
+  var convList = Object.values(conversations).sort(function(a,b){
+    var la = a.messages[a.messages.length-1].timestamp || 0;
+    var lb = b.messages[b.messages.length-1].timestamp || 0;
+    return lb - la;
+  });
+
+  var html = '';
+  // Panneau de composition (envoyer un message à un vendeur)
+  html += '<div class="acard">';
+  html += '<div class="acard-title">✉️ ENVOYER UN MESSAGE</div>';
+  html += '<div class="field"><label>DESTINATAIRE</label>';
+  html += '<select id="msg-to-vendor" style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:11px 13px;border-radius:8px;font-size:14px">';
+  html += '<option value="">-- Choisir un vendeur --</option>';
+  vendors.forEach(function(v){
+    if(!v.suspended) html += '<option value="'+v.code+'|'+v.name+'">'+v.name+' ('+v.code+')</option>';
+  });
+  html += '</select></div>';
+  html += '<div class="field"><label>MESSAGE</label>';
+  html += '<textarea id="msg-admin-text" placeholder="Écrivez votre message..." style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:12px;border-radius:8px;font-size:14px;min-height:80px;resize:vertical"></textarea></div>';
+  html += '<button onclick="envoyerMessageAdmin()" class="btn-gold btn-full">📤 Envoyer le message</button>';
+  html += '</div>';
+
+  // Liste des conversations
+  if(convList.length === 0) {
+    html += '<div class="empty-state"><div class="es-icon">💬</div><p>Aucun message pour l&#39;instant</p></div>';
+  } else {
+    html += '<div class="acard"><div class="acard-title">💬 CONVERSATIONS ('+convList.length+')</div>';
+    html += convList.map(function(conv) {
+      var lastMsg = conv.messages[conv.messages.length-1];
+      var unreadBadge = conv.unread > 0 ? '<span style="background:#ff4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px">'+conv.unread+' non lu</span>' : '';
+      return '<div data-vcode="'+conv.vendorCode+'" onclick="ouvrirConversation(this)" style="background:#0a0f1a;border:1px solid '+(conv.unread>0?"#c9a84c44":"#1a2030")+';border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'+
+        '<div style="font-size:14px;font-weight:700;color:#e8e0d0">👤 '+conv.vendorName+unreadBadge+'</div>'+
+        '<div style="font-size:10px;color:#4a5a7a">'+lastMsg.date+' '+lastMsg.time+'</div></div>'+
+        '<div style="font-size:12px;color:#8a8070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(lastMsg.from==="admin"?"Vous : ":"")+lastMsg.text+'</div>'+
+        '</div>';
+    }).join("");
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+  updateMsgBadge();
+}
+
+function ouvrirConversation(el) {
+  var vcode = el.getAttribute("data-vcode");
+  var msgs = getMessages();
+  var vendor = vendors.find(function(v){ return v.code===vcode; });
+  if(!vendor) return;
+  // Marquer messages comme lus
+  var changed = false;
+  msgs.forEach(function(m){ if(m.from===vcode && !m.readByAdmin){ m.readByAdmin=true; changed=true; } });
+  if(changed) saveMessages(msgs);
+  updateMsgBadge();
+
+  var convMsgs = msgs.filter(function(m){ return m.from===vcode || m.to===vcode; })
+    .sort(function(a,b){ return (a.timestamp||0)-(b.timestamp||0); });
+
+  // Modal conversation
+  var modal = document.getElementById("modal-conversation");
+  if(!modal) {
+    modal = document.createElement("div");
+    modal.id = "modal-conversation";
+    modal.className = "modal";
+    document.body.appendChild(modal);
+  }
+
+  var html = '<div class="modal-box" style="max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;max-width:500px">';
+  html += '<div style="padding:16px 20px;background:linear-gradient(135deg,#0d1525,#1a2540);border-bottom:1px solid #c9a84c22;display:flex;align-items:center;gap:12px">';
+  html += '<div style="font-size:28px">👤</div><div style="flex:1"><div style="font-size:15px;font-weight:700;color:#e8e0d0">'+vendor.name+'</div><div style="font-size:11px;color:#4a5a7a">'+vendor.code+'</div></div>';
+  html += '<button onclick="closeModal(\'modal-conversation\')" style="background:none;color:#8a8070;font-size:20px;padding:4px 8px">✕</button>';
+  html += '</div>';
+  // Messages
+  html += '<div id="conv-messages" style="flex:1;overflow-y:auto;padding:14px;background:#060d18;min-height:200px;max-height:50vh">';
+  if(convMsgs.length===0) {
+    html += '<div style="text-align:center;color:#4a5a7a;padding:30px;font-size:13px">Aucun message échangé</div>';
+  } else {
+    html += convMsgs.map(function(m){
+      var isAdmin = m.from === "admin";
+      return '<div style="display:flex;justify-content:'+(isAdmin?"flex-end":"flex-start")+';margin-bottom:10px">'+
+        '<div style="max-width:80%;background:'+(isAdmin?"linear-gradient(135deg,#2a1f0a,#3d2e10)":"#0f1825")+';border:1px solid '+(isAdmin?"#c9a84c44":"#1a2a3a")+';border-radius:'+(isAdmin?"12px 12px 4px 12px":"12px 12px 12px 4px")+';padding:10px 14px">'+
+        '<div style="font-size:13px;color:#e8e0d0;margin-bottom:4px">'+escapeHtml(m.text)+'</div>'+
+        '<div style="font-size:10px;color:#4a5a7a;text-align:right">'+m.date+' '+m.time+(isAdmin?" · Vous":"")+'</div>'+
+        '</div></div>';
+    }).join("");
+  }
+  html += '</div>';
+  // Zone de saisie
+  html += '<div style="padding:12px;background:#0a0f1a;border-top:1px solid #1a2030;display:flex;gap:8px">';
+  html += '<textarea id="conv-reply-text" placeholder="Votre réponse..." style="flex:1;background:#060d18;border:1px solid #1a2030;color:#e8e0d0;padding:10px;border-radius:8px;font-size:13px;min-height:44px;max-height:100px;resize:none"></textarea>';
+  html += '<button onclick="envoyerReponseAdmin(\"'+vcode+'|'+vendor.name+'\")" style="background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:10px 14px;border-radius:8px;font-weight:700;font-size:14px;border:none;align-self:flex-end">📤</button>';
+  html += '</div></div>';
+
+  modal.innerHTML = html;
+  modal.classList.add("open");
+  // Scroll en bas
+  setTimeout(function(){ var el=document.getElementById("conv-messages"); if(el) el.scrollTop=el.scrollHeight; }, 50);
+  // Rafraîchir l'onglet messages
+  var content = document.getElementById("admin-content");
+  if(content && currentTab==="messages") renderTabMessages(content);
+}
+
+function envoyerMessageAdmin() {
+  var sel = document.getElementById("msg-to-vendor");
+  var text = (document.getElementById("msg-admin-text")||{value:""}).value.trim();
+  if(!sel || !sel.value) { showToast("Choisissez un vendeur", true); return; }
+  if(!text) { showToast("Écrivez un message", true); return; }
+  var parts = sel.value.split("|");
+  var vcode = parts[0]; var vname = parts[1]||"";
+  envoyerMsg("admin", "Admin", vcode, vname, text);
+  document.getElementById("msg-admin-text").value = "";
+  showToast("✅ Message envoyé à "+vname+" !");
+  openTab("messages");
+}
+
+function envoyerReponseAdmin(vendorStr) {
+  var parts = vendorStr.split("|");
+  var vcode = parts[0]; var vname = parts[1]||"";
+  var text = (document.getElementById("conv-reply-text")||{value:""}).value.trim();
+  if(!text) return;
+  envoyerMsg("admin", "Admin", vcode, vname, text);
+  closeModal("modal-conversation");
+  showToast("✅ Réponse envoyée !");
+  openTab("messages");
+}
+
+function envoyerMsg(fromCode, fromName, toCode, toName, text) {
+  var msgs = getMessages();
+  var now = new Date();
+  msgs.push({
+    id: Date.now()+"_"+Math.random().toString(36).slice(2,6),
+    from: fromCode, fromName: fromName,
+    to: toCode, toName: toName,
+    text: text,
+    date: now.toLocaleDateString("fr-FR"),
+    time: now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),
+    timestamp: now.getTime(),
+    readByAdmin: fromCode === "admin",
+    readByVendor: fromCode !== "admin"
+  });
+  saveMessages(msgs);
+  updateMsgBadge();
+  updateVendorMsgBadge();
+}
+
+// ─── MESSAGERIE VENDEUR ───
+function renderVendorMessages() {
+  showPage("page-client");
+  var msgs = getMessages();
+  var myMsgs = msgs.filter(function(m){ return m.from===currentUser.code || m.to===currentUser.code; })
+    .sort(function(a,b){ return (a.timestamp||0)-(b.timestamp||0); });
+
+  // Marquer comme lus
+  var changed = false;
+  msgs.forEach(function(m){ if(m.to===currentUser.code && m.from==="admin" && !m.readByVendor){ m.readByVendor=true; changed=true; } });
+  if(changed) { saveMessages(msgs); updateVendorMsgBadge(); }
+
+  var html = '<div class="page-header"><h2>💬 Messages</h2><p>Échanges avec la direction</p></div>';
+  // Fil de discussion
+  html += '<div style="background:#060d18;border:1px solid #1a2030;border-radius:12px;margin-bottom:12px;overflow:hidden">';
+  html += '<div style="padding:12px 14px;background:linear-gradient(135deg,#0d1525,#1a2540);border-bottom:1px solid #1a2030;display:flex;align-items:center;gap:10px">';
+  html += '<div style="font-size:22px">👑</div><div><div style="font-size:13px;font-weight:700;color:#c9a84c">Direction — Mon Fermier SARL</div><div style="font-size:10px;color:#4a5a7a">M. Fabrice NKOGHE</div></div>';
+  html += '</div>';
+  html += '<div style="padding:14px;min-height:200px;max-height:55vh;overflow-y:auto" id="vendor-msg-list">';
+  if(myMsgs.length===0) {
+    html += '<div style="text-align:center;color:#4a5a7a;padding:40px;font-size:13px"><div style="font-size:40px;margin-bottom:10px">💬</div>Aucun message pour l&#39;instant.<br>Envoyez un message à la direction !</div>';
+  } else {
+    html += myMsgs.map(function(m){
+      var isMe = m.from === currentUser.code;
+      return '<div style="display:flex;justify-content:'+(isMe?"flex-end":"flex-start")+';margin-bottom:10px">'+
+        '<div style="max-width:82%;background:'+(isMe?"linear-gradient(135deg,#1a2540,#2a3550)":"linear-gradient(135deg,#0d1505,#1a2a0a)")+';border:1px solid '+(isMe?"#3a5a9a44":"#3d6a3d44")+';border-radius:'+(isMe?"12px 12px 4px 12px":"12px 12px 12px 4px")+';padding:10px 14px">'+
+        '<div style="font-size:13px;color:#e8e0d0;margin-bottom:4px">'+escapeHtml(m.text)+'</div>'+
+        '<div style="font-size:10px;color:#4a5a7a;text-align:right">'+m.date+' '+m.time+(isMe?" · Vous":"")+'</div>'+
+        '</div></div>';
+    }).join("");
+  }
+  html += '</div></div>';
+  // Zone de saisie
+  html += '<div style="display:flex;gap:8px;align-items:flex-end">';
+  html += '<textarea id="vendor-new-msg" placeholder="Écrivez votre message à la direction..." style="flex:1;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:12px;border-radius:10px;font-size:14px;min-height:56px;max-height:120px;resize:none"></textarea>';
+  html += '<button onclick="envoyerMessageVendeur()" style="background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;padding:14px 16px;border-radius:10px;font-weight:700;font-size:16px;border:none;flex-shrink:0">📤</button>';
+  html += '</div>';
+
+  document.getElementById("client-content").innerHTML = html;
+  // Scroll en bas
+  setTimeout(function(){ var el=document.getElementById("vendor-msg-list"); if(el) el.scrollTop=el.scrollHeight; }, 50);
+}
+
+function envoyerMessageVendeur() {
+  var text = (document.getElementById("vendor-new-msg")||{value:""}).value.trim();
+  if(!text) { showToast("Écrivez un message", true); return; }
+  var vendor = vendors.find(function(v){ return v.code===currentUser.code; });
+  var vname = vendor ? vendor.name : currentUser.name;
+  envoyerMsg(currentUser.code, vname, "admin", "Admin", text);
+  document.getElementById("vendor-new-msg").value = "";
+  showToast("✅ Message envoyé à la direction !");
+  renderVendorMessages();
 }
 
 function saveObjectif(){
@@ -2851,6 +3224,13 @@ function renderVendorHome() {
     '<button onclick="showMyVendorProfile()" style="padding:12px;background:#0a0f1a;border:1px solid #c9a84c44;color:#c9a84c;border-radius:10px;font-size:13px;font-weight:600">👤 Mon profil</button>'+
     '<button onclick="showMyCommissions()" style="padding:12px;background:#0a0f1a;border:1px solid #a07ad544;color:#a07ad5;border-radius:10px;font-size:13px;font-weight:600">💰 Mes commissions</button>'+
     '</div>';
+  // Bouton Messages avec badge
+  var unreadCount = getUnreadCount("vendor", currentUser.code);
+  html += '<div style="padding:0 16px 16px">'+
+    '<button onclick="renderVendorMessages()" style="position:relative;width:100%;padding:13px;background:linear-gradient(135deg,#0d1525,#1a2540);border:2px solid '+(unreadCount>0?"#c9a84c":"#1a2a3a")+';color:'+(unreadCount>0?"#c9a84c":"#7aaad5")+';border-radius:12px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px">'+
+    '<span style="font-size:18px">💬</span> Messages avec la direction'+
+    (unreadCount>0?'<span style="background:#ff4444;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px">'+unreadCount+' nouveau'+(unreadCount>1?"x":"")+'</span>':"") +
+    '</button></div>';
 
   // Règlement intérieur (si publié)
   var reg = getReglement();
@@ -3539,6 +3919,7 @@ async function saveNewVendor() {
     password:avGeneratedPass,
     photo: avPhotoBase64||null,
     suspended:false,
+    firstLogin:true,
     createdAt:new Date().toLocaleDateString("fr-FR")
   };
 
@@ -3786,7 +4167,13 @@ async function toggleSuspendVendor(id) {
   if(!vendor) return;
   vendor.suspended = !vendor.suspended;
   try { await db.collection("vendors").doc(id).update({suspended:vendor.suspended}); } catch(e){}
-  showToast(vendor.suspended?"⛔ Vendeur suspendu":"✅ Vendeur réactivé");
+  // Si le vendeur est actuellement connecté et qu'on vient de le suspendre, on le déconnecte
+  if(vendor.suspended && currentUser && currentUser.role==="vendor" && currentUser.code===vendor.code) {
+    showToast("⛔ Vendeur suspendu et déconnecté.");
+    setTimeout(function(){ doLogout(); }, 1500);
+    return;
+  }
+  showToast(vendor.suspended?"⛔ Vendeur "+vendor.name+" suspendu — connexion bloquée":"✅ Vendeur "+vendor.name+" réactivé");
   renderVendorProfile(vendor);
 }
 
@@ -4010,7 +4397,7 @@ startLoginClock();
 (function initReglement() {
   var existing = localStorage.getItem("mf_reglement");
   if(!existing) {
-    var defaultReglement = "MON FERMIER SARL\nProduction & Distribution de Piment — Qualité & Hygiène Alimentaire\n\nRÈGLEMENT INTÉRIEUR\nET CODE DE CONDUITE\n\nVersion 1.0 — 2025\nApplicable à tous les employés et vendeurs\nDirecteur Général : M. Fabrice NKOGHE\n\nPRÉAMBULE\n\nLe présent règlement intérieur est établi conformément aux dispositions légales en vigueur et aux valeurs fondatrices de Mon Fermier SARL. Il s'applique à l'ensemble du personnel, sans exception, dès la signature du contrat de travail ou d'accord commercial.\n\nMon Fermier SARL est une entreprise spécialisée dans la production et la distribution de piment en pâte et en poudre. Notre activité touche directement à la santé alimentaire des consommateurs. C'est pourquoi les règles d'hygiène et de qualité constituent le socle absolu de notre fonctionnement.\n\nAVERTISSEMENT : Le non-respect de ce règlement expose son auteur à des sanctions pouvant aller jusqu'au licenciement immédiat sans préavis ni indemnité.\n\n---\nCHAPITRE I — HYGIÈNE & SÉCURITÉ ALIMENTAIRE\n---\n\nLa protection de la santé du consommateur est une priorité absolue. Tout manquement aux règles d'hygiène constitue une faute grave.\n\nArticle 1 — Tenue de travail et propreté personnelle\n\n- Le port d'une tenue de travail propre et adaptée est obligatoire lors de toute manipulation des produits.\n- Les mains doivent être lavées et désinfectées avant chaque prise de poste, après chaque pause, et après tout contact avec des surfaces souillées.\n- Les ongles doivent être coupés courts et propres. Le vernis à ongles est interdit lors des manipulations alimentaires.\n- Le port de bijoux (bagues, bracelets, montres) est strictement interdit lors des manipulations de produits alimentaires.\n- Les cheveux doivent être couverts (bonnet, filet) lors de toute manipulation de piment en pâte ou en poudre.\n- Il est interdit de tousser, éternuer ou cracher à proximité des produits sans se couvrir la bouche et se désinfecter immédiatement après.\n\nArticle 2 — Manipulation et conservation des produits\n\n- Tout produit tombé à terre ou entré en contact avec une surface non désinfectée est considéré comme impropre à la vente et doit être mis à l'écart immédiatement.\n- Les contenants (seaux, sachets, bocaux) doivent être hermétiquement fermés après chaque utilisation.\n- Il est formellement interdit de goûter les produits avec les doigts ou un ustensile non propre.\n- La chaîne du froid ou les conditions de conservation prescrites doivent être respectées en tout temps.\n- Tout signe de détérioration, de moisissure ou d'odeur anormale doit être signalé immédiatement à la direction.\n- Les produits périmés ou dégradés ne peuvent en aucun cas être vendus ou remis à un client.\n\nArticle 3 — Propreté des espaces de travail\n\n- Chaque employé est responsable de la propreté de son poste de travail. Un poste sale en fin de journée constitue une faute.\n- Le nettoyage et la désinfection des surfaces de travail doivent être effectués au minimum en début et en fin de chaque journée de travail.\n- Les déchets de production doivent être éliminés dans les poubelles prévues à cet effet et ne doivent jamais s'accumuler.\n- Les zones de stockage doivent être maintenues ordonnées, sèches et protégées de toute contamination extérieure.\n- Il est interdit de manger, boire ou fumer dans les zones de production, de stockage ou de conditionnement des produits.\n\nTOLÉRANCE ZÉRO : Toute vente délibérée de produit périmé, contaminé ou altéré constitue une faute grave passible de licenciement immédiat et de poursuites judiciaires.\n\n---\nCHAPITRE II — DISCIPLINE & COMPORTEMENT PROFESSIONNEL\n---\n\nArticle 4 — Ponctualité et assiduité\n\n- Tout employé est tenu d'être présent à son poste à l'heure fixée dans son contrat ou accord commercial.\n- Tout retard doit être signalé avant la prise de poste par appel téléphonique. Trois retards non justifiés dans le mois constituent une faute sérieuse.\n- Toute absence doit être justifiée dans les 24 heures. Une absence injustifiée de plus de 2 jours consécutifs peut entraîner la rupture du contrat.\n- L'abandon de poste sans avertissement préalable est considéré comme une faute grave.\n\nArticle 5 — Respect et relations professionnelles\n\n- Le respect mutuel entre collègues, supérieurs et clients est une obligation non négociable.\n- Tout acte d'insubordination, d'insulte, de harcèlement ou de violence verbale ou physique entraîne une sanction immédiate.\n- Les conflits entre employés doivent être portés à la connaissance de la direction.\n- Il est interdit de tenir des propos désobligeants ou diffamatoires sur l'entreprise, ses produits ou sa direction, que ce soit en public ou sur les réseaux sociaux.\n- La politesse et la cordialité sont exigées en permanence avec les clients, partenaires et fournisseurs.\n\nArticle 6 — Usage des outils et équipements de l'entreprise\n\n- Les équipements mis à disposition sont strictement réservés à l'usage professionnel.\n- Tout dommage causé par négligence ou mauvais usage sera imputé à l'employé concerné.\n- Il est interdit d'emporter des outils, équipements ou produits de l'entreprise sans autorisation écrite de la direction.\n- Le téléphone personnel doit rester en mode silencieux pendant les heures de travail.\n\n---\nCHAPITRE III — INTÉGRITÉ, HONNÊTETÉ & CONFIDENTIALITÉ\n---\n\nArticle 7 — Interdiction stricte de vol, fraude et détournement\n\nTOLÉRANCE ZÉRO : Tout vol, détournement de fonds ou de marchandise, falsification de données de vente ou dissimulation d'invendus entraîne un licenciement immédiat et des poursuites judiciaires.\n\n- Il est formellement interdit de prélever des fonds, produits ou marchandises appartenant à l'entreprise, quelle qu'en soit la valeur.\n- Toute recette collectée lors d'une vente doit être intégralement remise à la direction dans les délais convenus, sans exception.\n- Il est interdit de falsifier les quantités vendues, les prix de vente ou les rapports de stock.\n- Tout écart entre les produits remis et les fonds reçus doit être signalé immédiatement. Tout écart non signalé est présumé frauduleux.\n\nArticle 8 — Confidentialité et secret professionnel\n\n- Toutes les informations relatives à l'entreprise (recettes, prix d'achat, clientèle, fournisseurs, stratégies commerciales) sont strictement confidentielles.\n- Il est interdit de divulguer ces informations à des tiers, concurrents, ou toute personne étrangère à l'entreprise.\n- Cette obligation de confidentialité s'applique pendant la durée du contrat et pendant une période de deux (2) ans après sa fin.\n\nArticle 9 — Loyauté et non-concurrence\n\n- Il est interdit d'exercer, directement ou indirectement, une activité concurrente à celle de Mon Fermier SARL sans autorisation préalable écrite.\n- Il est interdit de démarcher les clients de l'entreprise à des fins personnelles ou au profit d'un concurrent.\n\n---\nCHAPITRE IV — RÈGLES SPÉCIFIQUES AUX VENDEURS\n---\n\nArticle 10 — Gestion des produits et du stock\n\n- Chaque vendeur reçoit ses produits en début de journée et doit en signer la réception. Cette signature vaut engagement de responsabilité.\n- En fin de journée, le vendeur doit remettre les invendus ET la totalité des fonds correspondant aux ventes effectuées.\n- Il est interdit de stocker des produits de l'entreprise à son domicile sans autorisation écrite.\n- Toute perte, casse ou vol de produit doit être signalé immédiatement avec un rapport circonstancié. Les pertes non justifiées seront imputées au vendeur.\n- Les vendeurs n'ont pas le droit de modifier les prix de vente fixés par la direction, ni d'accorder des remises sans autorisation préalable.\n\nArticle 11 — Présentation et comportement lors des ventes\n\n- Le vendeur doit être propre, correctement habillé et porter les équipements d'hygiène lors de la manipulation des produits devant les clients.\n- Il est interdit de vendre dans un état d'ivresse ou sous l'influence de substances quelconques.\n- Le vendeur représente l'image de Mon Fermier SARL. Tout comportement déplacé, agressif ou malhonnête envers un client sera sanctionné.\n- Les plaintes des clients doivent être remontées à la direction dans les 24 heures.\n\nArticle 12 — Compte-rendu et communication\n\n- Chaque vendeur est tenu de rendre compte de ses activités quotidiennement via l'application Mon Fermier ou par tout moyen convenu avec la direction.\n- Tout problème rencontré (client difficile, produit dégradé, accident) doit être signalé le jour même.\n- L'absence de communication de plus de 48 heures sans justification valable est considérée comme un abandon de poste.\n\n---\nCHAPITRE V — SANCTIONS DISCIPLINAIRES\n---\n\nArticle 13 — Échelle des sanctions\n\n- Niveau 1 — Mineur : Avertissement oral (retard non signalé, poste non nettoyé, usage du téléphone en service).\n- Niveau 2 — Sérieux : Avertissement écrit + retenue sur salaire/commission (récidive, absence injustifiée, insubordination légère, non-respect des règles d'hygiène).\n- Niveau 3 — Grave : Licenciement avec préavis (manipulation de produits périmés, insubordination grave, violence verbale, abandon de poste).\n- Niveau 4 — FAUTE GRAVE : Licenciement immédiat + poursuites judiciaires (vol, fraude, détournement, vente de produits contaminés, violence physique).\n\n---\nCHAPITRE VI — DISPOSITIONS GÉNÉRALES\n---\n\nArticle 14 — Entrée en vigueur et diffusion\n\n- Le présent règlement entre en vigueur à la date de sa signature par la direction et s'applique immédiatement à l'ensemble du personnel.\n- Chaque employé ou vendeur recevra un exemplaire et devra signer la page d'engagement jointe.\n- L'ignorance du présent règlement ne peut être invoquée comme motif d'excuse.\n\nArticle 15 — Révision du règlement\n\n- La direction se réserve le droit de modifier le présent règlement à tout moment. Toute modification sera communiquée au personnel avec un préavis de 15 jours.\n\nArticle 16 — Droit de recours\n\n- Tout employé qui s'estime injustement sanctionné peut adresser un recours écrit à la direction dans un délai de 7 jours suivant la sanction.\n- La direction s'engage à examiner tout recours dans un délai de 15 jours ouvrables.\n\nArticle 17 — Engagement collectif\n\n- Chaque membre de l'équipe Mon Fermier SARL est ambassadeur de la marque et de ses valeurs : qualité, honnêteté, hygiène et excellence.\n- L'entreprise s'engage en contrepartie à fournir les équipements nécessaires, à former son personnel et à traiter chacun avec respect et équité.\n\nMon Fermier SARL — Qualité, Hygiène & Excellence — 2025";
+    var defaultReglement = `MON FERMIER SARL\nProduction & Distribution de Piment — Qualité & Hygiène Alimentaire\n\nRÈGLEMENT INTÉRIEUR\nET CODE DE CONDUITE\n\nVersion 1.0 — 2025\nApplicable à tous les employés et vendeurs\nDirecteur Général : M. Fabrice NKOGHE\n\nPRÉAMBULE\n\nLe présent règlement intérieur est établi conformément aux dispositions légales en vigueur et aux valeurs fondatrices de Mon Fermier SARL. Il s'applique à l'ensemble du personnel, sans exception, dès la signature du contrat de travail ou d'accord commercial.\n\nMon Fermier SARL est une entreprise spécialisée dans la production et la distribution de piment en pâte et en poudre. Notre activité touche directement à la santé alimentaire des consommateurs. C'est pourquoi les règles d'hygiène et de qualité constituent le socle absolu de notre fonctionnement.\n\nAVERTISSEMENT : Le non-respect de ce règlement expose son auteur à des sanctions pouvant aller jusqu'au licenciement immédiat sans préavis ni indemnité.\n\n---\nCHAPITRE I — HYGIÈNE & SÉCURITÉ ALIMENTAIRE\n---\n\nLa protection de la santé du consommateur est une priorité absolue. Tout manquement aux règles d'hygiène constitue une faute grave.\n\nArticle 1 — Tenue de travail et propreté personnelle\n\n- Le port d'une tenue de travail propre et adaptée est obligatoire lors de toute manipulation des produits.\n- Les mains doivent être lavées et désinfectées avant chaque prise de poste, après chaque pause, et après tout contact avec des surfaces souillées.\n- Les ongles doivent être coupés courts et propres. Le vernis à ongles est interdit lors des manipulations alimentaires.\n- Le port de bijoux (bagues, bracelets, montres) est strictement interdit lors des manipulations de produits alimentaires.\n- Les cheveux doivent être couverts (bonnet, filet) lors de toute manipulation de piment en pâte ou en poudre.\n- Il est interdit de tousser, éternuer ou cracher à proximité des produits sans se couvrir la bouche et se désinfecter immédiatement après.\n\nArticle 2 — Manipulation et conservation des produits\n\n- Tout produit tombé à terre ou entré en contact avec une surface non désinfectée est considéré comme impropre à la vente et doit être mis à l'écart immédiatement.\n- Les contenants (seaux, sachets, bocaux) doivent être hermétiquement fermés après chaque utilisation.\n- Il est formellement interdit de goûter les produits avec les doigts ou un ustensile non propre.\n- La chaîne du froid ou les conditions de conservation prescrites doivent être respectées en tout temps.\n- Tout signe de détérioration, de moisissure ou d'odeur anormale doit être signalé immédiatement à la direction.\n- Les produits périmés ou dégradés ne peuvent en aucun cas être vendus ou remis à un client.\n\nArticle 3 — Propreté des espaces de travail\n\n- Chaque employé est responsable de la propreté de son poste de travail. Un poste sale en fin de journée constitue une faute.\n- Le nettoyage et la désinfection des surfaces de travail doivent être effectués au minimum en début et en fin de chaque journée de travail.\n- Les déchets de production doivent être éliminés dans les poubelles prévues à cet effet et ne doivent jamais s'accumuler.\n- Les zones de stockage doivent être maintenues ordonnées, sèches et protégées de toute contamination extérieure.\n- Il est interdit de manger, boire ou fumer dans les zones de production, de stockage ou de conditionnement des produits.\n\nTOLÉRANCE ZÉRO : Toute vente délibérée de produit périmé, contaminé ou altéré constitue une faute grave passible de licenciement immédiat et de poursuites judiciaires.\n\n---\nCHAPITRE II — DISCIPLINE & COMPORTEMENT PROFESSIONNEL\n---\n\nArticle 4 — Ponctualité et assiduité\n\n- Tout employé est tenu d'être présent à son poste à l'heure fixée dans son contrat ou accord commercial.\n- Tout retard doit être signalé avant la prise de poste par appel téléphonique. Trois retards non justifiés dans le mois constituent une faute sérieuse.\n- Toute absence doit être justifiée dans les 24 heures. Une absence injustifiée de plus de 2 jours consécutifs peut entraîner la rupture du contrat.\n- L'abandon de poste sans avertissement préalable est considéré comme une faute grave.\n\nArticle 5 — Respect et relations professionnelles\n\n- Le respect mutuel entre collègues, supérieurs et clients est une obligation non négociable.\n- Tout acte d'insubordination, d'insulte, de harcèlement ou de violence verbale ou physique entraîne une sanction immédiate.\n- Les conflits entre employés doivent être portés à la connaissance de la direction.\n- Il est interdit de tenir des propos désobligeants ou diffamatoires sur l'entreprise, ses produits ou sa direction, que ce soit en public ou sur les réseaux sociaux.\n- La politesse et la cordialité sont exigées en permanence avec les clients, partenaires et fournisseurs.\n\nArticle 6 — Usage des outils et équipements de l'entreprise\n\n- Les équipements mis à disposition sont strictement réservés à l'usage professionnel.\n- Tout dommage causé par négligence ou mauvais usage sera imputé à l'employé concerné.\n- Il est interdit d'emporter des outils, équipements ou produits de l'entreprise sans autorisation écrite de la direction.\n- Le téléphone personnel doit rester en mode silencieux pendant les heures de travail.\n\n---\nCHAPITRE III — INTÉGRITÉ, HONNÊTETÉ & CONFIDENTIALITÉ\n---\n\nArticle 7 — Interdiction stricte de vol, fraude et détournement\n\nTOLÉRANCE ZÉRO : Tout vol, détournement de fonds ou de marchandise, falsification de données de vente ou dissimulation d'invendus entraîne un licenciement immédiat et des poursuites judiciaires.\n\n- Il est formellement interdit de prélever des fonds, produits ou marchandises appartenant à l'entreprise, quelle qu'en soit la valeur.\n- Toute recette collectée lors d'une vente doit être intégralement remise à la direction dans les délais convenus, sans exception.\n- Il est interdit de falsifier les quantités vendues, les prix de vente ou les rapports de stock.\n- Tout écart entre les produits remis et les fonds reçus doit être signalé immédiatement. Tout écart non signalé est présumé frauduleux.\n\nArticle 8 — Confidentialité et secret professionnel\n\n- Toutes les informations relatives à l'entreprise (recettes, prix d'achat, clientèle, fournisseurs, stratégies commerciales) sont strictement confidentielles.\n- Il est interdit de divulguer ces informations à des tiers, concurrents, ou toute personne étrangère à l'entreprise.\n- Cette obligation de confidentialité s'applique pendant la durée du contrat et pendant une période de deux (2) ans après sa fin.\n\nArticle 9 — Loyauté et non-concurrence\n\n- Il est interdit d'exercer, directement ou indirectement, une activité concurrente à celle de Mon Fermier SARL sans autorisation préalable écrite.\n- Il est interdit de démarcher les clients de l'entreprise à des fins personnelles ou au profit d'un concurrent.\n\n---\nCHAPITRE IV — RÈGLES SPÉCIFIQUES AUX VENDEURS\n---\n\nArticle 10 — Gestion des produits et du stock\n\n- Chaque vendeur reçoit ses produits en début de journée et doit en signer la réception. Cette signature vaut engagement de responsabilité.\n- En fin de journée, le vendeur doit remettre les invendus ET la totalité des fonds correspondant aux ventes effectuées.\n- Il est interdit de stocker des produits de l'entreprise à son domicile sans autorisation écrite.\n- Toute perte, casse ou vol de produit doit être signalé immédiatement avec un rapport circonstancié. Les pertes non justifiées seront imputées au vendeur.\n- Les vendeurs n'ont pas le droit de modifier les prix de vente fixés par la direction, ni d'accorder des remises sans autorisation préalable.\n\nArticle 11 — Présentation et comportement lors des ventes\n\n- Le vendeur doit être propre, correctement habillé et porter les équipements d'hygiène lors de la manipulation des produits devant les clients.\n- Il est interdit de vendre dans un état d'ivresse ou sous l'influence de substances quelconques.\n- Le vendeur représente l'image de Mon Fermier SARL. Tout comportement déplacé, agressif ou malhonnête envers un client sera sanctionné.\n- Les plaintes des clients doivent être remontées à la direction dans les 24 heures.\n\nArticle 12 — Compte-rendu et communication\n\n- Chaque vendeur est tenu de rendre compte de ses activités quotidiennement via l'application Mon Fermier ou par tout moyen convenu avec la direction.\n- Tout problème rencontré (client difficile, produit dégradé, accident) doit être signalé le jour même.\n- L'absence de communication de plus de 48 heures sans justification valable est considérée comme un abandon de poste.\n\n---\nCHAPITRE V — SANCTIONS DISCIPLINAIRES\n---\n\nArticle 13 — Échelle des sanctions\n\n- Niveau 1 — Mineur : Avertissement oral (retard non signalé, poste non nettoyé, usage du téléphone en service).\n- Niveau 2 — Sérieux : Avertissement écrit + retenue sur salaire/commission (récidive, absence injustifiée, insubordination légère, non-respect des règles d'hygiène).\n- Niveau 3 — Grave : Licenciement avec préavis (manipulation de produits périmés, insubordination grave, violence verbale, abandon de poste).\n- Niveau 4 — FAUTE GRAVE : Licenciement immédiat + poursuites judiciaires (vol, fraude, détournement, vente de produits contaminés, violence physique).\n\n---\nCHAPITRE VI — DISPOSITIONS GÉNÉRALES\n---\n\nArticle 14 — Entrée en vigueur et diffusion\n\n- Le présent règlement entre en vigueur à la date de sa signature par la direction et s'applique immédiatement à l'ensemble du personnel.\n- Chaque employé ou vendeur recevra un exemplaire et devra signer la page d'engagement jointe.\n- L'ignorance du présent règlement ne peut être invoquée comme motif d'excuse.\n\nArticle 15 — Révision du règlement\n\n- La direction se réserve le droit de modifier le présent règlement à tout moment. Toute modification sera communiquée au personnel avec un préavis de 15 jours.\n\nArticle 16 — Droit de recours\n\n- Tout employé qui s'estime injustement sanctionné peut adresser un recours écrit à la direction dans un délai de 7 jours suivant la sanction.\n- La direction s'engage à examiner tout recours dans un délai de 15 jours ouvrables.\n\nArticle 17 — Engagement collectif\n\n- Chaque membre de l'équipe Mon Fermier SARL est ambassadeur de la marque et de ses valeurs : qualité, honnêteté, hygiène et excellence.\n- L'entreprise s'engage en contrepartie à fournir les équipements nécessaires, à former son personnel et à traiter chacun avec respect et équité.\n\nMon Fermier SARL — Qualité, Hygiène & Excellence — 2025`;
     localStorage.setItem("mf_reglement", JSON.stringify({ contenu: defaultReglement, dateModif: "", publie: false }));
   }
 })();
