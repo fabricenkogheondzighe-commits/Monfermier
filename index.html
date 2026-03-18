@@ -752,7 +752,7 @@ function goBack() {
     var prev = pageHistory[pageHistory.length-1];
     showPage(prev);
     if(prev === "page-home") renderHome();
-    else if(prev === "page-admin") { /* already rendered */ }
+    else if(prev === "page-admin") { localStorage.setItem("mf_stock_view","general"); /* already rendered */ }
     else if(prev === "page-client" && currentClient) renderClientProfile();
     else if(prev === "page-sale" && currentClient) renderSale();
     else if(prev === "page-vendor-home") renderVendorHome();
@@ -1864,7 +1864,12 @@ function renderStockJournalier(el){
   var today=getTodayStr(); var mvtsToday=getMvtsToday(); var journees=getStockJournees();
   var tColors={emballage:"#c9a84c",magasin:"#e8e0d0",remise:"#7aaad5",retour:"#7ac97a",perime:"#ff6666",ajustement:"#8a8070"};
   var tLabels={emballage:"Emballage",magasin:"Magasin",remise:"Remise",retour:"Retour",perime:"Perime",ajustement:"Ajust."};
-  var html="";
+  var tabSt="padding:10px;border-radius:8px;font-size:13px;font-weight:700;border:2px solid ";
+  var tA="background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906;border-color:#c9a84c";
+  var tI="background:#0a0f1a;color:#8a8070;border-color:#1a2030";
+  var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">'+
+    '<button onclick="setStockViewG()" style="'+tabSt+tI+'">Stock general</button>'+
+    '<button onclick="setStockViewJ()" style="'+tabSt+tA+'">Journalier</button></div>';
   html+='<div class="acard"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
   html+='<div class="acard-title" style="margin-bottom:0">Aujourd&#39;hui &mdash; '+today+'</div>';
   html+='<span style="font-size:11px;color:#c9a84c;background:#2a1f0a;border:1px solid #c9a84c44;border-radius:20px;padding:3px 10px">'+mvtsToday.length+' mvt(s)</span></div>';
