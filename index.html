@@ -1230,8 +1230,8 @@ async function envoyerQuestionIA(question) {
   messagesEl.scrollTop=messagesEl.scrollHeight;
   iaConversation.push({role:"user",content:question});
   try {
-    var response=await fetch("/.netlify/functions/sanny",{
-      method:"POST",headers:{"Content-Type":"application/json"},
+    var response=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json","x-api-key":"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","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,system:getSannySystem(),messages:iaConversation})
     });
     var data=await response.json();
@@ -2830,9 +2830,16 @@ function renderTabMessages(el) {
   });
 
   var html = '';
-  // Panneau de composition (envoyer un message à un vendeur)
+  // Panneau de composition
   html += '<div class="acard">';
   html += '<div class="acard-title">✉️ ENVOYER UN MESSAGE</div>';
+  // Onglets Individuel / Groupé
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">';
+  html += '<button id="msg-mode-individuel" onclick="setMsgMode(\'individuel\')" style="padding:9px;border-radius:8px;font-size:12px;font-weight:700;border:2px solid #c9a84c;background:linear-gradient(135deg,#b8860b,#c9a84c);color:#0a0906">👤 Individuel</button>';
+  html += '<button id="msg-mode-groupe" onclick="setMsgMode(\'groupe\')" style="padding:9px;border-radius:8px;font-size:12px;font-weight:700;border:2px solid #1a2030;background:#0a0f1a;color:#8a8070">👥 Message groupé</button>';
+  html += '</div>';
+  // Zone individuel
+  html += '<div id="msg-zone-individuel">';
   html += '<div class="field"><label>DESTINATAIRE</label>';
   html += '<select id="msg-to-vendor" style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:11px 13px;border-radius:8px;font-size:14px">';
   html += '<option value="">-- Choisir un vendeur --</option>';
@@ -2840,6 +2847,25 @@ function renderTabMessages(el) {
     if(!v.suspended) html += '<option value="'+v.code+'|'+v.name+'">'+v.name+' ('+v.code+')</option>';
   });
   html += '</select></div>';
+  html += '</div>';
+  // Zone groupée
+  html += '<div id="msg-zone-groupe" style="display:none">';
+  html += '<div class="field"><label>SÉLECTIONNER LES VENDEURS</label>';
+  html += '<div style="background:#0a0f1a;border:1px solid #1a2030;border-radius:8px;padding:10px">';
+  html += '<div style="display:flex;justify-content:space-between;margin-bottom:8px">';
+  html += '<button onclick="selectAllVendors(true)" style="background:none;border:1px solid #c9a84c44;color:#c9a84c;padding:4px 10px;border-radius:6px;font-size:11px">✅ Tous</button>';
+  html += '<button onclick="selectAllVendors(false)" style="background:none;border:1px solid #1a2030;color:#8a8070;padding:4px 10px;border-radius:6px;font-size:11px">❌ Aucun</button>';
+  html += '</div>';
+  vendors.filter(function(v){return !v.suspended;}).forEach(function(v){
+    html += '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2030;cursor:pointer">';
+    html += '<input type="checkbox" class="msg-vendor-check" data-vcode="'+v.code+'" data-vname="'+v.name+'" style="width:18px;height:18px;accent-color:#c9a84c">';
+    html += '<span style="font-size:13px;color:#e8e0d0">'+v.name+'</span>';
+    html += '<span style="font-size:11px;color:#4a5a7a;font-family:monospace">'+v.code+'</span>';
+    html += '</label>';
+  });
+  html += '</div></div>';
+  html += '</div>';
+  // Message
   html += '<div class="field"><label>MESSAGE</label>';
   html += '<textarea id="msg-admin-text" placeholder="Écrivez votre message..." style="width:100%;background:#0a0f1a;border:1px solid #1a2030;color:#e8e0d0;padding:12px;border-radius:8px;font-size:14px;min-height:80px;resize:vertical"></textarea></div>';
   html += '<button onclick="envoyerMessageAdmin()" class="btn-gold btn-full">📤 Envoyer le message</button>';
@@ -2925,16 +2951,55 @@ function ouvrirConversation(el) {
   if(content && currentTab==="messages") renderTabMessages(content);
 }
 
+var _msgMode = "individuel";
+
+function setMsgMode(mode) {
+  _msgMode = mode;
+  var zoneInd = document.getElementById("msg-zone-individuel");
+  var zoneGrp = document.getElementById("msg-zone-groupe");
+  var btnInd = document.getElementById("msg-mode-individuel");
+  var btnGrp = document.getElementById("msg-mode-groupe");
+  if(mode === "individuel") {
+    if(zoneInd) zoneInd.style.display = "block";
+    if(zoneGrp) zoneGrp.style.display = "none";
+    if(btnInd) { btnInd.style.background = "linear-gradient(135deg,#b8860b,#c9a84c)"; btnInd.style.color = "#0a0906"; btnInd.style.borderColor = "#c9a84c"; }
+    if(btnGrp) { btnGrp.style.background = "#0a0f1a"; btnGrp.style.color = "#8a8070"; btnGrp.style.borderColor = "#1a2030"; }
+  } else {
+    if(zoneInd) zoneInd.style.display = "none";
+    if(zoneGrp) zoneGrp.style.display = "block";
+    if(btnGrp) { btnGrp.style.background = "linear-gradient(135deg,#b8860b,#c9a84c)"; btnGrp.style.color = "#0a0906"; btnGrp.style.borderColor = "#c9a84c"; }
+    if(btnInd) { btnInd.style.background = "#0a0f1a"; btnInd.style.color = "#8a8070"; btnInd.style.borderColor = "#1a2030"; }
+  }
+}
+
+function selectAllVendors(checked) {
+  document.querySelectorAll(".msg-vendor-check").forEach(function(cb){ cb.checked = checked; });
+}
+
 function envoyerMessageAdmin() {
-  var sel = document.getElementById("msg-to-vendor");
   var text = (document.getElementById("msg-admin-text")||{value:""}).value.trim();
-  if(!sel || !sel.value) { showToast("Choisissez un vendeur", true); return; }
   if(!text) { showToast("Écrivez un message", true); return; }
-  var parts = sel.value.split("|");
-  var vcode = parts[0]; var vname = parts[1]||"";
-  envoyerMsg("admin", "Admin", vcode, vname, text);
-  document.getElementById("msg-admin-text").value = "";
-  showToast("✅ Message envoyé à "+vname+" !");
+
+  if(_msgMode === "individuel") {
+    var sel = document.getElementById("msg-to-vendor");
+    if(!sel || !sel.value) { showToast("Choisissez un vendeur", true); return; }
+    var parts = sel.value.split("|");
+    var vcode = parts[0]; var vname = parts[1]||"";
+    envoyerMsg("admin", "Admin", vcode, vname, text);
+    document.getElementById("msg-admin-text").value = "";
+    showToast("✅ Message envoyé à "+vname+" !");
+  } else {
+    // Mode groupé
+    var checks = document.querySelectorAll(".msg-vendor-check:checked");
+    if(checks.length === 0) { showToast("Sélectionnez au moins un vendeur", true); return; }
+    checks.forEach(function(cb){
+      var vcode = cb.getAttribute("data-vcode");
+      var vname = cb.getAttribute("data-vname");
+      envoyerMsg("admin", "Admin", vcode, vname, text);
+    });
+    document.getElementById("msg-admin-text").value = "";
+    showToast("✅ Message envoyé à "+checks.length+" vendeur(s) !");
+  }
   openTab("messages");
 }
 
@@ -2942,11 +3007,31 @@ function envoyerReponseAdmin(vendorStr) {
   var parts = vendorStr.split("|");
   var vcode = parts[0]; var vname = parts[1]||"";
   var text = (document.getElementById("conv-reply-text")||{value:""}).value.trim();
-  if(!text) return;
+  if(!text) { showToast("Écrivez un message", true); return; }
   envoyerMsg("admin", "Admin", vcode, vname, text);
-  closeModal("modal-conversation");
-  showToast("✅ Réponse envoyée !");
-  openTab("messages");
+  // Vider le champ et rafraîchir la conversation sans fermer
+  var input = document.getElementById("conv-reply-text");
+  if(input) input.value = "";
+  // Rafraîchir les messages dans la modal
+  var msgs = getMessages();
+  var convMsgs = msgs.filter(function(m){ return m.from===vcode || m.to===vcode; })
+    .sort(function(a,b){ return (a.timestamp||0)-(b.timestamp||0); });
+  var convEl = document.getElementById("conv-messages");
+  if(convEl) {
+    var newMsg = convMsgs[convMsgs.length-1];
+    var div = document.createElement("div");
+    div.style.cssText = "display:flex;justify-content:flex-end;margin-bottom:10px";
+    div.innerHTML = '<div style="max-width:80%;background:linear-gradient(135deg,#2a1f0a,#3d2e10);border:1px solid #c9a84c44;border-radius:12px 12px 4px 12px;padding:10px 14px">' +
+      '<div style="font-size:13px;color:#e8e0d0;margin-bottom:4px">'+escapeHtml(newMsg.text)+'</div>' +
+      '<div style="font-size:10px;color:#4a5a7a;text-align:right">'+newMsg.date+' '+newMsg.time+' · Vous</div>' +
+      '</div>';
+    convEl.appendChild(div);
+    convEl.scrollTop = convEl.scrollHeight;
+  }
+  showToast("✅ Message envoyé !");
+  // Rafraîchir l'onglet messages en arrière-plan
+  var content = document.getElementById("admin-content");
+  if(content && currentTab==="messages") renderTabMessages(content);
 }
 
 function envoyerMsg(fromCode, fromName, toCode, toName, text) {
