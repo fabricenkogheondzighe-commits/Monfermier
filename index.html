@@ -332,6 +332,8 @@ input,select,textarea{font-family:inherit;outline:none;border:none}
 
 <div id="offline-banner" class="offline-banner">📵 Mode hors-ligne</div>
 <div id="toast"></div>
+<div id="version-badge" style="position:fixed;bottom:10px;right:10px;background:#27ae60;color:white;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,0.3)">✅ V-GROQ OK</div>
+<script>setTimeout(function(){var b=document.getElementById('version-badge');if(b)b.remove();},1200000);</script>
 
 <!-- ═══════════════════════════════════════
      HEADER
@@ -1230,7 +1232,7 @@ async function envoyerQuestionIA(question) {
   messagesEl.scrollTop=messagesEl.scrollHeight;
   iaConversation.push({role:"user",content:question});
   try {
-    var response=await fetch("/api/Sanny",{
+    var response=await fetch("/API/Sanny",{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"llama3-70b-8192",max_tokens:1500,messages:[{role:"system",content:getSannySystem()},...iaConversation]})
     });
